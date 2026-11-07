@@ -16,6 +16,15 @@ const HERO_DARK = {
   B: '.4 .85 1 1 .95 .3',
 }
 
+// Soft circular dent used as a pressure map on the glossy wordmark.
+const PRESS =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><radialGradient id="g">' +
+      '<stop offset="0" stop-opacity="1"/><stop offset=".55" stop-opacity=".55"/><stop offset="1" stop-opacity="0"/>' +
+      '</radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/></svg>'
+  )
+
 export const DARK = {
   R: '.93 .62 .31 .18 .12 .08',
   G: '.95 .76 .49 .3 .17 .09',
@@ -63,75 +72,85 @@ export function ColorFilter({ id, paper, table = { R, G, B }, x = '-10%', y = '-
 export default function Thermal({ text = 'webassure', className = '', tone }) {
   const uid = useId().replace(/:/g, '')
   const svgRef = useRef(null)
-  const lightRef = useRef(null)
+  const pressRef = useRef(null)
+  const depthRef = useRef(null)
 
-  // Hover: the shine follows the cursor and nearby letters lift individually.
+  // Pressing the plastic: dent depth and size are proportional to pressure.
+  // Hover = light touch; holding the button presses deeper over time; pen/touch
+  // use real pressure. On release the surface springs back with a little rebound.
   useEffect(() => {
     const svg = svgRef.current
-    const light = lightRef.current
-    if (!svg || !light) return
+    const img = pressRef.current
+    const depthFn = depthRef.current
+    if (!svg || !img || !depthFn) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const host = svg.parentElement
-    const spans = Array.from(svg.querySelectorAll('.thermal__glass tspan'))
-    const lift = spans.map(() => 0)
-    let liftTarget = spans.map(() => 0)
-    let centers = null
+    const HOVER = 0.3
     let raf = 0
-    let tgt = { az: 240, el: 52 }
-    const cur = { ...tgt }
-    const measure = () => {
-      centers = spans.map((t) => {
-        const b = t.getBBox()
-        return { x: b.x + b.width / 2, y: b.y + b.height / 2 }
-      })
-    }
-    const tick = () => {
-      let moving = false
-      for (const k of ['az', 'el']) {
-        const d = tgt[k] - cur[k]
-        if (Math.abs(d) > 0.05) moving = true
-        cur[k] += d * 0.12
+    let hovering = false
+    let down = false
+    let downAt = 0
+    let penPressure = 0
+    const pos = { x: 450, y: 100, tx: 450, ty: 100 }
+    let depth = 0
+    let vel = 0
+    const targetDepth = (now) => {
+      if (down) {
+        if (penPressure > 0) return Math.min(1, 0.25 + penPressure * 0.85)
+        return Math.min(1, 0.45 + ((now - downAt) / 1000) * 0.9) // deeper the longer you hold
       }
-      light.setAttribute('azimuth', cur.az.toFixed(1))
-      light.setAttribute('elevation', cur.el.toFixed(1))
-      // dy is relative to the previous glyph, so set each one to the change in lift.
-      let prev = 0
-      spans.forEach((t, i) => {
-        const d = liftTarget[i] - lift[i]
-        if (Math.abs(d) > 0.05) moving = true
-        lift[i] += d * 0.16
-        t.setAttribute('dy', (-(lift[i] - prev)).toFixed(2))
-        prev = lift[i]
-      })
-      raf = moving ? requestAnimationFrame(tick) : 0
+      return hovering ? HOVER : 0
+    }
+    const tick = (now) => {
+      pos.x += (pos.tx - pos.x) * 0.25
+      pos.y += (pos.ty - pos.y) * 0.25
+      // spring toward the target depth (rebounds slightly when released)
+      vel += (targetDepth(now) - depth) * 0.16
+      vel *= 0.74
+      depth = Math.max(0, depth + vel)
+      const R = 46 + 38 * Math.min(1, depth) // wider footprint under more pressure
+      img.setAttribute('x', (pos.x - R).toFixed(1))
+      img.setAttribute('y', (pos.y - R).toFixed(1))
+      img.setAttribute('width', (R * 2).toFixed(1))
+      img.setAttribute('height', (R * 2).toFixed(1))
+      depthFn.setAttribute('slope', depth.toFixed(3))
+      const settled = !down && Math.abs(vel) < 0.001 && Math.abs(targetDepth(now) - depth) < 0.002 &&
+        Math.abs(pos.tx - pos.x) < 0.2 && Math.abs(pos.ty - pos.y) < 0.2
+      raf = settled ? 0 : requestAnimationFrame(tick)
     }
     const kick = () => { if (!raf) raf = requestAnimationFrame(tick) }
-    const onMove = (e) => {
-      const r = svg.getBoundingClientRect()
-      const nx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2)
-      const ny = (e.clientY - (r.top + r.height / 2)) / (r.height / 2)
-      tgt = { az: ((Math.atan2(ny, nx) * 180) / Math.PI + 360) % 360, el: 62 - Math.min(1, Math.hypot(nx, ny)) * 26 }
-      if (!centers) measure()
+    const toLocal = (e) => {
       const m = svg.getScreenCTM()
-      if (m) {
-        const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse())
-        liftTarget = centers.map((c) => {
-          const dist = Math.hypot(pt.x - c.x, (pt.y - c.y) * 0.6)
-          const k = Math.max(0, 1 - dist / 170)
-          return 14 * k * k * (3 - 2 * k)
-        })
-      }
+      if (!m) return null
+      return new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse())
+    }
+    const onMove = (e) => {
+      const pt = toLocal(e)
+      if (!pt) return
+      if (!hovering && depth < 0.01) { pos.x = pt.x; pos.y = pt.y }
+      pos.tx = pt.x
+      pos.ty = pt.y
+      hovering = true
+      if (down && e.pointerType !== 'mouse') penPressure = e.pressure || 0
       kick()
     }
-    const onLeave = () => { tgt = { az: 240, el: 52 }; liftTarget = spans.map(() => 0); kick() }
-    const onResize = () => { centers = null }
+    const onDown = (e) => {
+      down = true
+      downAt = performance.now()
+      penPressure = e.pointerType !== 'mouse' ? e.pressure || 0 : 0
+      onMove(e)
+    }
+    const onUp = () => { down = false; penPressure = 0; kick() }
+    const onLeave = () => { hovering = false; down = false; penPressure = 0; kick() }
     host.addEventListener('pointermove', onMove)
+    host.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointerup', onUp)
     host.addEventListener('pointerleave', onLeave)
-    window.addEventListener('resize', onResize)
     return () => {
       host.removeEventListener('pointermove', onMove)
+      host.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointerup', onUp)
       host.removeEventListener('pointerleave', onLeave)
-      window.removeEventListener('resize', onResize)
       cancelAnimationFrame(raf)
     }
   }, [])
@@ -186,8 +205,22 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
         </linearGradient>
         <filter id={`${uid}-glass`} x="-10%" y="-40%" width="120%" height="190%" colorInterpolationFilters="sRGB">
           <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="b" />
-          <feSpecularLighting in="b" surfaceScale="5.5" specularConstant="1.1" specularExponent="24" lightingColor="#ffffff" result="spec">
-            <feDistantLight ref={lightRef} azimuth="240" elevation="52" />
+          <feImage
+            ref={pressRef}
+            href={PRESS}
+            x="-999"
+            y="-999"
+            width="140"
+            height="140"
+            preserveAspectRatio="none"
+            result="pressRaw"
+          />
+          <feComponentTransfer in="pressRaw" result="press">
+            <feFuncA ref={depthRef} type="linear" slope="0" />
+          </feComponentTransfer>
+          <feComposite in="b" in2="press" operator="arithmetic" k1="0" k2="1" k3="-0.85" k4="0" result="h" />
+          <feSpecularLighting in="h" surfaceScale="5.5" specularConstant="1.1" specularExponent="24" lightingColor="#ffffff" result="spec">
+            <feDistantLight azimuth="240" elevation="52" />
           </feSpecularLighting>
           <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn" />
           <feComposite in="SourceGraphic" in2="specIn" operator="arithmetic" k1="0" k2="1" k3="0.8" k4="0" result="lit" />
@@ -200,10 +233,14 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
           <feOffset in="sb" dy="6" result="so" />
           <feFlood floodColor="#000" floodOpacity=".55" />
           <feComposite in2="so" operator="in" result="shadow" />
+          <feComposite in="press" in2="SourceAlpha" operator="in" result="pressIn" />
+          <feFlood floodColor="#0a1660" floodOpacity=".38" />
+          <feComposite in2="pressIn" operator="in" result="pressShade" />
           <feMerge>
             <feMergeNode in="shadow" />
             <feMergeNode in="lit" />
             <feMergeNode in="innerShade" />
+            <feMergeNode in="pressShade" />
           </feMerge>
         </filter>
       </defs>
@@ -234,9 +271,7 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
           filter={`url(#${uid}-glass)`}
           style={{ fontFamily: 'var(--font-mark)' }}
         >
-          {Array.from(text).map((ch, i) => (
-            <tspan key={i}>{ch}</tspan>
-          ))}
+          {text}
         </text>
       </g>
     </svg>
