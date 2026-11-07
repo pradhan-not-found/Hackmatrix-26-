@@ -1,6 +1,6 @@
 'use client'
 
-import { useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 
 // Heat-map wordmark: the text is filled with a moving black/white stripe, blurred,
 // and the resulting luminance is remapped through a thermal colour table.
@@ -62,6 +62,54 @@ export function ColorFilter({ id, paper, table = { R, G, B }, x = '-10%', y = '-
 
 export default function Thermal({ text = 'webassure', className = '', tone }) {
   const uid = useId().replace(/:/g, '')
+  const svgRef = useRef(null)
+  const lightRef = useRef(null)
+
+  // Hover: the specular light follows the cursor and the word tilts slightly.
+  useEffect(() => {
+    const svg = svgRef.current
+    const light = lightRef.current
+    if (!svg || !light) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const host = svg.parentElement
+    let raf = 0
+    let target = { az: 240, el: 52, rx: 0, ry: 0 }
+    const cur = { ...target }
+    const tick = () => {
+      let moving = false
+      for (const k of ['az', 'el', 'rx', 'ry']) {
+        const d = target[k] - cur[k]
+        if (Math.abs(d) > 0.05) moving = true
+        cur[k] += d * 0.12
+      }
+      light.setAttribute('azimuth', cur.az.toFixed(1))
+      light.setAttribute('elevation', cur.el.toFixed(1))
+      svg.style.setProperty('--rx', `${cur.rx.toFixed(2)}deg`)
+      svg.style.setProperty('--ry', `${cur.ry.toFixed(2)}deg`)
+      raf = moving ? requestAnimationFrame(tick) : 0
+    }
+    const kick = () => { if (!raf) raf = requestAnimationFrame(tick) }
+    const onMove = (e) => {
+      const r = svg.getBoundingClientRect()
+      const nx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2)
+      const ny = (e.clientY - (r.top + r.height / 2)) / (r.height / 2)
+      target = {
+        az: ((Math.atan2(ny, nx) * 180) / Math.PI + 360) % 360,
+        el: 62 - Math.min(1, Math.hypot(nx, ny)) * 26,
+        rx: Math.max(-1, Math.min(1, ny)) * -4,
+        ry: Math.max(-1, Math.min(1, nx)) * 5,
+      }
+      kick()
+    }
+    const onLeave = () => { target = { az: 240, el: 52, rx: 0, ry: 0 }; kick() }
+    host.addEventListener('pointermove', onMove)
+    host.addEventListener('pointerleave', onLeave)
+    return () => {
+      host.removeEventListener('pointermove', onMove)
+      host.removeEventListener('pointerleave', onLeave)
+      cancelAnimationFrame(raf)
+    }
+  }, [])
   const stripe = `${uid}-stripe`
   const material = `${uid}-material`
   const color = `${uid}-color`
@@ -69,6 +117,7 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
 
   return (
     <svg
+      ref={svgRef}
       className={`thermal ${className}`}
       viewBox="-40 -30 980 230"
       overflow="visible"
@@ -113,7 +162,7 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
         <filter id={`${uid}-glass`} x="-10%" y="-40%" width="120%" height="190%" colorInterpolationFilters="sRGB">
           <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="b" />
           <feSpecularLighting in="b" surfaceScale="5.5" specularConstant="1.1" specularExponent="24" lightingColor="#ffffff" result="spec">
-            <feDistantLight azimuth="240" elevation="52" />
+            <feDistantLight ref={lightRef} azimuth="240" elevation="52" />
           </feSpecularLighting>
           <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn" />
           <feComposite in="SourceGraphic" in2="specIn" operator="arithmetic" k1="0" k2="1" k3="0.8" k4="0" result="lit" />
