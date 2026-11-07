@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from backend.investigation import investigate
 from backend.network import UnsafeURL
+from backend.gemini import explain
 
 app = FastAPI(title="HackMatrix URL Investigation", version="0.1.0")
 static_directory = Path(__file__).parent / "static"
@@ -92,3 +93,22 @@ def get_investigation(investigation_id: UUID):
     if row is None:
         raise HTTPException(404, "Investigation not found")
     return json.loads(row[0])
+
+
+@app.post("/api/investigations/{investigation_id}/explanation")
+def explain_investigation(investigation_id: UUID):
+    if not slots.acquire(blocking=False):
+        raise HTTPException(429, "Investigation capacity reached; retry later")
+    try:
+        report = get_investigation(investigation_id)
+        report["ai_explanation"] = explain(report)
+        connection = database()
+        try:
+            with connection:
+                connection.execute("UPDATE investigations SET report = ? WHERE id = ?",
+                                   (json.dumps(report), str(investigation_id)))
+        finally:
+            connection.close()
+        return report["ai_explanation"]
+    finally:
+        slots.release()
