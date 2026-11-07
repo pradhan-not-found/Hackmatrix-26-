@@ -131,6 +131,23 @@
 .up__card[data-popular] { background: linear-gradient(180deg, color-mix(in srgb, var(--workspace-accent) 7%, var(--card)) 0%, var(--card) 40%); }
 .up__head { gap: 12px; padding-bottom: 20px; }
 
+/* dashboard 404 (inside the app shell) */
+.dnf { width: 100%; max-width: 640px; margin: 4vh auto 0; display: flex; flex-direction: column; gap: 14px; }
+.dnf__card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 40px 28px 32px; border-radius: 22px; background: var(--card); box-shadow: 0 1px 2px rgba(15, 20, 40, 0.04), 0 14px 40px -28px rgba(15, 20, 40, 0.3); }
+[data-theme='dark'] .dnf__card { box-shadow: none; }
+.dnf__code { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; padding: 4px 12px; border-radius: 999px; color: var(--workspace-accent); background: color-mix(in srgb, var(--workspace-accent) 12%, transparent); }
+.dnf__t { font-size: clamp(22px, 2.2vw, 28px); font-weight: 600; letter-spacing: -0.02em; margin-top: 6px; }
+.dnf__d { color: var(--grey); font-size: 14px; line-height: 1.55; max-width: 420px; }
+.dnf__actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+.dnf__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.dnf__links a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-radius: 16px; background: var(--card); color: var(--ink); transition: background 0.2s var(--ease); }
+.dnf__links a:hover { background: var(--tile); }
+.dnf__links span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dnf__links strong { font-size: 14px; font-weight: 600; }
+.dnf__links em { font-style: normal; font-size: 12.5px; color: var(--grey); }
+.dnf__links svg { flex: none; color: var(--grey); }
+@media (max-width: 600px) { .dnf__links { grid-template-columns: 1fr; } }
+
 /* billing page (settings → plan) */
 .bl__hero { display: flex; flex-direction: column; gap: 22px; }
 .bl__hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; }

@@ -190,8 +190,10 @@ export default function Shell({ children }) {
   }
 
   const seg = pathname.split('/')[2] || ''
-  const current = seg === 'settings' || seg === 'upgrade' ? 'Settings' : (NAV.find(([p]) => p === seg) || NAV[0])[1]
-  const crumbNow = seg === 'upgrade' ? 'Plans' : current
+  const known = NAV.find(([p]) => p === seg)
+  const missing = !known && seg !== 'settings' && seg !== 'upgrade'
+  const current = seg === 'settings' || seg === 'upgrade' ? 'Settings' : missing ? '' : known[1]
+  const crumbNow = seg === 'upgrade' ? 'Plans' : missing ? 'Page not found' : current
   const href = (p) => `/dashboard${p ? `/${p}` : ''}`
 
   const runScan = (event) => { event.preventDefault(); runInvestigation(query) }
@@ -249,6 +251,7 @@ export default function Shell({ children }) {
             </button>
             <p className="dash__crumb crumb">
               {(() => {
+                if (missing) return <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 8v4.5M12 16h.01" /></svg>
                 const Icon = current === 'Settings' ? SettingsIcon : (NAV.find(([, l]) => l === current) || NAV[0])[2]
                 return <Icon />
               })()}

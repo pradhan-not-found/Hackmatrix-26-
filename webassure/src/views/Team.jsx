@@ -10,7 +10,7 @@ const TEAM = [
   { name: 'Souradeep Pradhan', photo: '/team/souradeep.png', github: '#', website: '#', linkedin: '#' },
   { name: 'Madhushree Dasgupta', github: '#', website: '#', linkedin: '#' },
   { name: 'Aniruddha Das', org: 'Adamas University', photo: '/team/aniruddha.png', github: '#', website: '#', linkedin: '#' },
-  { name: 'Sattwik Das', photo: '/team/sattwik.png', github: '#', website: '#', linkedin: '#' },
+  { name: 'Sattwik Das', photo: '/team/sattwik.png', github: 'https://github.com/Sattwik-Das', website: 'https://sattwik-das.vercel.app/', linkedin: 'https://www.linkedin.com/in/sattwik-das-in' },
 ]
 
 const Icon = {
