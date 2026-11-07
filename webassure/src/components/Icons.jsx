@@ -54,3 +54,18 @@ export const AlertIcon = () => (
 export const SearchIcon = () => (
   <svg {...base}><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4-4" /></svg>
 )
+export const GlobeIcon = () => (
+  <svg {...base}><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="4" ry="9" /><path d="M3 12h18M5 6.5h14M5 17.5h14" /></svg>
+)
+export const RouteIcon = () => (
+  <svg {...base}><circle cx="5" cy="5" r="2" /><circle cx="19" cy="19" r="2" /><path d="M7 5h8a4 4 0 0 1 0 8H9a4 4 0 0 0 0 8h6M16 16l3 3-3 3" /></svg>
+)
+export const InfoIcon = () => (
+  <svg {...base}><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7v.01" /></svg>
+)
+export const DownloadIcon = () => (
+  <svg {...base}><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4" /></svg>
+)
+export const CloseIcon = () => (
+  <svg {...base}><path d="m6 6 12 12M18 6 6 18" /></svg>
+)
