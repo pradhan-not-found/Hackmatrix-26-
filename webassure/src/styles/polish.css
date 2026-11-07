@@ -1309,3 +1309,7 @@
   background-size: 8px 8px;
 }
 @keyframes grid-drift { to { background-position: 8px 8px; } }
+
+/* plastic buttons keep their pill shape on hover — no morph */
+.btn--ink, .btn--ink:hover, .plan .btn--ink:hover, .pill-btn--glow, .pill-btn--glow:hover,
+.mc .pill-btn--glow:hover, .cb__primary, .cb__primary:hover, .cb .btn:hover { border-radius: 999px; }
