@@ -204,3 +204,8 @@
 .up__blurb { height: 40px; }
 .up__price { margin-top: 14px; }
 .up__foot { margin-top: 22px; }
+
+/* consistent card outlines */
+.up__card, .up__card[data-current] { box-shadow: inset 0 0 0 1px var(--line); }
+.up__card[data-popular] { box-shadow: inset 0 0 0 1.5px var(--workspace-accent); }
+
