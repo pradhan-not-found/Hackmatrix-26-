@@ -6,6 +6,7 @@ import re
 import socket
 import ssl
 import time
+import idna
 from urllib.parse import quote, urlsplit, urlunsplit
 
 
@@ -25,11 +26,12 @@ def normalize_url(value: str) -> str:
             raise UnsafeURL("Only HTTP and HTTPS URLs are supported")
         if parts.username is not None or parts.password is not None:
             raise UnsafeURL("URLs containing credentials are not supported")
-        host = parts.hostname.rstrip(".").encode("idna").decode("ascii").lower()
+        host = parts.hostname.rstrip(".").lower()
         try:
             address = ipaddress.ip_address(host)
             host = address.compressed
         except ValueError:
+            host = idna.encode(host, uts46=True, std3_rules=True).decode("ascii")
             if len(host) > 253 or not all(
                 re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label)
                 for label in host.split(".")

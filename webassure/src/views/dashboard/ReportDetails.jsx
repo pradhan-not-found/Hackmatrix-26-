@@ -38,8 +38,11 @@ export default function ReportDetails({ id, onClose }) {
     {report && <>
       <p className="report-url">{report.normalized_url}</p>
       <p className="caption grey">{report.id} · {formatDate(report.created_at)}</p>
-      <div className="drawer__score"><Badge tone={classificationTone(report.risk_classification)}>{report.risk_classification}</Badge><span className="caption grey">Backend assessment · no numeric score</span></div>
+      <div className="drawer__score"><Badge tone={classificationTone(report.risk_classification)}>{report.risk_classification}</Badge><span className="caption grey">Phishing assessment · configuration findings are separate</span></div>
+      {report.assessment && <Evidence title="Assessment decision" value={report.assessment} />}
       <section><h3 className="drawer__h">Coverage</h3><p>Network inspection: {report.evidence_coverage?.network_complete ? 'Complete' : 'Incomplete'}</p><p>Threat intelligence: {report.evidence_coverage?.reputation_available ? 'Available' : 'Unavailable'}</p><p className="caption grey">No detected threats does not guarantee safety.</p></section>
+      {report.evidence_coverage?.checks && <Evidence title="Completed, incomplete & unimplemented checks" value={report.evidence_coverage.checks} />}
+      {report.url_analysis && <Evidence title="Domain identity & URL indicators" value={report.url_analysis} />}
       <section><h3 className="drawer__h">Understand this report</h3>
         {explanation?.status === 'completed' ? <>
           <p className="caption grey">{explanation.provider} · {explanation.model}</p>
@@ -50,7 +53,7 @@ export default function ReportDetails({ id, onClose }) {
       <section><h3 className="drawer__h">Findings ({report.findings.length})</h3>
         {!report.findings.length && <p className="caption grey">No findings recorded. Review coverage before drawing conclusions.</p>}
         {report.findings.map((finding) => <article className="report-item" key={finding.id}>
-          <strong>{finding.description}</strong><p className="caption grey">{finding.severity} · {finding.source} · {formatDate(finding.observed_at)}</p><Evidence value={finding.evidence} />
+          <strong>{finding.description}</strong><p className="caption grey">{finding.kind?.replaceAll('_', ' ') || finding.category} · {finding.severity} · {finding.source} · {formatDate(finding.observed_at)}</p><Evidence value={finding.evidence} />
         </article>)}
       </section>
       <section><h3 className="drawer__h">Individual checks</h3>

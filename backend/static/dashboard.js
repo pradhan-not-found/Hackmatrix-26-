@@ -137,6 +137,8 @@ function renderReport(report) {
     $(id).replaceChildren(...(items.length ? items : ["No specific actions were provided by these checks."]).map(text => element("li", "", text)));
   }
   $("checks").replaceChildren();
+  if (report.assessment) $("checks").append(details("Assessment decision", report.assessment));
+  if (report.evidence_coverage?.checks) $("checks").append(details("Completed, incomplete & unimplemented checks", report.evidence_coverage.checks));
   for (const check of report.checks) {
     const row = element("article", "check");
     const heading = element("div", "check-heading");
@@ -148,6 +150,7 @@ function renderReport(report) {
     $("checks").append(row);
   }
   $("redirects").replaceChildren();
+  if (report.url_analysis) $("redirects").append(details("Domain identity & URL indicators", report.url_analysis));
   report.redirect_chain.forEach((hop, index) => {
     const row = element("article", "redirect");
     const metadata = element("div", "redirect-meta");

@@ -9,6 +9,7 @@ from backend.network import UnsafeURL, fetch, normalize_url, public_addresses
 from backend.threat_intelligence import reputation
 from backend.explanation import explain_locally
 from backend.assessment import assess
+from backend.url_analysis import analyze_url, analyze_redirect
 
 
 def now() -> str:
@@ -21,7 +22,7 @@ def investigate(url: str) -> dict:
         "id": str(uuid4()), "status": "running", "submitted_url": url,
         "normalized_url": normalized, "created_at": now(), "completed_at": None,
         "risk_classification": "Inconclusive", "findings": [], "checks": [],
-        "redirect_chain": [], "recommendations": [],
+        "redirect_chain": [], "url_analysis": [], "recommendations": [],
         "limitations": [
             "No detected threats does not establish safety; HTTPS does not establish legitimacy.",
             "HEAD requests only; page content, scripts, downloads and vulnerabilities are not inspected.",
@@ -40,16 +41,23 @@ def investigate(url: str) -> dict:
         if recommendation not in report["recommendations"]:
             report["recommendations"].append(recommendation)
 
-    host = urlsplit(normalized).hostname
-    indicators = []
-    if "xn--" in host:
-        indicators.append("Internationalized hostname; verify the intended organisation")
-    if host.count("-") >= 4 or host.count(".") >= 5:
-        indicators.append("Unusual hostname structure")
-    if indicators:
-        finding("url", "low", "URL characteristics warrant manual review", indicators,
-                "Verify the hostname through an independently trusted source.")
-    report["checks"].append({"name": "url_structure", "status": "completed"})
+    analyzed = {}
+
+    def inspect_url(value):
+        if value not in analyzed:
+            analysis = analyze_url(value)
+            analyzed[value] = analysis
+            report["url_analysis"].append(analysis)
+            for indicator in analysis["indicators"]:
+                finding("url", {"weak": "info", "moderate": "medium", "strong": "high"}[indicator["strength"]],
+                        indicator["description"], indicator["evidence"],
+                        "Verify the exact destination through an independently trusted source; naming indicators alone do not prove fraud.",
+                        source="offline URL analysis", code=indicator["code"], strength=indicator["strength"], signal_group=indicator["signal_group"])
+            report["checks"].append({"name": "url_structure", "status": "completed", "url": value,
+                                     "registrable_domain": analysis["registrable_domain"]})
+        return analyzed[value]
+
+    inspect_url(normalized)
     current = normalized
     reputation_urls = [normalized]
     visited = set()
@@ -59,13 +67,16 @@ def investigate(url: str) -> dict:
     for hop in range(6):
         if current in visited:
             report["limitations"].append("Redirect loop prevented completion.")
+            redirect_error = "Redirect loop prevented completion."
             break
         if time.monotonic() - started >= 25:
             report["limitations"].append("Investigation network budget exhausted.")
+            redirect_error = "Investigation network budget exhausted."
             break
         visited.add(current)
         try:
             parts = urlsplit(current)
+            inspect_url(current)
             stage = "dns"
             addresses = public_addresses(parts.hostname, 443 if parts.scheme == "https" else 80)
             if current not in reputation_urls:
@@ -86,8 +97,20 @@ def investigate(url: str) -> dict:
             if result["status"] in (301, 302, 303, 307, 308) and location:
                 if hop == 5:
                     report["limitations"].append("Redirect limit reached.")
+                    redirect_error = "Redirect limit reached."
                     break
-                current = normalize_url(urljoin(current, location))
+                destination = normalize_url(urljoin(current, location))
+                origin_analysis = inspect_url(current)
+                target_analysis = inspect_url(destination)
+                identity_suspicion = any(item["strength"] in ("moderate", "strong")
+                                         for analysis in (origin_analysis, target_analysis) for item in analysis["indicators"])
+                for indicator in analyze_redirect(current, destination, identity_suspicion):
+                    finding("redirect", "medium" if indicator["strength"] == "moderate" or indicator["code"] == "https_downgrade" else "info",
+                            indicator["description"], indicator["evidence"],
+                            "Review the destination change before providing sensitive information. Redirects may be legitimate; avoid sending sensitive data over HTTP.",
+                            source="observed HTTP redirect", code=indicator["code"], kind=indicator["kind"],
+                            strength=indicator["strength"], signal_group=indicator["signal_group"])
+                current = destination
                 continue
             report["final_url"] = current
             redirects_complete = True

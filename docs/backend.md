@@ -146,6 +146,36 @@ not_applicable states. HTML, revocation, CT, and certificate key-strength checks
 are explicitly not_implemented and excluded from core coverage. These are
 documented heuristic rules, not calibrated probabilities.
 
+### URL and redirect analysis
+
+Each URL encountered in the actual HTTP redirect chain receives offline analysis.
+`url_analysis` records ASCII/Unicode hostnames, registrable domain, subdomain,
+public/private suffix, indicators, and limitations. Domain boundaries use the
+bundled Public Suffix List in `tldextract`, including private hosting suffixes;
+there are no runtime suffix-list downloads or cache writes. Unknown suffixes have
+no inferred registrable domain. Update dependencies to refresh bundled data.
+IDNA normalization uses UTS 46 and IDNA 2008 processing.
+
+A small curated registry covers example official roots for PayPal, Google,
+Microsoft, Amazon, Apple, and GitHub. This is not comprehensive ownership
+verification. Exact known roots and their subdomains skip brand-name heuristics;
+they do not bypass reputation or other checks. An embedded official root in an
+unrelated hostname and Unicode brand lookalikes are strong naming indicators.
+Single-edit/transposed names or brand tokens become moderate indicators only
+with credential-related hostname/path context. Plain punycode, mixed scripts,
+unusual structure, and close spellings without context remain weak advisories.
+Unicode matching uses bundled confusable data and is deliberately limited;
+it does not claim complete UTS 39 spoof detection.
+
+Recognized redirect query parameters are decoded at most twice and inspected as
+data only; their destinations are never fetched or treated as observed redirects.
+Actual cross-domain HTTP redirects are weak by default and moderate when
+corroborating significant naming indicators. Identity signals share one group,
+so several variants of the same hostname concern cannot alone create High Risk.
+HTTPS downgrades are separate configuration findings, not proof of phishing.
+All actual redirect destinations retain the existing SSRF validation and pinned
+connection checks. Only HEAD is sent; HTML and JavaScript remain uninspected.
+
 Reports contain findings with sources, evidence, timestamps, recommendations,
 per-check results, redirect details, coverage, and limitations. TLS uses the system
 trust store and verifies the original hostname while connecting to a validated IP.
