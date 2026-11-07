@@ -140,6 +140,89 @@ local explanations do not replace the Safe Browsing lookup or prove a site safe.
 The existing `ai_explanation` JSON field is retained for report compatibility,
 and its `provider` identifies local versus Gemini output.
 
+## Message spam/scam analysis
+
+`POST /api/analyze-message` runs an independent text-analysis path; it does not
+change or call the URL investigation pipeline. It normalizes whitespace, extracts
+URLs, phone numbers and email addresses, applies transparent indicators for
+KYC/banking, prizes, OTPs, jobs, payment, credentials, urgency and impersonation,
+then adds an optional TF-IDF classifier prediction. URLs are reported as extracted
+text and are not opened, reputation checked or asserted to be malicious. The
+endpoint does not persist raw message text.
+
+Install the pinned scikit-learn and joblib dependencies from `requirements.txt`.
+Download the CC BY 4.0 [UCI SMS Spam Collection](https://archive.ics.uci.edu/dataset/228/sms%2Bspam%2Bcollection),
+extract the tab-separated `SMSSpamCollection`, then train from the repository root:
+
+```powershell
+.venv\Scripts\python -m backend.train_message_model path\to\SMSSpamCollection
+```
+
+The training command uses an 80/20 stratified split with a fixed seed. It reports
+accuracy, spam precision/recall/F1, a confusion matrix, and per-class metrics for
+Logistic Regression and Multinomial Naive Bayes, then saves the Logistic Regression
+model plus its fitted TF-IDF vectorizer to `backend/models/message_classifier.joblib`.
+Evaluation output is saved at `data/message-model-metrics.json`. The model artifact
+is a local generated file and should be retrained when dependency versions change.
+For the 5,574-row UCI dataset with this configuration, the 1,115-message stratified
+test split produced the following observed results (positive class: `spam`):
+
+| Model | Accuracy | Spam precision | Spam recall | Spam F1 | Confusion matrix (`ham`, `spam` rows/columns) |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Logistic Regression | 98.39% | 94.56% | 93.29% | 93.92% | `[[958, 8], [10, 139]]` |
+| Multinomial Naive Bayes | 96.77% | 100.00% | 75.84% | 86.26% | `[[966, 0], [36, 113]]` |
+
+These are held-out results from this dataset and split, not expected production
+accuracy or measured scam-detection performance.
+
+Example request:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/analyze-message -Method Post -ContentType application/json -Body '{"message":"Your bank account is blocked. Verify your KYC immediately."}'
+```
+
+Example response shape (model confidence and wording depend on the trained artifact):
+
+```json
+{
+  "classification": "Likely scam or spam",
+  "risk_level": "High",
+  "confidence": 0.687,
+  "model_prediction": {"status": "available", "label": "spam", "confidence": 0.687, "model": "LogisticRegression"},
+  "heuristic_risk_score": 42,
+  "indicators": [
+    {"code": "banking_kyc", "name": "Banking or account verification language", "evidence": ["bank account", "KYC"]},
+    {"code": "urgency_pressure", "name": "Urgency or consequence pressure", "evidence": ["immediately"]},
+    {"code": "shortened_url", "name": "URL shortener hides the destination", "evidence": ["https://bit.ly/claim"]}
+  ],
+  "extracted_urls": ["https://bit.ly/claim"],
+  "extracted_phone_numbers": [],
+  "extracted_email_addresses": [],
+  "explanation": "The text model predicted spam with 69% confidence. Heuristic indicators: 3. Extracted links are not reputation checked and are not labelled malicious.",
+  "recommendation": "Do not reply, open links, share codes or credentials, or send money. Verify the claim using an independently obtained official contact."
+}
+```
+
+The response includes `classification`, `risk_level`, `confidence`, a separate
+`model_prediction`, `heuristic_risk_score`, indicator names and original text
+evidence, extracted links/contact details, an explanation, a recommended action,
+and limitations. The maximum message length is 10,000 characters; empty or
+oversized messages receive HTTP 422. Missing or unloadable model files do not stop
+the endpoint: the model prediction is marked unavailable, and heuristic indicators
+continue to be returned. In that case the risk level may be `Unknown`.
+
+The UCI corpus is an older English ham/spam dataset, not a labelled banking-fraud
+or phishing dataset. Its model output is a spam/ham prediction, not a verified fraud
+finding. Indicator phrases can occur in legitimate messages, and messages in other
+languages or newer scam patterns may not be detected. `confidence` is the classifier's
+spam/ham class probability, not a calibrated probability that the sender is fraudulent;
+heuristic score is returned separately. The default explanation is local. To request
+Gemini explicitly, append `?provider=gemini`; only the classification, model result,
+indicator names/codes, heuristic score and limitations are sent. Raw message text,
+evidence snippets, extracted URLs, phone numbers and email addresses are excluded.
+The existing Gemini key/model configuration is reused, and provider errors leave the
+local analysis available in the response.
+
 ## Optional Gemini explanations
 
 Add a [Google AI Studio API key](https://aistudio.google.com/apikey) to `.env`:
@@ -168,5 +251,6 @@ extra fields, and incomplete generations are rejected. Reference validation does
 not prove that a statement logically follows from its evidence; review the source
 checks. Gemini cannot change the deterministic risk classification.
 
-AI explanations are implemented; message analysis and blockchain reporting remain
-outside this endpoint.
+AI explanations are implemented for URL investigation reports; message analysis
+uses local rule-based explanations and blockchain reporting remains outside this
+endpoint.
