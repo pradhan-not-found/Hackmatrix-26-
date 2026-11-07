@@ -85,6 +85,7 @@ def investigate(url: str) -> dict:
                                      "addresses": addresses})
             stage = "http"
             result = fetch(current, addresses)
+            result.pop("html", None)  # Body text is transient and must never enter stored reports.
             report["redirect_chain"].append(result)
             report["checks"].append({"name": "http", "status": "completed", "url": current,
                                      "http_status": result["status"]})

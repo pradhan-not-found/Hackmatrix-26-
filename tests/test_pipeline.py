@@ -58,7 +58,7 @@ class NetworkTests(unittest.TestCase):
         fetch("https://example.com/", ["8.8.8.8"])
         connect.assert_called_once_with(("8.8.8.8", 443), timeout=5)
         context.return_value.wrap_socket.assert_called_once_with(connect.return_value, server_hostname="example.com")
-        self.assertEqual(connection.return_value.request.call_args.args[0], "HEAD")
+        self.assertEqual(connection.return_value.request.call_args.args[0], "GET")
         connection.return_value.close.assert_called_once()
 
     def test_reputation_disabled_without_key(self):
