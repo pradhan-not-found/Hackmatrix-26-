@@ -1,4 +1,61 @@
 /* Dashboard workspace. Landing-page styling remains independent. */
+.dash { transition: grid-template-columns 320ms cubic-bezier(.22, 1, .36, 1); }
+.dash .dash__menu, .dash .dash__close {
+  display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--card); color: var(--grey);
+  cursor: pointer; transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.dash .dash__menu:hover, .dash .dash__close:hover {
+  color: var(--workspace-accent); border-color: var(--workspace-accent);
+  background: color-mix(in srgb, var(--workspace-accent) 8%, var(--card));
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--workspace-accent) 10%, transparent);
+}
+.dash .dash__menu:active, .dash .dash__close:active { transform: scale(.94); }
+.dash .dash__menu:focus-visible, .dash .dash__close:focus-visible { outline: 2px solid var(--workspace-accent); outline-offset: 3px; }
+.dash__menu-arrow { transform-origin: 13.5px 12px; transition: transform 320ms ease; }
+.dash__menu[aria-expanded='false'] .dash__menu-arrow { transform: rotate(180deg); }
+.dash .dash__close { display: none; }
+.dash .dash__side-head { display: flex; align-items: center; justify-content: space-between; height: 36px; min-height: 36px; flex: 0 0 36px; gap: 8px; }
+.dash .dash__mobile-menu { display: none; }
+.dash .dash__side { min-width: 0; }
+.dash .dash__link svg { flex-shrink: 0; }
+.dash__link-label { white-space: nowrap; transition: opacity 160ms ease; }
+.dash__brand-compact { display: none; }
+@media (min-width: 861px) {
+  .dash[data-collapsed] { grid-template-columns: 76px minmax(0, 1fr); }
+  .dash .dash__side[id] { overflow: hidden; padding-inline: 12px; }
+  /* Both states reserve the same rows: brand, toggle, then navigation. */
+  .dash .dash__side-head { position: relative; display: block; height: 76px; min-height: 76px; flex: 0 0 76px; }
+  .dash .dash__side-head .dash__logo { position: absolute; top: 0; left: 6px; display: block; width: 180px; height: 24px; line-height: 24px; white-space: nowrap; }
+  .dash .dash__collapse-toggle { position: absolute; top: 32px; left: 8px; }
+  .dash__brand-full, .dash__brand-compact { position: absolute; inset: 0 auto auto 0; display: block; transition: opacity 140ms ease, transform 320ms cubic-bezier(.22, 1, .36, 1); }
+  .dash__brand-full { opacity: 1; transform: translateX(0); }
+  .dash__brand-compact { width: 40px; text-align: center; font-size: 20px; opacity: 0; transform: translateX(-4px); }
+  .dash[data-collapsed] .dash__brand-full { opacity: 0; transform: translateX(-6px); }
+  .dash[data-collapsed] .dash__brand-compact { opacity: 1; transform: translateX(0); }
+  .dash .dash__nav .dash__link, .dash .dash__side-foot > .dash__link { padding-inline: 17px; overflow: hidden; }
+  .dash .dash__link-label { flex-shrink: 0; }
+  .dash[data-collapsed] .dash__link-label { opacity: 0; }
+  .dash .dash__user { position: relative; height: 65px; flex: 0 0 65px; }
+  .dash .dash__user > .icon-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); }
+  .dash .dash__avatar { position: absolute; left: 8px; }
+  .dash .dash__user-txt { flex: none; width: 130px; margin-left: 42px; padding-right: 32px; }
+  .dash .dash__avatar, .dash .dash__user-txt { transition: opacity 140ms ease, visibility 140ms; }
+  .dash[data-collapsed] .dash__avatar, .dash[data-collapsed] .dash__user-txt { opacity: 0; visibility: hidden; }
+}
+@media (max-width: 860px) {
+  .dash .dash__mobile-menu { display: grid; }
+  .dash .dash__collapse-toggle { display: none; }
+  .dash .dash__side-head { justify-content: flex-start; }
+  .dash .dash__side { visibility: hidden; transition: transform 320ms cubic-bezier(.22, 1, .36, 1), visibility 320ms; }
+  .dash[data-nav] .dash__side { visibility: visible; box-shadow: 16px 0 60px #0004; }
+  .dash .dash__close { display: grid; position: absolute; top: 23px; right: 16px; }
+  .dash .dash__scrim { display: block; position: fixed; inset: 0; z-index: 40; background: #0006; opacity: 0; visibility: hidden; transition: opacity 320ms ease, visibility 320ms; }
+  .dash[data-nav] .dash__scrim { visibility: visible; opacity: 1; background: #0006; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash, .dash .dash__side, .dash .dash__scrim, .dash .dash__menu, .dash .dash__close, .dash__menu-arrow, .dash__link-label, .dash .dash__brand-full, .dash .dash__brand-compact, .dash .dash__avatar, .dash .dash__user-txt { transition: none; }
+}
 .dash {
   --workspace-canvas: #f3f6fb; --workspace-nav: #fff; --card: #fff; --tile: #f4f7fb;
   --ink: #1b293d; --grey: #607087; --line: #dfe6ef; --console: #eef2f8;
@@ -10,7 +67,7 @@
   --ink: #e7eef7; --grey: #a4b1c3; --line: #29394b; --console: #203047; --workspace-accent: #7e9fff;
 }
 .dash .dash__side { background: var(--workspace-nav); border-right: 1px solid var(--line); padding: 28px 18px 20px; }
-.dash .dash__logo { align-self: flex-start; margin: 0 12px 12px; padding: 0; background: none; animation: none; color: var(--ink); -webkit-text-fill-color: var(--ink); font-size: 22px; }
+.dash .dash__logo { align-self: flex-start; margin: 0; padding: 0; background: none; animation: none; color: var(--ink); -webkit-text-fill-color: var(--ink); font-size: 22px; }
 .dash .dash__nav { gap: 6px; }
 .dash .dash__link { padding: 11px 13px; border-radius: 6px; font-size: 13px; gap: 11px; }
 .dash .dash__link svg { width: 17px; height: 17px; }
