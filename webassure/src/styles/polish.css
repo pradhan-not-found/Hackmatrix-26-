@@ -1313,3 +1313,6 @@
 /* plastic buttons keep their pill shape on hover — no morph */
 .btn--ink, .btn--ink:hover, .plan .btn--ink:hover, .pill-btn--glow, .pill-btn--glow:hover,
 .mc .pill-btn--glow:hover, .cb__primary, .cb__primary:hover, .cb .btn:hover { border-radius: 999px; }
+
+/* login panel: same glossy plastic wordmark as the hero */
+.auth__art .auth__mark--show { width: 78%; transform: none; user-select: none; -webkit-user-select: none; touch-action: none; }
