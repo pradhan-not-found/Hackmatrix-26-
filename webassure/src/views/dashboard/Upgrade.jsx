@@ -64,7 +64,7 @@ function Checkout({ planId, cycle, user, onClose }) {
               <div className="ck__qr">
                 <MockQR seed={`${planId}-${cycle}-${user.id}`} size={196} />
                 <p className="ck__scan">Scan with any UPI app</p>
-                <div className="ck__apps"><span>GPay</span><span>PhonePe</span><span>Paytm</span><span>BHIM</span></div>
+                <p className="ck__apps">GPay · PhonePe · Paytm · BHIM</p>
               </div>
 
               <div className="ck__sum">
