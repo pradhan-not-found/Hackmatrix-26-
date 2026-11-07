@@ -18,6 +18,17 @@ def result(url="https://example.com/", status=200, headers=None):
 
 
 class NetworkTests(unittest.TestCase):
+    def test_dashboard_and_assets_are_served(self):
+        with TestClient(app) as client:
+            page = client.get("/")
+            self.assertEqual(page.status_code, 200)
+            self.assertIn("text/html", page.headers["content-type"])
+            self.assertIn('id="investigation-form"', page.text)
+            self.assertIn('role="tablist"', page.text)
+            for asset in ("dashboard.css", "dashboard.js"):
+                self.assertEqual(client.get(f"/assets/{asset}").status_code, 200)
+            self.assertEqual(client.get("/assets/missing.js").status_code, 404)
+
     def test_normalization(self):
         self.assertEqual(normalize_url("EXAMPLE.com/a b".replace(" ", "%20")), "https://example.com/a%20b")
         self.assertEqual(normalize_url("https://example.com:443#fragment"), "https://example.com/")

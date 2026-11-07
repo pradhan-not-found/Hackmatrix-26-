@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Investigations · HackMatrix</title>
+  <link rel="stylesheet" href="/assets/dashboard.css">
+  <script src="/assets/dashboard.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar" aria-label="Investigation history">
+    <a class="brand" href="/">HackMatrix<span>Security workspace</span></a>
+    <button id="new-investigation" class="new-button" type="button">+ New investigation</button>
+    <div class="history-heading"><h2>Recent investigations</h2><button id="refresh-history" class="text-button" type="button">Refresh</button></div>
+    <p id="history-status" class="sidebar-note" role="status">Loading history…</p>
+    <nav id="history" aria-label="Saved reports"></nav>
+    <button id="load-more" class="text-button more" type="button" hidden>Load more</button>
+    <div class="sidebar-footer"><span id="service-status" role="status">Checking service…</span><a href="/docs" target="_blank" rel="noopener">API reference ↗</a></div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar"><span>Workspace <span class="separator">/</span> <strong>URL investigations</strong></span><span class="environment">Local environment</span></header>
+    <main>
+      <div class="page-heading"><div><p class="eyebrow">INVESTIGATIONS</p><h1>Inspect a URL</h1><p class="muted">Review website signals, certificate details, and known threat matches.</p></div><a class="quiet-link" href="/docs" target="_blank" rel="noopener">View API ↗</a></div>
+      <section class="submission" aria-label="Submit a URL">
+        <form id="investigation-form">
+          <label for="url">Website URL or domain</label>
+          <div class="input-row"><input id="url" name="url" type="text" inputmode="url" spellcheck="false" autocomplete="off" placeholder="https://example.com" maxlength="4096" required><button id="submit" class="primary-button" type="submit">Investigate URL <span aria-hidden="true">→</span></button></div>
+          <div class="form-footer"><span>HTTP / HTTPS · Headers only · Up to 6 requests</span><button class="text-button" id="use-example" type="button">Use example.com</button></div>
+          <p class="privacy-note">URLs are saved in local reports. If reputation lookup is enabled, they are also sent to Google Safe Browsing.</p>
+        </form>
+      </section>
+      <p id="activity" class="activity" role="status" aria-live="polite" hidden></p>
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <section id="empty-state" class="empty-state">
+        <span class="empty-mark" aria-hidden="true">↗</span><h2>No investigation selected</h2>
+        <p>Submit a URL above or open a saved report from the sidebar.</p>
+        <div class="scope-grid"><div><strong>Website checks</strong><span>DNS, redirects, HTTP headers</span></div><div><strong>Connection security</strong><span>Certificate verification and TLS</span></div><div><strong>Reputation</strong><span>Known threat listings, when configured</span></div></div>
+      </section>
+
+      <section id="report" aria-label="Investigation report" hidden>
+        <div class="report-heading"><div><p class="eyebrow">INVESTIGATION REPORT</p><h2 id="report-url"></h2><p id="report-meta" class="muted mono"></p></div><button id="download-report" class="secondary-button" type="button">Export JSON ↓</button></div>
+        <div class="summary"><div class="risk-summary"><span class="field-label">Assessment</span><span id="risk" class="badge"></span></div><div><span class="field-label">Network inspection</span><strong id="network-coverage"></strong></div><div><span class="field-label">Threat intelligence</span><strong id="reputation-coverage"></strong></div><div><span class="field-label">Findings</span><strong id="finding-count"></strong></div></div>
+        <div class="report-navigation" role="tablist" aria-label="Report sections">
+          <button id="tab-findings" class="tab" role="tab" aria-selected="true" aria-controls="panel-findings" tabindex="0" data-panel="findings">Findings <span id="tab-count"></span></button>
+          <button id="tab-checks" class="tab" role="tab" aria-selected="false" aria-controls="panel-checks" tabindex="-1" data-panel="checks">Checks</button>
+          <button id="tab-redirects" class="tab" role="tab" aria-selected="false" aria-controls="panel-redirects" tabindex="-1" data-panel="redirects">Redirects & TLS</button>
+          <button id="tab-json" class="tab" role="tab" aria-selected="false" aria-controls="panel-json" tabindex="-1" data-panel="json">Raw JSON</button>
+        </div>
+        <div id="panel-findings" class="tab-panel" role="tabpanel" aria-labelledby="tab-findings"><div id="findings"></div><section class="report-section"><h3>Recommended actions</h3><ul id="recommendations"></ul></section><section class="report-section limitations"><h3>Coverage & limitations</h3><ul id="limitations"></ul></section></div>
+        <div id="panel-checks" class="tab-panel" role="tabpanel" aria-labelledby="tab-checks" hidden><div class="section-intro"><h3>Individual checks</h3><p class="muted">Unavailable and failed checks are reported separately from risk findings.</p></div><div id="checks"></div></div>
+        <div id="panel-redirects" class="tab-panel" role="tabpanel" aria-labelledby="tab-redirects" hidden><div class="section-intro"><h3>Request chain</h3><p class="muted">Destinations contacted during this investigation, in order.</p></div><div id="redirects"></div></div>
+        <div id="panel-json" class="tab-panel" role="tabpanel" aria-labelledby="tab-json" hidden><pre id="raw-json" tabindex="0" aria-label="Raw report JSON"></pre></div>
+      </section>
+      <footer class="main-footer">HackMatrix <span>Automated checks provide evidence, not a guarantee of safety.</span></footer>
+    </main>
+  </div>
+</body>
+</html>

@@ -6,14 +6,23 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from backend.investigation import investigate
 from backend.network import UnsafeURL
 
 app = FastAPI(title="HackMatrix URL Investigation", version="0.1.0")
+static_directory = Path(__file__).parent / "static"
+app.mount("/assets", StaticFiles(directory=static_directory), name="assets")
 # Bound simultaneous outbound scans in this single-process MVP.
 slots = threading.BoundedSemaphore(4)
+
+
+@app.get("/", include_in_schema=False)
+def dashboard():
+    return FileResponse(static_directory / "index.html")
 
 
 def database():
