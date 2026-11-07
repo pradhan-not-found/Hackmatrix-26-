@@ -102,6 +102,36 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
         </filter>
         <ColorFilter id={color} paper="1" table={LIGHT_BLUE} />
         <ColorFilter id={colorDark} paper="0.0706" table={tone === 'white' ? WHITE : HERO_DARK} />
+        {/* Dark mode: solid glossy blue with a moving gradient inside and a 3D bevel. */}
+        <linearGradient id={`${uid}-gfill`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="900" y2="60" spreadMethod="reflect">
+          <stop offset="0" stopColor="#1b3bd1" />
+          <stop offset=".35" stopColor="#3f6dff" />
+          <stop offset=".6" stopColor="#7ab8ff" />
+          <stop offset="1" stopColor="#2a4fe6" />
+          <animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="1800 0" dur="9s" repeatCount="indefinite" />
+        </linearGradient>
+        <filter id={`${uid}-glass`} x="-10%" y="-40%" width="120%" height="190%" colorInterpolationFilters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="b" />
+          <feSpecularLighting in="b" surfaceScale="5.5" specularConstant="1.1" specularExponent="24" lightingColor="#ffffff" result="spec">
+            <feDistantLight azimuth="240" elevation="52" />
+          </feSpecularLighting>
+          <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn" />
+          <feComposite in="SourceGraphic" in2="specIn" operator="arithmetic" k1="0" k2="1" k3="0.8" k4="0" result="lit" />
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="ib" />
+          <feOffset in="ib" dy="-3" result="io" />
+          <feComposite in="SourceAlpha" in2="io" operator="out" result="inner" />
+          <feFlood floodColor="#0b1a6b" floodOpacity=".55" />
+          <feComposite in2="inner" operator="in" result="innerShade" />
+          <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="sb" />
+          <feOffset in="sb" dy="6" result="so" />
+          <feFlood floodColor="#000" floodOpacity=".55" />
+          <feComposite in2="so" operator="in" result="shadow" />
+          <feMerge>
+            <feMergeNode in="shadow" />
+            <feMergeNode in="lit" />
+            <feMergeNode in="innerShade" />
+          </feMerge>
+        </filter>
       </defs>
       <g className="thermal__color">
         <text
@@ -113,6 +143,21 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
           letterSpacing="7"
           className="thermal__text"
           filter={`url(#${material})`}
+          style={{ fontFamily: 'var(--font-mark)' }}
+        >
+          {text}
+        </text>
+      </g>
+      <g className="thermal__glass">
+        <text
+          x="450"
+          y="150"
+          textAnchor="middle"
+          fontSize="168"
+          fontWeight="800"
+          letterSpacing="7"
+          fill={`url(#${uid}-gfill)`}
+          filter={`url(#${uid}-glass)`}
           style={{ fontFamily: 'var(--font-mark)' }}
         >
           {text}
