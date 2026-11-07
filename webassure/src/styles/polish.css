@@ -239,3 +239,19 @@
 .plan[data-featured] { background: var(--page); box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.04); }
 [data-theme='dark'] .plan[data-featured] { background: var(--console); box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.8); }
 .plan[data-featured] .plan__icon { background: var(--tile); }
+
+/* ===== Sectors framed as a two-column table (content unchanged) ===== */
+.sectors {
+  gap: 0; border-radius: 20px; overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.sector { padding: 22px 28px; }
+.sector:nth-child(odd) { border-right: 1px solid var(--line); }
+.sector:nth-child(-n + 2) { border-top: 0; }
+.sector:hover { background: var(--tile); }
+@media (max-width: 767px) {
+  .sector:nth-child(odd) { border-right: 0; }
+}
+
+/* ===== Report findings: thermal icons ===== */
+.rp__glow { display: block; width: 56px; height: 56px; margin: -4px 0 14px -6px; }

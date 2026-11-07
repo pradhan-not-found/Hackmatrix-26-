@@ -20,6 +20,13 @@ const SHAPES = {
     </>
   ),
   check: <path d="M34 106 L80 152 L168 52" fill="none" />,
+  alert: (
+    <>
+      <path d="M100 24 L182 170 H18 Z" fill="none" />
+      <path d="M100 78 V114" fill="none" />
+      <circle cx="100" cy="142" r="13" stroke="none" />
+    </>
+  ),
   shield: (
     <>
       <path d="M100 14 L174 42 V96 C174 142 142 176 100 190 C58 176 26 142 26 96 V42 Z" fill="none" />

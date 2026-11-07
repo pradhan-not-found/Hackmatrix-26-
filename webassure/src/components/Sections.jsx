@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { AlertIcon, ArrowIcon, CheckIcon } from './Icons.jsx'
+import { ArrowIcon } from './Icons.jsx'
 import ScrollText from './ScrollText.jsx'
 import ThermalIcon from './ThermalIcon.jsx'
 
@@ -79,7 +79,7 @@ export function Report() {
         <ul className="rp__grid">
           {FINDINGS.map(([tone, title, text]) => (
             <li key={title} className="rp__item">
-              <span className={`rp__icon rp__icon--${tone}`}>{tone === 'ok' ? <CheckIcon /> : <AlertIcon />}</span>
+              <span className="rp__glow"><ThermalIcon shape={tone === 'ok' ? 'check' : 'alert'} size={56} /></span>
               <p className="rp__t">{title}</p>
               <p className="rp__d">{text}</p>
             </li>
