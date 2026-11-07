@@ -1,0 +1,67 @@
+import json
+import os
+import sqlite3
+import threading
+from pathlib import Path
+from uuid import UUID
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+from backend.investigation import investigate
+from backend.network import UnsafeURL
+
+app = FastAPI(title="HackMatrix URL Investigation", version="0.1.0")
+# Bound simultaneous outbound scans in this single-process MVP.
+slots = threading.BoundedSemaphore(4)
+
+
+def database():
+    path = Path(os.getenv("INVESTIGATION_DB", "data/investigations.sqlite3"))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(path, timeout=5)
+    connection.execute("CREATE TABLE IF NOT EXISTS investigations (id TEXT PRIMARY KEY, report TEXT NOT NULL)")
+    return connection
+
+
+class InvestigationRequest(BaseModel):
+    url: str = Field(min_length=1, max_length=4096)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post("/api/investigations", status_code=201)
+def create_investigation(body: InvestigationRequest):
+    if not slots.acquire(blocking=False):
+        raise HTTPException(429, "Investigation capacity reached; retry later")
+    try:
+        try:
+            report = investigate(body.url)
+        except UnsafeURL as exc:
+            raise HTTPException(422, str(exc)) from exc
+        connection = database()
+        try:
+            with connection:
+                connection.execute("INSERT INTO investigations VALUES (?, ?)",
+                                   (report["id"], json.dumps(report)))
+        finally:
+            connection.close()
+        return report
+    finally:
+        slots.release()
+
+
+@app.get("/api/investigations/{investigation_id}")
+def get_investigation(investigation_id: UUID):
+    connection = database()
+    try:
+        row = connection.execute("SELECT report FROM investigations WHERE id = ?",
+                                 (str(investigation_id),)).fetchone()
+    finally:
+        connection.close()
+    if row is None:
+        raise HTTPException(404, "Investigation not found")
+    return json.loads(row[0])
