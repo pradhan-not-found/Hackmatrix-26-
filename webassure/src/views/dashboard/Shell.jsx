@@ -263,7 +263,7 @@ export default function Shell({ children }) {
             </form>
             {plan.id !== 'teams' && (
               <Link href="/dashboard/upgrade" className="upbtn" title={`You are on ${PLANS[plan.id].name}. See plans`}>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9Z" /><path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8Z" /></svg>
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 16V8.5" /><path d="M8.5 11.5 12 8l3.5 3.5" /></svg>
                 Upgrade
               </Link>
             )}
