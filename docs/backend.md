@@ -8,14 +8,9 @@ python -m venv .venv
 .venv\Scripts\python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open http://127.0.0.1:8000/ for the investigation dashboard, or
-http://127.0.0.1:8000/docs for the interactive API.
-
-The dashboard submits real investigations and shows saved history, assessment
-coverage, evidence, individual checks, redirects, TLS details, and raw JSON.
-Reports can be exported as JSON. Recent reports are loaded from SQLite with
-pagination; a report's URL fragment allows reopening it directly. It uses the
-same origin as the API, with no frontend build or additional runtime dependencies.
+Open http://127.0.0.1:8000/docs for the interactive API. The backend is API-only;
+the standalone dashboard and its assets have been removed. Use the WebAssure
+frontend below for investigations and reports.
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/api/investigations -Method Post -ContentType application/json -Body '{"url":"https://example.com"}'
@@ -192,12 +187,7 @@ socket timeouts are inactivity limits, not a hard whole-investigation deadline.
 .venv\Scripts\python -m unittest discover -s tests -v
 ```
 
-Browser interaction tests use installed Microsoft Edge and a temporary local server
-with mocked API responses (no outbound scans):
-
-```powershell
-.venv\Scripts\python -m unittest discover -s tests -p dashboard_browser.py -v
-```
+Browser integration tests use installed Microsoft Edge; see the WebAssure commands above.
 
 Tests use mocked network/provider responses, including three benign and three
 suspicious cases. They do not establish real-world phishing detection accuracy.
