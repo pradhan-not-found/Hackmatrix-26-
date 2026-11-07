@@ -485,3 +485,18 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--grey) 45
 .dash .dash__user > .icon-btn:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .dash .dash__user > .icon-btn svg { width: 18px; height: 18px; }
 .dash .dash__user .dash__av { position: static; }
+
+/* smooth trend chart */
+.chart__line { stroke-dasharray: 1; stroke-dashoffset: 1; animation: chart-draw 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards; }
+.chart__area { opacity: 0; animation: chart-fade 0.8s ease 0.5s forwards; }
+.chart__pt { opacity: 0; animation: chart-fade 0.4s ease 1s forwards; }
+@keyframes chart-draw { to { stroke-dashoffset: 0; } }
+@keyframes chart-fade { to { opacity: 1; } }
+.chart svg { transition: none; }
+@media (prefers-reduced-motion: reduce) { .chart__line, .chart__area, .chart__pt { animation: none; opacity: 1; stroke-dashoffset: 0; } }
+
+/* tables: clear grid lines */
+.dash .table th { box-shadow: inset 0 -1px 0 var(--line); }
+.dash .table tbody tr + tr td { box-shadow: inset 0 1px 0 var(--line); }
+.dash .table th + th, .dash .table td + td { border-left: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+[data-theme='dark'] .dash { --line: #2e2e33; }

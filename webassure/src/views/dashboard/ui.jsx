@@ -66,7 +66,22 @@ export function TrendChart({ labels, values, unit = 'scans' }) {
   const ticks = [0, max / 4, max / 2, (3 * max) / 4, max]
   const x = (i) => P.l + (i * (W - P.l - P.r)) / (values.length - 1)
   const y = (v) => P.t + (1 - v / max) * (H - P.t - P.b)
-  const path = useMemo(() => values.map((v, i) => `${i ? 'L' : 'M'}${x(i)},${y(v)}`).join(' '), [values])
+  // Smooth monotone curve (no overshoot below zero) through the daily points.
+  const path = useMemo(() => {
+    const pts = values.map((v, i) => [x(i), y(v)])
+    if (pts.length < 2) return pts.length ? `M${pts[0][0]},${pts[0][1]}` : ''
+    const n = pts.length
+    const d = pts.slice(1).map((p, i) => (p[1] - pts[i][1]) / (p[0] - pts[i][0]))
+    const m = pts.map((_, i) => (i === 0 ? d[0] : i === n - 1 ? d[n - 2] : d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2))
+    let out = `M${pts[0][0]},${pts[0][1]}`
+    for (let i = 0; i < n - 1; i++) {
+      const [x0, y0] = pts[i]
+      const [x1, y1] = pts[i + 1]
+      const h = (x1 - x0) / 3
+      out += ` C${x0 + h},${y0 + m[i] * h} ${x1 - h},${y1 - m[i + 1] * h} ${x1},${y1}`
+    }
+    return out
+  }, [values, max])
   const area = `${path} L${x(values.length - 1)},${y(0)} L${x(0)},${y(0)} Z`
 
   const onMove = (e) => {
@@ -81,21 +96,22 @@ export function TrendChart({ labels, values, unit = 'scans' }) {
       <svg viewBox={`0 0 ${W} ${H}`} onMouseMove={onMove} onMouseLeave={() => setHover(null)} role="img" aria-label="Scans per day">
         <defs>
           <linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="var(--chart)" stopOpacity="0.16" />
+            <stop offset="0" stopColor="var(--chart)" stopOpacity="0.28" />
             <stop offset="1" stopColor="var(--chart)" stopOpacity="0" />
           </linearGradient>
         </defs>
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} stroke="var(--line)" strokeWidth="1" />
+            <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} stroke="var(--line)" strokeWidth="1" strokeDasharray={t ? '2 6' : undefined} strokeLinecap="round" />
             <text x={P.l - 8} y={y(t) + 4} textAnchor="end" className="chart__tick">{t}</text>
           </g>
         ))}
-        {labels.map((l, i) => (i % 3 === 0 || i === labels.length - 1) && (
+        {labels.map((l, i) => (labels.length <= 8 || i % 3 === 0 || i === labels.length - 1) && (
           <text key={l} x={x(i)} y={H - 8} textAnchor="middle" className="chart__tick">{l}</text>
         ))}
-        <path d={area} fill="url(#chart-fill)" />
-        <path d={path} fill="none" stroke="var(--chart)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <path className="chart__area" d={area} fill="url(#chart-fill)" />
+        <path className="chart__line" pathLength="1" d={path} fill="none" stroke="var(--chart)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {values.map((v, i) => <circle key={i} className="chart__pt" cx={x(i)} cy={y(v)} r="3" fill="var(--card)" stroke="var(--chart)" strokeWidth="2" />)}
         {hover !== null && (
           <g>
             <line x1={x(hover)} x2={x(hover)} y1={P.t} y2={H - P.b} stroke="var(--grey)" strokeWidth="1" strokeDasharray="3 3" />
