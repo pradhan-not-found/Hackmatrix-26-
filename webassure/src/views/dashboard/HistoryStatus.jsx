@@ -15,7 +15,7 @@ export default function HistoryStatus() {
     <p className="caption grey" role="status">{historyLoading ? 'Loading saved investigations…' : `${scans.length} of ${total} saved investigations loaded`}</p>
     {historyError && <p role="alert">{historyError}</p>}
     <button className="hs__refresh" data-spin={historyLoading || undefined} disabled={historyLoading} onClick={() => refreshHistory()} aria-label={label} title={label}>
-      <Refresh /><span>{historyError ? 'Retry' : 'Refresh'}</span>
+      <Refresh />
     </button>
     {scans.length < total && <button className="btn btn--ghost" disabled={historyLoading} onClick={loadMore}>Load more</button>}
   </div>

@@ -235,3 +235,6 @@
 .history-status .hs__refresh:disabled { color: var(--grey); cursor: default; }
 .history-status .hs__refresh svg { width: 14px; height: 14px; color: var(--grey); }
 .history-status .hs__refresh[data-spin] svg { animation: hs-spin 0.9s linear infinite; }
+.history-status .hs__refresh { width: 32px; padding: 0; justify-content: center; }
+.history-status .hs__refresh svg { width: 15px; height: 15px; color: var(--ink); }
+.history-status .hs__refresh:disabled svg { color: var(--grey); }
