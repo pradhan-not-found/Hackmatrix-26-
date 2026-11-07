@@ -116,7 +116,7 @@ export default function Settings() {
           </div>
           <div className="set__body">
             {[
-              ['high', 'High-risk scan detected', 'When a scan scores 55 or above.'],
+              ['high', 'High-risk scan detected', 'When the backend classifies an investigation as High Risk or Confirmed Malicious.'],
               ['certs', 'Certificate alerts', 'Expiry within 14 days, weak keys or missing CT entries.'],
               ['weekly', 'Weekly summary', 'A digest of scans and threats every Monday.'],
             ].map(([k, t, d]) => (

@@ -9,7 +9,7 @@ const st = { Anchored: 'ok', Pending: 'warn', Disputed: 'bad' }
 export default function Ledger() {
   return (
     <>
-      <PageHead title="Threat ledger" sub="Confirmed threats anchored on-chain. Public, permanent and community-verified." />
+      <PageHead title="Threat ledger" sub="Demo preview — sample entries only. Blockchain report registration is not connected." />
 
       <section className="kpis kpis--3">
         <Kpi label="Reports anchored" value="4,821" delta="All time" />

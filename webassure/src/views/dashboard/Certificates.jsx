@@ -24,7 +24,7 @@ export default function Certificates() {
 
   return (
     <>
-      <PageHead title="Certificates" sub="TLS certificates monitored against Certificate Transparency logs." />
+      <PageHead title="Certificates" sub="Demo preview — monitoring is not connected. Actual TLS results are available in each scan report." />
 
       <form className="card panel addbar" onSubmit={add}>
         <div>

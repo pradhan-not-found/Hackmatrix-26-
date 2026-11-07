@@ -8,14 +8,9 @@ python -m venv .venv
 .venv\Scripts\python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open http://127.0.0.1:8000/ for the investigation dashboard, or
-http://127.0.0.1:8000/docs for the interactive API.
-
-The dashboard submits real investigations and shows saved history, assessment
-coverage, evidence, individual checks, redirects, TLS details, and raw JSON.
-Reports can be exported as JSON. Recent reports are loaded from SQLite with
-pagination; a report's URL fragment allows reopening it directly. It uses the
-same origin as the API, with no frontend build or additional runtime dependencies.
+Open http://127.0.0.1:8000/docs for the interactive API. The backend is API-only;
+the standalone dashboard and its assets have been removed. Use the WebAssure
+frontend below for investigations and reports.
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/api/investigations -Method Post -ContentType application/json -Body '{"url":"https://example.com"}'
@@ -27,6 +22,52 @@ Invoke-RestMethod http://127.0.0.1:8000/api/investigations -Method Post -Content
 newest first (maximum limit 100). `GET /health` is a liveness check.
 SQLite defaults to `data/investigations.sqlite3`; override with `INVESTIGATION_DB`.
 No model training, vector database, or RAG is required.
+
+## Run the WebAssure frontend
+
+Keep FastAPI running on port 8000 in one terminal. In a second terminal:
+
+```powershell
+cd webassure
+npm ci
+npm run dev
+```
+
+Open http://localhost:3000/dashboard/scans?demo to use the existing demo session.
+Development writes compiled assets to `webassure/.next-dev`; production build/start
+uses `webassure/.next`. This prevents verification builds from overwriting an
+active development server's chunks. Restart Next.js after updating this config.
+The session is a frontend preview, not real authentication. Scans, Reports, and
+Overview now use real backend investigation data; they contain no seeded scans or
+browser-generated risk scores. Submit a URL in the top bar. The saved report opens
+with backend classification, coverage, findings, local explanations, individual
+checks, redirects, TLS details, limitations, and a full JSON export. Refreshing a
+report URL reopens it by its database ID. History loads 30 records at a time with
+**Load more**; filters and overview assessment counts apply to loaded records.
+
+Next.js proxies `/api/investigations` to `http://127.0.0.1:8000` on the server;
+no browser CORS configuration or API keys are needed. To use another backend,
+set the server-side `BACKEND_URL` environment variable before starting Next.js.
+Keep the root `.env` API keys on the backend; do not copy them into frontend
+variables. The proxy has a 90-second timeout. A timed-out submission may still
+finish in the backend, so refresh saved history before retrying it.
+
+Certificate monitoring, threat campaigns, ledger entries, and authentication are
+still demo features, labeled accordingly. Real TLS evidence is in scan reports.
+This integration does not make the application ready for public multi-user use;
+the deployment limits below still apply.
+
+Frontend proxy checks and full browser integration checks:
+
+```powershell
+npm --prefix webassure test
+npm --prefix webassure run build
+.venv\Scripts\python -m unittest discover -s tests -p webassure_browser.py -v
+```
+
+The browser suite starts Next.js and FastAPI with a temporary SQLite database.
+Only outbound DNS, HTTP/TLS probes, and reputation responses are mocked; submissions,
+proxying, persistence, retrieval, and exports run through the real application.
 
 ## Reputation lookup
 
@@ -84,18 +125,98 @@ responses, including classification through the investigation pipeline.
 ## Assessment behavior
 
 - A validated provider match produces Confirmed Malicious.
-- URL heuristics, unencrypted transport, or failed certificate verification produce Suspicious.
-- With completed network and reputation checks and no threat indicators, the result is Low Risk.
-- Otherwise the result is Inconclusive. Missing headers alone do not indicate phishing.
+- Significant phishing indicators produce Suspicious. High Risk requires indicators
+  from at least two distinct signal groups, including at least one strong indicator.
+- A critical severity alone never confirms maliciousness. Confirmation requires an
+  explicit matching threat-provider result.
+- HTTP transport, certificate problems, and missing headers are configuration
+  findings, separate from the phishing classification. Weak naming signals alone
+  do not establish phishing.
+- Low Risk requires successful core URL, DNS, HTTP, TLS (where applicable), redirect,
+  header, HTML (where applicable), and reputation checks without significant phishing indicators. HTTP error
+  or unsupported responses cannot satisfy this coverage requirement.
+- Otherwise the result is Inconclusive. Low Risk never guarantees website safety.
+
+`assessment` records the policy version, decision rule, relevant finding IDs,
+signal groups, and configuration finding IDs. `evidence_coverage.checks` aggregates
+per-hop results into completed, partial, unavailable, failed, blocked, not_run, or
+not_applicable states. Revocation, CT, and certificate key-strength checks
+are explicitly not_implemented and excluded from core coverage. These are
+documented heuristic rules, not calibrated probabilities.
+
+### URL and redirect analysis
+
+Each URL encountered in the actual HTTP redirect chain receives offline analysis.
+`url_analysis` records ASCII/Unicode hostnames, registrable domain, subdomain,
+public/private suffix, indicators, and limitations. Domain boundaries use the
+bundled Public Suffix List in `tldextract`, including private hosting suffixes;
+there are no runtime suffix-list downloads or cache writes. Unknown suffixes have
+no inferred registrable domain. Update dependencies to refresh bundled data.
+IDNA normalization uses UTS 46 and IDNA 2008 processing.
+
+A small curated registry covers example official roots for PayPal, Google,
+Microsoft, Amazon, Apple, and GitHub. This is not comprehensive ownership
+verification. Exact known roots and their subdomains skip brand-name heuristics;
+they do not bypass reputation or other checks. An embedded official root in an
+unrelated hostname and Unicode brand lookalikes are strong naming indicators.
+Single-edit/transposed names or brand tokens become moderate indicators only
+with credential-related hostname/path context. Plain punycode, mixed scripts,
+unusual structure, and close spellings without context remain weak advisories.
+Unicode matching uses bundled confusable data and is deliberately limited;
+it does not claim complete UTS 39 spoof detection.
+
+Recognized redirect query parameters are decoded at most twice and inspected as
+data only; their destinations are never fetched or treated as observed redirects.
+Actual cross-domain HTTP redirects are weak by default and moderate when
+corroborating significant naming indicators. Identity signals share one group,
+so several variants of the same hostname concern cannot alone create High Risk.
+HTTPS downgrades are separate configuration findings, not proof of phishing.
+All actual redirect destinations retain the existing SSRF validation and pinned
+connection checks. A bounded GET retrieves the terminal page; JavaScript remains unexecuted.
+
+### Static HTML inspection
+
+The pinned HTTP client requests HTML using GET and `Accept-Encoding: identity`.
+Only successful responses declared as `text/html` or `application/xhtml+xml` are
+read. Bodies are capped at 256 KiB, including responses without Content-Length.
+Oversized declarations, attachments, and compressed bodies are skipped. A
+five-second absolute socket deadline interrupts slow headers and slow body streams;
+redirects are returned to the existing validated traversal loop, never automatically
+followed. Non-HTML bodies are not read.
+
+The parser extracts title/heading text, sensitive forms (password inputs or payment
+autocomplete fields), submission methods and destinations, mixed-content references,
+and meta-refresh declarations. It accounts for the first base URL, external form
+ownership, and submit-button destination overrides. No input values, raw HTML,
+scripts, or full page text are persisted. `page_analysis` contains selected parsed
+observations; each HTML finding includes evidence, impact, remediation, and limitations.
+Actual page titles and destination URLs remain untrusted data and may still contain
+sensitive information, so protect stored reports and exports.
+
+HTTP sensitive-form actions and GET submission are configuration findings. A
+cross-domain form alone is a weak advisory because third-party login/payment
+providers can be legitimate. A title/heading brand mismatch needs a sensitive form
+to become significant; corroborating hostname evidence can strengthen it. No HTML
+heuristic produces Confirmed Malicious. Mixed content and refresh destinations
+are reported as declarations, not proof of resource loading or observed navigation.
+Form actions, refresh destinations, images, scripts, and frames are never fetched.
+
+HTML inspection is a core check in policy 2.1. Skipped, oversized, truncated,
+unparseable, or element-limited HTML cannot silently produce Low Risk. Non-HTML
+responses are explicitly not_applicable. The parser limits forms, controls, targets,
+resources, and tags. It does not model a browser's DOM repairs, scripts, CSS URLs,
+or disabled-fieldset behavior completely. Existing saved reports are unchanged;
+run a new investigation to inspect HTML. WebAssure shows page observations in
+**Checks**, and complete selected metadata under **Evidence** and JSON exports.
 
 Reports contain findings with sources, evidence, timestamps, recommendations,
 per-check results, redirect details, coverage, and limitations. TLS uses the system
 trust store and verifies the original hostname while connecting to a validated IP.
-Requests use HEAD, standard ports only, no cookies, and no environment proxies.
+Requests use GET, standard ports only, no cookies, and no environment proxies.
 All DNS answers must be public; every redirect is revalidated. Up to six requests
-are permitted, with five-second socket timeouts and a budget checked between hops.
+are permitted, with five-second absolute request deadlines and a budget checked between hops.
 DNS resolution uses the OS resolver and is not covered by the socket timeout;
-socket timeouts are inactivity limits, not a hard whole-investigation deadline.
+the hop budget is not a hard whole-investigation deadline.
 
 ## Tests
 
@@ -104,12 +225,7 @@ socket timeouts are inactivity limits, not a hard whole-investigation deadline.
 .venv\Scripts\python -m unittest discover -s tests -v
 ```
 
-Browser interaction tests use installed Microsoft Edge and a temporary local server
-with mocked API responses (no outbound scans):
-
-```powershell
-.venv\Scripts\python -m unittest discover -s tests -p dashboard_browser.py -v
-```
+Browser integration tests use installed Microsoft Edge; see the WebAssure commands above.
 
 Tests use mocked network/provider responses, including three benign and three
 suspicious cases. They do not establish real-world phishing detection accuracy.
@@ -120,7 +236,7 @@ This is a local MVP. Run one worker; the four-scan concurrency limit is per proc
 Before public exposure add authentication, per-user rate limits, retention/deletion
 controls, network egress restrictions, and a durable worker with hard job deadlines.
 Reports contain submitted URLs and may contain sensitive query strings; protect the database.
-HEAD-only checks cannot inspect page content, and some websites reject HEAD.
+Static inspection cannot evaluate script-rendered pages, submit forms, or establish overall website safety.
 Revocation, compromised-CA intelligence, CT monitoring, signature/key-strength
 analysis, scam-message analysis, and blockchain reporting are not implemented.
 API provider failures never count as clean reputation results.

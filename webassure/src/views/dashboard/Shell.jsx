@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { analyze } from '../../lib/analyze.js'
+import { api } from '../../lib/investigations.js'
 import { getUser, signIn, signOut } from '../../lib/auth.js'
-import { SEED_SCANS } from '../../lib/data.js'
 import { takePendingScan } from '../../lib/pending.js'
 import { useTheme } from '../../components/ThemeProvider.jsx'
 import { DashContext } from './context.js'
@@ -27,10 +26,20 @@ export default function Shell({ children }) {
   const pathname = usePathname()
   const { theme, toggle } = useTheme()
   const [user, setUser] = useState(null)
-  const [scans, setScans] = useState(SEED_SCANS)
+  const [scans, setScans] = useState([])
+  const [total, setTotal] = useState(0)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState('')
+  const [scanLoading, setScanLoading] = useState(false)
+  const [failedInput, setFailedInput] = useState('')
+  const reportCache = useRef(new Map())
+  const historyVersion = useRef(0)
+  const submitting = useRef(false)
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const [navOpen, setNavOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const menuRef = useRef(null)
   const [focusId, setFocusId] = useState(null)
   const [introDone, setIntroDone] = useState(false)
 
@@ -51,20 +60,81 @@ export default function Shell({ children }) {
   useEffect(() => setNavOpen(false), [pathname])
 
   useEffect(() => {
-    if (!user) return
-    const pending = takePendingScan()
-    if (!pending) return
-    const r = analyze(pending)
-    if (!r) return
-    const id = `s-${1100 + Math.floor(Math.random() * 800)}`
-    setScans((s) => [{
-      id, url: pending.trim().replace(/^https?:\/\//, ''), risk: r.risk,
-      category: r.findings[0]?.weight ? 'Heuristic flags' : 'No flags', when: 'Just now', source: 'Website',
-      findings: r.findings.map((f) => f.text), fresh: true,
-    }, ...s])
-    setFocusId(id)
-  }, [user])
+    const media = window.matchMedia('(max-width: 860px)')
+    const syncViewport = () => setNavOpen(false)
+    syncViewport()
+    media.addEventListener('change', syncViewport)
+    return () => media.removeEventListener('change', syncViewport)
+  }, [])
 
+  useEffect(() => {
+    if (!navOpen) return
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setNavOpen(false)
+        menuRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [navOpen])
+
+  const loadHistory = useCallback(async (offset = 0) => {
+    const version = ++historyVersion.current
+    setHistoryLoading(true)
+    setHistoryError('')
+    try {
+      const page = await api(`?limit=30&offset=${offset}`)
+      if (version !== historyVersion.current) return
+      setScans((previous) => offset ? [...new Map([...previous, ...page.items].map((item) => [item.id, item])).values()] : page.items)
+      setTotal(page.total)
+    } catch (failure) {
+      if (version === historyVersion.current) setHistoryError(failure.message)
+    } finally {
+      if (version === historyVersion.current) setHistoryLoading(false)
+    }
+  }, [])
+
+  const getReport = useCallback(async (id) => {
+    if (reportCache.current.has(id)) return reportCache.current.get(id)
+    const report = await api(`/${encodeURIComponent(id)}`)
+    reportCache.current.set(id, report)
+    return report
+  }, [])
+
+  const runInvestigation = useCallback(async (input) => {
+    if (!input.trim() || submitting.current) return
+    submitting.current = true
+    setScanLoading(true)
+    setError('')
+    setFailedInput('')
+    try {
+      const report = await api('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: input.trim() }) })
+      reportCache.current.set(report.id, report)
+      ++historyVersion.current
+      setScans((previous) => [report, ...previous.filter((item) => item.id !== report.id)])
+      setTotal((previous) => previous + 1)
+      setFocusId(report.id)
+      setQuery('')
+      router.push('/dashboard/scans')
+      await loadHistory()
+    } catch (failure) {
+      setError(failure.message)
+      setFailedInput(input)
+    } finally {
+      submitting.current = false
+      setScanLoading(false)
+    }
+  }, [loadHistory, router])
+
+  useEffect(() => {
+    if (!user) return
+    loadHistory()
+    const pending = takePendingScan()
+    if (pending) { setQuery(pending); runInvestigation(pending) }
+  }, [user, loadHistory, runInvestigation])
+
+  const clearFocus = useCallback(() => setFocusId(null), [])
   if (!user || !introDone) {
     return (
       <div className="dash-loading" role="status" aria-label="Loading your workspace">
@@ -78,55 +148,47 @@ export default function Shell({ children }) {
   const current = seg === 'settings' ? 'Settings' : (NAV.find(([p]) => p === seg) || NAV[0])[1]
   const href = (p) => `/dashboard${p ? `/${p}` : ''}`
 
-  const addScan = (input) => {
-    const r = analyze(input)
-    if (!r) return null
-    const scan = {
-      id: `s-${1043 + scans.length}`,
-      url: input.trim().replace(/^https?:\/\//, ''),
-      risk: r.risk,
-      category: r.findings[0]?.weight ? 'Heuristic flags' : 'No flags',
-      when: 'Just now',
-      source: 'Manual',
-      findings: r.findings.map((f) => f.text),
-      fresh: true,
-    }
-    setScans((s) => [scan, ...s])
-    return scan
-  }
-
-  const runScan = (e) => {
-    e.preventDefault()
-    if (!query.trim()) return
-    if (!addScan(query)) return setError('Enter a valid URL or domain.')
-    setError('')
-    setQuery('')
-    if (seg !== '' && seg !== 'scans') router.push('/dashboard/scans')
-  }
+  const runScan = (event) => { event.preventDefault(); runInvestigation(query) }
 
   const logout = () => {
     signOut()
     router.push('/')
   }
 
-  const ctx = { scans, addScan, user, setUser, focusId, clearFocus: () => setFocusId(null) }
+  const ctx = { scans, total, historyLoading, historyError, refreshHistory: loadHistory,
+    loadMore: () => loadHistory(scans.length), getReport, scanLoading,
+    user, setUser, focusId, clearFocus }
 
   return (
     <DashContext.Provider value={ctx}>
-      <div className="dash" data-nav={navOpen || undefined}>
-        <aside className="dash__side">
-          <Link href="/" className="wordmark dash__logo">webassure</Link>
+      <div className="dash" data-nav={navOpen || undefined} data-collapsed={sidebarCollapsed || undefined}>
+        <aside className="dash__side" id="dashboard-sidebar">
+          <div className="dash__side-head">
+            <Link href="/" className="wordmark dash__logo" aria-label="WebAssure home">
+              <span className="dash__brand-full" aria-hidden="true">webassure</span>
+              <span className="dash__brand-compact" aria-hidden="true">W</span>
+            </Link>
+            <button className="dash__menu dash__collapse-toggle" onClick={() => setSidebarCollapsed((collapsed) => !collapsed)} aria-controls="dashboard-sidebar" aria-expanded={!sidebarCollapsed} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" />
+                <path className="dash__menu-arrow" d="m15 9-3 3 3 3" />
+              </svg>
+            </button>
+          </div>
+          <button className="dash__close" onClick={() => { setNavOpen(false); menuRef.current?.focus() }} aria-label="Close navigation">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
           <nav className="dash__nav" aria-label="Dashboard">
             {NAV.map(([p, label, Icon]) => (
-              <Link key={label} href={href(p)} className={`dash__link${current === label ? ' active' : ''}`} aria-current={current === label ? 'page' : undefined}>
+              <Link key={label} href={href(p)} title={label} className={`dash__link${current === label ? ' active' : ''}`} aria-current={current === label ? 'page' : undefined}>
                 <Icon />
-                {label}
+                <span className="dash__link-label">{label}</span>
               </Link>
             ))}
           </nav>
           <div className="dash__side-foot">
-            <Link href="/dashboard/settings" className={`dash__link${current === 'Settings' ? ' active' : ''}`}>
-              <SettingsIcon />Settings
+            <Link href="/dashboard/settings" title="Settings" className={`dash__link${current === 'Settings' ? ' active' : ''}`}>
+              <SettingsIcon /><span className="dash__link-label">Settings</span>
             </Link>
             <div className="dash__user">
               <span className="dash__avatar">
@@ -143,21 +205,25 @@ export default function Shell({ children }) {
 
         <div className="dash__main">
           <header className="dash__top">
-            <button className="icon-btn dash__menu" onClick={() => setNavOpen((o) => !o)} aria-label="Toggle navigation">
-              <GridIcon />
+            <button ref={menuRef} className="dash__menu dash__mobile-menu" onClick={() => setNavOpen((o) => !o)} aria-controls="dashboard-sidebar" aria-expanded={navOpen} aria-label={navOpen ? 'Close navigation' : 'Open navigation'} title="Toggle navigation">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" />
+                <path className="dash__menu-arrow" d="m15 9-3 3 3 3" />
+              </svg>
             </button>
             <p className="dash__crumb"><span className="grey">Workspace</span> / {current}</p>
-            <form className="dash__scan" onSubmit={runScan} role="search">
+            <form className="dash__scan" onSubmit={runScan} role="search" aria-busy={scanLoading}>
               <SearchIcon />
               <label htmlFor="dash-scan" className="skip">URL to scan</label>
               <input id="dash-scan" placeholder="Scan a URL or domain…" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
-              <button className="btn btn--ink" type="submit">Scan</button>
+              <button className="btn btn--ink" type="submit" disabled={scanLoading}>{scanLoading ? 'Scanning…' : 'Scan'}</button>
             </form>
             <button className="icon-btn" onClick={toggle} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
               <ThemeIcon />
             </button>
           </header>
-          {error && <p className="dash__err" role="alert">{error}</p>}
+          {scanLoading && <p className="scan-status caption" role="status">Investigating URL. Collecting network checks and threat intelligence…</p>}
+          {error && <div className="dash__err" role="alert">{error} <button className="btn btn--ghost" disabled={scanLoading} onClick={() => runInvestigation(failedInput)}>Retry scan</button></div>}
           {children}
         </div>
         <button className="dash__scrim" onClick={() => setNavOpen(false)} aria-label="Close navigation" tabIndex={navOpen ? 0 : -1} />

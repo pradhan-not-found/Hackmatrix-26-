@@ -6,11 +6,57 @@ import re
 import socket
 import ssl
 import time
+import threading
+from email.message import Message
+import idna
 from urllib.parse import quote, urlsplit, urlunsplit
 
 
 class UnsafeURL(ValueError):
     pass
+
+
+MAX_HTML_BYTES = 256 * 1024
+
+
+def read_html(response, headers: dict, deadline: float) -> dict:
+    if not 200 <= response.status < 300:
+        return {"status": "not_run", "reason": "Only successful terminal responses are parsed."}
+    message = Message()
+    message["content-type"] = headers.get("content-type", "application/octet-stream")
+    if message.get_content_type() not in ("text/html", "application/xhtml+xml"):
+        return {"status": "not_applicable", "reason": "Response is not declared HTML; its body was not read."}
+    if headers.get("content-encoding", "identity").lower() != "identity":
+        return {"status": "unavailable", "reason": "Compressed responses are not decoded by the bounded inspector."}
+    if "attachment" in headers.get("content-disposition", "").lower():
+        return {"status": "unavailable", "reason": "Attachments are not downloaded."}
+    try:
+        length = int(headers["content-length"]) if "content-length" in headers else None
+    except ValueError:
+        return {"status": "unavailable", "reason": "Invalid response Content-Length."}
+    if length is not None and (length < 0 or length > MAX_HTML_BYTES):
+        return {"status": "unavailable", "reason": "HTML exceeds the 256 KiB inspection limit or has an invalid length."}
+    chunks, size = [], 0
+    while True:
+        if time.monotonic() >= deadline:
+            raise TimeoutError("HTML request deadline exceeded")
+        chunk = response.read1(min(8192, MAX_HTML_BYTES - size + 1))
+        if not chunk:
+            break
+        size += len(chunk)
+        if size > MAX_HTML_BYTES:
+            return {"status": "unavailable", "reason": "HTML exceeds the 256 KiB inspection limit."}
+        chunks.append(chunk)
+    if response.length not in (None, 0):
+        return {"status": "unavailable", "reason": "HTML response ended before its declared length."}
+    raw = b"".join(chunks)
+    charset = message.get_content_charset() or "utf-8"
+    try:
+        text = raw.decode(charset, errors="replace")
+    except (LookupError, UnicodeError):
+        charset = "utf-8"
+        text = raw.decode(charset, errors="replace")
+    return {"status": "completed", "text": text, "bytes_read": size, "charset": charset}
 
 
 def normalize_url(value: str) -> str:
@@ -25,11 +71,12 @@ def normalize_url(value: str) -> str:
             raise UnsafeURL("Only HTTP and HTTPS URLs are supported")
         if parts.username is not None or parts.password is not None:
             raise UnsafeURL("URLs containing credentials are not supported")
-        host = parts.hostname.rstrip(".").encode("idna").decode("ascii").lower()
+        host = parts.hostname.rstrip(".").lower()
         try:
             address = ipaddress.ip_address(host)
             host = address.compressed
         except ValueError:
+            host = idna.encode(host, uts46=True, std3_rules=True).decode("ascii")
             if len(host) > 253 or not all(
                 re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label)
                 for label in host.split(".")
@@ -67,20 +114,43 @@ def public_addresses(host: str, port: int) -> list[str]:
 
 
 def fetch(url: str, addresses: list[str], timeout: float = 5) -> dict:
-    """HEAD only: collect headers without downloading bodies or running scripts."""
+    """One pinned GET, with a hard socket deadline and a bounded HTML-only body."""
     parts = urlsplit(url)
     host = parts.hostname
     port = 443 if parts.scheme == "https" else 80
     connection = http.client.HTTPConnection(host, port, timeout=timeout)
     started = time.monotonic()
+    deadline = started + timeout
+    active_socket = [None]
+    expired = threading.Event()
+    response = None
+
+    def interrupt():
+        expired.set()
+        sock = active_socket[0]
+        if sock is not None:
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            sock.close()
+
+    timer = threading.Timer(timeout, interrupt)
+    timer.daemon = True
+    timer.start()
     try:
         # Connect to an already validated numeric IP. Never resolve the hostname again.
         connection.sock = socket.create_connection((addresses[0], port), timeout=timeout)
+        active_socket[0] = connection.sock
+        if expired.is_set():
+            raise TimeoutError("Request deadline exceeded")
+        connection.sock.settimeout(max(.001, deadline - time.monotonic()))
         tls = None
         if parts.scheme == "https":
             connection.sock = ssl.create_default_context().wrap_socket(
                 connection.sock, server_hostname=host
             )
+            active_socket[0] = connection.sock
             cert = connection.sock.getpeercert()
             tls = {
                 "verified": True, "protocol": connection.sock.version(),
@@ -89,14 +159,25 @@ def fetch(url: str, addresses: list[str], timeout: float = 5) -> dict:
                 "not_before": cert.get("notBefore"), "not_after": cert.get("notAfter"),
                 "subject_alt_names": cert.get("subjectAltName", ()),
             }
-        connection.sock.settimeout(max(0.1, timeout - (time.monotonic() - started)))
+        if time.monotonic() >= deadline:
+            raise TimeoutError("Request deadline exceeded")
+        connection.sock.settimeout(max(.001, deadline - time.monotonic()))
         target = urlunsplit(("", "", parts.path, parts.query, ""))
-        connection.request("HEAD", target, headers={
+        connection.request("GET", target, headers={
             "User-Agent": "HackMatrix-Investigator/1.0", "Connection": "close",
+            "Accept": "text/html, application/xhtml+xml", "Accept-Encoding": "identity",
         })
         response = connection.getresponse()
         headers = {key.lower(): value for key, value in response.getheaders()}
+        html = read_html(response, headers, deadline)
+        if expired.is_set():
+            raise TimeoutError("Request deadline exceeded")
         return {"url": url, "address": addresses[0], "status": response.status,
-                "headers": headers, "tls": tls}
+                "headers": headers, "tls": tls, "html": html}
     finally:
+        timer.cancel()
+        if response is not None:
+            response.close()
         connection.close()
+        if active_socket[0] is not None:
+            active_socket[0].close()

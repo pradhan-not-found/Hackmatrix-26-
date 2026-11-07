@@ -97,7 +97,7 @@ class ThreatIntelligenceTests(unittest.TestCase):
 
     def test_provider_results_reach_pipeline_classification(self):
         response = {"url": BENIGN_URL, "address": "8.8.8.8", "status": 200,
-                    "headers": {}, "tls": {"verified": True}}
+                    "headers": {}, "tls": {"verified": True}, "html": {"status": "completed", "text": "<title>Example</title>"}}
         with patch("backend.investigation.public_addresses", return_value=["8.8.8.8"]):
             with patch("backend.investigation.fetch", return_value=response) as fetch:
                 self.assertEqual(investigate(BENIGN_URL)["risk_classification"], "Low Risk")

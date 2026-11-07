@@ -14,20 +14,17 @@ from backend.network import UnsafeURL, fetch, normalize_url, public_addresses
 
 def result(url="https://example.com/", status=200, headers=None):
     return {"url": url, "status": status, "address": "93.184.216.34",
-            "headers": headers or {}, "tls": {"verified": True}}
+            "headers": headers or {}, "tls": {"verified": True},
+            "html": {"status": "completed", "text": "<title>Example</title>"}}
 
 
 class NetworkTests(unittest.TestCase):
-    def test_dashboard_and_assets_are_served(self):
+    def test_backend_is_api_only_without_legacy_dashboard(self):
         with TestClient(app) as client:
-            page = client.get("/")
-            self.assertEqual(page.status_code, 200)
-            self.assertIn("text/html", page.headers["content-type"])
-            self.assertIn('id="investigation-form"', page.text)
-            self.assertIn('role="tablist"', page.text)
-            for asset in ("dashboard.css", "dashboard.js"):
-                self.assertEqual(client.get(f"/assets/{asset}").status_code, 200)
-            self.assertEqual(client.get("/assets/missing.js").status_code, 404)
+            self.assertEqual(client.get("/").status_code, 404)
+            self.assertEqual(client.get("/assets/dashboard.js").status_code, 404)
+            self.assertEqual(client.get("/health").status_code, 200)
+            self.assertEqual(client.get("/docs").status_code, 200)
 
     def test_normalization(self):
         self.assertEqual(normalize_url("EXAMPLE.com/a b".replace(" ", "%20")), "https://example.com/a%20b")
@@ -62,7 +59,7 @@ class NetworkTests(unittest.TestCase):
         fetch("https://example.com/", ["8.8.8.8"])
         connect.assert_called_once_with(("8.8.8.8", 443), timeout=5)
         context.return_value.wrap_socket.assert_called_once_with(connect.return_value, server_hostname="example.com")
-        self.assertEqual(connection.return_value.request.call_args.args[0], "HEAD")
+        self.assertEqual(connection.return_value.request.call_args.args[0], "GET")
         connection.return_value.close.assert_called_once()
 
     def test_reputation_disabled_without_key(self):
@@ -102,11 +99,11 @@ class PipelineTests(unittest.TestCase):
                 self.assertEqual(report["risk_classification"], "Low Risk")
                 self.assertTrue(report["findings"])  # Missing headers alone do not imply phishing.
 
-    def test_three_suspicious_cases(self):
+    def test_weak_hostname_and_transport_signals_do_not_prove_phishing(self):
         for url in ("https://xn--bcher-kva.de", "https://a-b-c-d-e.com", "http://example.com"):
             with self.subTest(url=url):
                 report = investigate(url)
-                self.assertEqual(report["risk_classification"], "Suspicious")
+                self.assertEqual(report["risk_classification"], "Low Risk")
 
     def test_provider_unavailable_is_inconclusive(self):
         self.reputation.return_value = {"status": "unavailable", "reason": "not configured"}
@@ -125,7 +122,7 @@ class PipelineTests(unittest.TestCase):
         report = investigate("example.com")
         self.assertEqual(self.fetch.call_count, 1)
         self.assertEqual(report["risk_classification"], "Inconclusive")
-        self.assertEqual(report["checks"][-2]["status"], "blocked")
+        self.assertTrue(any(check["status"] == "blocked" for check in report["checks"]))
 
     def test_redirect_limit(self):
         self.fetch.side_effect = [result(f"https://example.com/{i}", 302, {"location": f"/{i+1}"}) for i in range(6)]

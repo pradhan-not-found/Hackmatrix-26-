@@ -249,10 +249,10 @@ Found a security issue? Please report it privately to the maintainers rather tha
 
 WebAssure is built by **Fantastic 4**:
 
-- Aniruddha Das
-- Madhushree Dasgupta
-- Sattwik Das
 - Souradeep Pradhan
+- Madhushree Dasgupta
+- Aniruddha Das
+- Sattwik Das
 
 ## License
 

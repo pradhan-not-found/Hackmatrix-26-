@@ -181,7 +181,7 @@ export default function ThermalIcon({ shape, size = 96, label }) {
     >
       <defs>
         {stripe(ids.s, '#6a6a6a')}
-        {stripe(ids.sd, '#5a5a5a')}
+        {stripe(ids.sd, '#3a3a3a')}
         <filter id={ids.m} x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
           <feGaussianBlur in="SourceAlpha" stdDeviation="4" />
           <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" />
@@ -189,11 +189,44 @@ export default function ThermalIcon({ shape, size = 96, label }) {
         </filter>
         <ColorFilter id={ids.c} paper="1" table={LIGHT_BLUE} {...region} />
         <ColorFilter id={ids.cd} paper="0.0706" table={DARK} {...region} />
+        <linearGradient id={`${uid}-gf`} gradientUnits="userSpaceOnUse" x1="10" y1="0" x2="190" y2="200">
+          <stop offset="0" stopColor="#8cc2ff" />
+          <stop offset=".45" stopColor="#4a76ff" />
+          <stop offset="1" stopColor="#1d3dd4" />
+        </linearGradient>
+        <filter id={`${uid}-gl`} x="-30%" y="-30%" width="160%" height="170%" colorInterpolationFilters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="7" result="b" />
+          <feSpecularLighting in="b" surfaceScale="6" specularConstant="1.05" specularExponent="22" lightingColor="#ffffff" result="spec">
+            <feDistantLight azimuth="240" elevation="50" />
+          </feSpecularLighting>
+          <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn" />
+          <feComposite in="SourceGraphic" in2="specIn" operator="arithmetic" k1="0" k2="1" k3="0.75" k4="0" result="lit" />
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="ib" />
+          <feOffset in="ib" dy="-4" result="io" />
+          <feComposite in="SourceAlpha" in2="io" operator="out" result="inner" />
+          <feFlood floodColor="#0b1a6b" floodOpacity=".45" />
+          <feComposite in2="inner" operator="in" result="innerShade" />
+          <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="sb" />
+          <feOffset in="sb" dy="9" result="so" />
+          <feFlood floodColor="#0a1650" floodOpacity=".35" />
+          <feComposite in2="so" operator="in" result="shadow" />
+          <feMerge>
+            <feMergeNode in="shadow" />
+            <feMergeNode in="lit" />
+            <feMergeNode in="innerShade" />
+          </feMerge>
+        </filter>
       </defs>
-      <g className="thermal__color">
-        <g className="thermal__text ticon__ink" filter={`url(#${ids.m})`}>
+      <g
+        className="ticon__glass"
+        fill={`url(#${uid}-gf)`}
+        stroke={`url(#${uid}-gf)`}
+        strokeWidth="24"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        filter={`url(#${uid}-gl)`}
+      >
           {SHAPES[shape]}
-        </g>
       </g>
     </svg>
   )
