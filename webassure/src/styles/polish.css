@@ -1474,3 +1474,12 @@
 .auth__brand { width: 100%; align-items: center; }
 .auth__plastic { width: 86%; max-width: 640px; }
 .auth__plastic .thermal { width: 100%; }
+
+/* login panel: balanced wordmark + tagline */
+.auth__brand { gap: 0; }
+.auth__plastic { width: 64%; max-width: 480px; }
+.auth__tag {
+  margin-top: -6px; font-size: 15px; font-weight: 500; letter-spacing: 0.02em;
+  color: rgba(214, 220, 236, 0.62);
+}
+.auth__tag { margin-top: 10px; }
