@@ -37,6 +37,10 @@ const SOCIAL = [
 export default function Footer() {
   return (
     <footer className="site-footer wrap">
+      <div className="horizon" aria-hidden="true">
+        <span className="horizon__haze" />
+        <span className="horizon__orb" />
+      </div>
       <div className="footer__top">
         <div className="footer__brand">
           <a href="#top" className="footer__mark" aria-label="WebAssure home">webassure</a>

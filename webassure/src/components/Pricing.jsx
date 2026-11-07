@@ -62,8 +62,8 @@ export default function Pricing() {
           return (
             <article key={p.name} className="plan" data-featured={p.featured || undefined}>
               {p.featured && <span className="plan__glow" aria-hidden="true" />}
-              <span className="plan__icon"><ThermalIcon shape={p.icon} size={64} /></span>
               <header className="plan__top">
+                <span className="plan__icon"><ThermalIcon shape={p.icon} size={52} /></span>
                 <h3 className="plan__name">{p.name}</h3>
                 {p.featured && <span className="plan__tag">Most popular</span>}
               </header>

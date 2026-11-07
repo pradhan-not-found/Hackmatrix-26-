@@ -56,17 +56,17 @@ export default function Login({ mode }) {
                 <path fill="#FBBC05" d="M5.9 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.2a11 11 0 0 0 0 9.8z" />
                 <path fill="#EA4335" d="M12 5.4c1.6 0 3 .5 4.1 1.6l3.1-3.1A11 11 0 0 0 2.2 7.1l3.7 2.8C6.8 7.3 9.2 5.4 12 5.4z" />
               </svg>
-              Continue with Google
+              Google
             </button>
             <button type="button" className="btn btn--ghost btn--block" onClick={() => sso('GitHub')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5z" />
               </svg>
-              Continue with GitHub
+              GitHub
             </button>
           </div>
 
-          <div className="auth__or"><span>or</span></div>
+          <div className="auth__or"><span>or continue with email</span></div>
 
           <form onSubmit={submit} noValidate className="auth__fields">
             {isSignup && (
@@ -113,13 +113,16 @@ export default function Login({ mode }) {
       </div>
 
       <aside className="auth__art" aria-hidden="true">
+        <div className="horizon horizon--panel">
+          <span className="horizon__haze" />
+          <span className="horizon__orb" />
+        </div>
+        <p className="auth__quote">
+          Know your website before you trust it.
+          <span> Phishing, fake portals and forged certificates, caught in seconds.</span>
+        </p>
         <div className="auth__mark">
           <Thermal text="webassure" />
-        </div>
-        <div className="auth__phrases">
-          <span>Know your website</span>
-          <span>Trust every link</span>
-          <span>Click with confidence</span>
         </div>
       </aside>
     </div>
