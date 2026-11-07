@@ -14,7 +14,7 @@ VERDICTS = {
 }
 FINDING_MEANINGS = {
     "url": "Unusual domain naming can occur on legitimate sites too. Verify the exact hostname through an independently trusted source.",
-    "configuration": "Missing security headers are a website configuration concern, not proof of phishing or fraud.",
+    "configuration": "Missing security headers are a website configuration concern, not proof of phishing or fraud. Configuration warnings are separate from the phishing assessment.",
     "tls": "Certificate verification failed. This may reflect expiration, identity, trust-store, or local network issues; it does not by itself prove fraud. Do not bypass certificate warnings.",
     "transport": "HTTP does not encrypt this connection. Do not enter passwords, payment details, or other sensitive information over HTTP.",
     "threat_intelligence": "A threat intelligence source returned a matching listing. Treat the destination as dangerous; a provider test URL can intentionally produce this result.",
@@ -51,7 +51,7 @@ def explain_locally(report: dict) -> dict:
             else:
                 text = CHECK_MEANINGS.get(name, f"{label} completed; review its evidence for details.")
         elif status == "not_applicable":
-            text = f"{label} was not applicable to this request. HTTP destinations do not provide an HTTPS certificate."
+            text = f"{label} was not applicable to this request."
         elif status == "blocked":
             text = f"{label} blocked inspection under the destination safety policy. This protects the scanner and does not prove the website is malicious."
         else:

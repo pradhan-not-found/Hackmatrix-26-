@@ -127,9 +127,24 @@ responses, including classification through the investigation pipeline.
 ## Assessment behavior
 
 - A validated provider match produces Confirmed Malicious.
-- URL heuristics, unencrypted transport, or failed certificate verification produce Suspicious.
-- With completed network and reputation checks and no threat indicators, the result is Low Risk.
-- Otherwise the result is Inconclusive. Missing headers alone do not indicate phishing.
+- Significant phishing indicators produce Suspicious. High Risk requires indicators
+  from at least two distinct signal groups, including at least one strong indicator.
+- A critical severity alone never confirms maliciousness. Confirmation requires an
+  explicit matching threat-provider result.
+- HTTP transport, certificate problems, and missing headers are configuration
+  findings, separate from the phishing classification. Weak naming signals alone
+  do not establish phishing.
+- Low Risk requires successful core URL, DNS, HTTP, TLS (where applicable), redirect,
+  header, and reputation checks without significant phishing indicators. HTTP error
+  or unsupported responses cannot satisfy this coverage requirement.
+- Otherwise the result is Inconclusive. Low Risk never guarantees website safety.
+
+`assessment` records the policy version, decision rule, relevant finding IDs,
+signal groups, and configuration finding IDs. `evidence_coverage.checks` aggregates
+per-hop results into completed, partial, unavailable, failed, blocked, not_run, or
+not_applicable states. HTML, revocation, CT, and certificate key-strength checks
+are explicitly not_implemented and excluded from core coverage. These are
+documented heuristic rules, not calibrated probabilities.
 
 Reports contain findings with sources, evidence, timestamps, recommendations,
 per-check results, redirect details, coverage, and limitations. TLS uses the system

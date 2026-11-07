@@ -31,6 +31,7 @@ class Explanation(BaseModel):
 def evidence_snapshot(report: dict) -> dict:
     # Exclude paths, queries, response headers, certificate names, and raw submitted content.
     evidence = [{"id": "assessment", "risk_classification": report["risk_classification"],
+                 "decision": report.get("assessment", {}),
                  "coverage": report.get("evidence_coverage", {})}]
     for finding in report["findings"]:
         item = {key: finding[key] for key in ("id", "category", "severity", "description")}

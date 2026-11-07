@@ -102,11 +102,11 @@ class PipelineTests(unittest.TestCase):
                 self.assertEqual(report["risk_classification"], "Low Risk")
                 self.assertTrue(report["findings"])  # Missing headers alone do not imply phishing.
 
-    def test_three_suspicious_cases(self):
+    def test_weak_hostname_and_transport_signals_do_not_prove_phishing(self):
         for url in ("https://xn--bcher-kva.de", "https://a-b-c-d-e.com", "http://example.com"):
             with self.subTest(url=url):
                 report = investigate(url)
-                self.assertEqual(report["risk_classification"], "Suspicious")
+                self.assertEqual(report["risk_classification"], "Low Risk")
 
     def test_provider_unavailable_is_inconclusive(self):
         self.reputation.return_value = {"status": "unavailable", "reason": "not configured"}
@@ -125,7 +125,7 @@ class PipelineTests(unittest.TestCase):
         report = investigate("example.com")
         self.assertEqual(self.fetch.call_count, 1)
         self.assertEqual(report["risk_classification"], "Inconclusive")
-        self.assertEqual(report["checks"][-2]["status"], "blocked")
+        self.assertTrue(any(check["status"] == "blocked" for check in report["checks"]))
 
     def test_redirect_limit(self):
         self.fetch.side_effect = [result(f"https://example.com/{i}", 302, {"location": f"/{i+1}"}) for i in range(6)]
