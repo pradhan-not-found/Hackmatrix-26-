@@ -150,6 +150,8 @@ class PipelineTests(unittest.TestCase):
                     response = client.post("/api/investigations", json={"url": "example.com"})
                     self.assertEqual(response.status_code, 201)
                     report = response.json()
+                    self.assertEqual(report["ai_explanation"]["provider"], "Local rules")
+                    self.assertEqual(report["ai_explanation"]["status"], "completed")
                     self.assertEqual(client.get(f"/api/investigations/{report['id']}").json(), report)
                     self.assertEqual(client.post("/api/investigations", json={"url": "file:///etc/passwd"}).status_code, 422)
                     self.assertEqual(client.get("/api/investigations/00000000-0000-0000-0000-000000000000").status_code, 404)

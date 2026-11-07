@@ -64,7 +64,7 @@ class DashboardBrowserTests(unittest.TestCase):
         def api(route):
             request = route.request
             if request.url.endswith("/explanation"):
-                route.fulfill(json={"status": "completed", "model": "gemini-test",
+                route.fulfill(json={"status": "completed", "provider": "Local rules", "model": "Rule-based explanation",
                     "generated_at": REPORT["completed_at"],
                     "summary": {"text": "Reputation verification is unavailable.", "evidence_ids": ["assessment"]},
                     "explanations": [], "next_steps": [],
@@ -100,12 +100,13 @@ class DashboardBrowserTests(unittest.TestCase):
         self.assertEqual(json.loads(event.value.path().read_text()), REPORT)
         page.get_by_role("button", name="Explain findings", exact=True).click()
         page.get_by_text("Reputation verification is unavailable.", exact=True).wait_for()
+        self.assertIn("No AI API", page.locator("#explanation-disclosure").inner_text())
         page.get_by_text("Supporting evidence: assessment", exact=True).click()
         self.assertIn("Suspicious", page.locator("#ai-content pre").inner_text())
         self.assertEqual(page.locator("#risk").inner_text(), "Suspicious")
-        page.route("**/explanation", lambda route: route.fulfill(json={"status": "unavailable", "reason": "Gemini quota exceeded."}))
+        page.route("**/explanation", lambda route: route.fulfill(status=503, json={"detail": "Explanation request failed."}))
         page.get_by_role("button", name="Explain again", exact=True).click()
-        page.get_by_text("Gemini quota exceeded.", exact=True).wait_for()
+        page.get_by_text("Explanation request failed.", exact=True).wait_for()
         self.assertTrue(page.get_by_role("button", name="Explain findings", exact=True).is_enabled())
         page.unroute("**/explanation")
         page.reload()

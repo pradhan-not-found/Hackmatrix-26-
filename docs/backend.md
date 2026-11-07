@@ -125,7 +125,22 @@ Revocation, compromised-CA intelligence, CT monitoring, signature/key-strength
 analysis, scam-message analysis, and blockchain reporting are not implemented.
 API provider failures never count as clean reputation results.
 
-## Gemini explanations
+## Local explanations (default)
+
+New investigations automatically include a rule-based explanation of the
+assessment, findings, individual check outcomes, and next steps. No model, API
+key, training, RAG, or external explanation request is needed. Every statement
+references evidence in the report. Existing saved reports can use **Explain
+findings** to generate a local explanation. Detailed interpretations and next
+steps expand beneath the summary.
+
+`POST /api/investigations/{id}/explanation` defaults to local rules, even if a
+Gemini key is configured. Missing reputation data still means incomplete coverage;
+local explanations do not replace the Safe Browsing lookup or prove a site safe.
+The existing `ai_explanation` JSON field is retained for report compatibility,
+and its `provider` identifies local versus Gemini output.
+
+## Optional Gemini explanations
 
 Add a [Google AI Studio API key](https://aistudio.google.com/apikey) to `.env`:
 
@@ -134,8 +149,9 @@ GEMINI_API_KEY=your_key
 GEMINI_MODEL=gemini-3.8-flash
 ```
 
-Open a report and click **Explain findings**. Explanations run only on request,
-including for saved reports, via `POST /api/investigations/{id}/explanation`.
+Gemini is available only through an explicit request to
+`POST /api/investigations/{id}/explanation?provider=gemini`.
+The dashboard uses local explanations and does not call Gemini.
 The response is saved with the report and included in JSON exports. Errors and
 quota limits appear in the dashboard; the underlying report remains available.
 The model defaults to `gemini-3.8-flash`, verified against the live model list.

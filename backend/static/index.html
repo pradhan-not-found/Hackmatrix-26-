@@ -45,7 +45,7 @@
         <div class="summary"><div class="risk-summary"><span class="field-label">Assessment</span><span id="risk" class="badge"></span></div><div><span class="field-label">Network inspection</span><strong id="network-coverage"></strong></div><div><span class="field-label">Threat intelligence</span><strong id="reputation-coverage"></strong></div><div><span class="field-label">Findings</span><strong id="finding-count"></strong></div></div>
         <section class="ai-section" aria-labelledby="ai-title">
           <div class="check-heading"><h3 id="ai-title">Understand this report</h3><button id="explain-report" class="secondary-button" type="button">Explain findings</button></div>
-          <p class="muted ai-disclosure">On request, Gemini receives the hostname and reduced check results. URL paths, query strings, and response headers are excluded. AI explanations may be incorrect; verify the cited evidence.</p>
+          <p id="explanation-disclosure" class="muted ai-disclosure">Generated locally from the collected evidence. No AI API is used for this explanation. A low-risk result is not a guarantee of safety.</p>
           <p id="ai-status" class="muted" role="status" aria-live="polite"></p>
           <div id="ai-content"></div>
         </section>
