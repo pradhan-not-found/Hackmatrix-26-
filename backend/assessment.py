@@ -1,7 +1,7 @@
 """Evidence-based phishing assessment, separate from configuration warnings."""
 
-IMPLEMENTED = ("url_structure", "dns", "http", "tls", "redirects", "security_headers", "threat_intelligence")
-UNIMPLEMENTED = ("html_inspection", "certificate_revocation", "certificate_transparency", "certificate_key_strength")
+IMPLEMENTED = ("url_structure", "dns", "http", "tls", "redirects", "security_headers", "threat_intelligence", "html_inspection")
+UNIMPLEMENTED = ("certificate_revocation", "certificate_transparency", "certificate_key_strength")
 
 
 def assess(report: dict) -> None:
@@ -24,7 +24,8 @@ def assess(report: dict) -> None:
     network_complete = all(states[name] in ("completed", "not_applicable")
                            for name in ("dns", "http", "tls", "redirects", "security_headers"))
     reputation_available = states["threat_intelligence"] == "completed"
-    complete = network_complete and reputation_available and states["url_structure"] == "completed"
+    complete = (network_complete and reputation_available and states["url_structure"] == "completed"
+                and states["html_inspection"] in ("completed", "not_applicable"))
 
     indicators = [finding for finding in report["findings"] if finding.get("kind") == "threat_indicator"]
     confirmed = [finding for finding in indicators if finding["category"] == "threat_intelligence"
@@ -43,7 +44,7 @@ def assess(report: dict) -> None:
         classification, rule, evidence = "Inconclusive", "insufficient_core_coverage", []
     report["risk_classification"] = classification
     report["assessment"] = {
-        "policy_version": "2.0", "rule": rule, "evidence_ids": [finding["id"] for finding in evidence],
+        "policy_version": "2.1", "rule": rule, "evidence_ids": [finding["id"] for finding in evidence],
         "signal_groups": sorted(groups), "scope": "Phishing and malicious-destination indicators, not overall website security",
         "configuration_finding_ids": [finding["id"] for finding in report["findings"] if finding.get("kind") == "security_configuration"],
         "limitations": "Heuristic classifications are not calibrated probabilities. Low Risk does not prove safety.",

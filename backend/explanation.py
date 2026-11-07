@@ -15,6 +15,7 @@ VERDICTS = {
 FINDING_MEANINGS = {
     "url": "Unusual domain naming can occur on legitimate sites too. Verify the exact hostname through an independently trusted source.",
     "redirect": "A destination change was observed in an HTTP response. Redirects may be legitimate; review the source and destination domains. HTTPS-to-HTTP changes remove transport encryption.",
+    "html": "This finding comes from static HTML. External form providers and brand mentions can be legitimate; review the context, impact, and remediation. No form or page resource was executed.",
     "configuration": "Missing security headers are a website configuration concern, not proof of phishing or fraud. Configuration warnings are separate from the phishing assessment.",
     "tls": "Certificate verification failed. This may reflect expiration, identity, trust-store, or local network issues; it does not by itself prove fraud. Do not bypass certificate warnings.",
     "transport": "HTTP does not encrypt this connection. Do not enter passwords, payment details, or other sensitive information over HTTP.",
@@ -26,7 +27,8 @@ CHECK_MEANINGS = {
     "dns": "The hostname resolved to addresses allowed by the public-destination policy. DNS resolution does not establish website legitimacy.",
     "http": "An HTTP response was collected. Reachability and a successful response do not establish safety.",
     "tls": "The HTTPS certificate passed system-trust and hostname verification for this request. Encryption does not establish that the website is legitimate.",
-    "security_headers": "The HEAD response was inspected for selected security headers. This is not a complete website vulnerability assessment.",
+    "security_headers": "The HTTP response was inspected for selected security headers. This is not a complete website vulnerability assessment.",
+    "html_inspection": "A bounded HTML response was parsed for forms, page identity, mixed-content references, and declared navigation. JavaScript and linked resources were not executed.",
     "threat_intelligence": "The reputation lookup completed. No matching listing means no known threat was returned by this source, not proof of safety.",
 }
 

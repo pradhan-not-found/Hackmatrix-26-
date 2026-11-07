@@ -14,7 +14,8 @@ from backend.network import UnsafeURL, fetch, normalize_url, public_addresses
 
 def result(url="https://example.com/", status=200, headers=None):
     return {"url": url, "status": status, "address": "93.184.216.34",
-            "headers": headers or {}, "tls": {"verified": True}}
+            "headers": headers or {}, "tls": {"verified": True},
+            "html": {"status": "completed", "text": "<title>Example</title>"}}
 
 
 class NetworkTests(unittest.TestCase):

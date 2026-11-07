@@ -10,6 +10,7 @@ from backend.threat_intelligence import reputation
 from backend.explanation import explain_locally
 from backend.assessment import assess
 from backend.url_analysis import analyze_url, analyze_redirect
+from backend.html_analysis import analyze_html
 
 
 def now() -> str:
@@ -25,7 +26,7 @@ def investigate(url: str) -> dict:
         "redirect_chain": [], "url_analysis": [], "recommendations": [],
         "limitations": [
             "No detected threats does not establish safety; HTTPS does not establish legitimacy.",
-            "HEAD requests only; page content, scripts, downloads and vulnerabilities are not inspected.",
+            "Only bounded static HTML is inspected. Scripts, linked resources, form submissions, and vulnerabilities are not executed or tested.",
             "Certificate revocation, Certificate Transparency and full chain analysis are not implemented.",
         ],
     }
@@ -84,8 +85,10 @@ def investigate(url: str) -> dict:
             report["checks"].append({"name": "dns", "status": "completed", "url": current,
                                      "addresses": addresses})
             stage = "http"
-            result = fetch(current, addresses)
-            result.pop("html", None)  # Body text is transient and must never enter stored reports.
+            result = dict(fetch(current, addresses))
+            html = dict(result.pop("html", {"status": "unavailable", "reason": "No HTML retrieval result was provided."}))
+            html_text = html.pop("text", None)  # Never persist raw page source.
+            result["html_retrieval"] = html
             report["redirect_chain"].append(result)
             report["checks"].append({"name": "http", "status": "completed", "url": current,
                                      "http_status": result["status"]})
@@ -116,7 +119,7 @@ def investigate(url: str) -> dict:
             report["final_url"] = current
             redirects_complete = True
             if not 200 <= result["status"] < 300:
-                report["limitations"].append(f"Target returned HTTP {result['status']}; HEAD may be unsupported.")
+                report["limitations"].append(f"Target returned HTTP {result['status']}; page inspection is unavailable.")
                 report["checks"].append({"name": "http", "status": "unavailable", "url": current,
                                          "reason": f"HTTP {result['status']} does not provide a successful inspection response."})
                 report["checks"].append({"name": "security_headers", "status": "not_run", "url": current,
@@ -128,8 +131,27 @@ def investigate(url: str) -> dict:
             missing = [name for name in required if name not in result["headers"]]
             report["checks"].append({"name": "security_headers", "status": "completed", "missing": missing})
             if missing:
-                finding("configuration", "info", "Security headers absent from HEAD response", missing,
+                finding("configuration", "info", "Security headers absent from HTTP response", missing,
                         "Website owner: review security header configuration; absence alone is not evidence of phishing.")
+            html_check = {"name": "html_inspection", "url": current, **html}
+            if html["status"] == "completed" and html_text is not None:
+                try:
+                    page = analyze_html(html_text, current)
+                    for issue in page.pop("findings"):
+                        finding("html", issue["severity"], issue["description"], issue["evidence"], issue["remediation"],
+                                source="static HTML inspection", **{key: issue[key] for key in
+                                    ("code", "kind", "strength", "signal_group", "impact", "remediation", "limitations")})
+                    report["page_analysis"] = page
+                    if page["limited"]:
+                        html_check.update(status="partial", reason="HTML element limits reached; inspection is incomplete.")
+                    report["limitations"].extend(page["limitations"])
+                except (ValueError, UnicodeError):
+                    html_check.update(status="unavailable", reason="HTML could not be parsed within inspection limits.")
+            elif html["status"] == "completed":
+                html_check.update(status="unavailable", reason="HTML body was not available for parsing.")
+            report["checks"].append(html_check)
+            if html_check.get("reason") and html_check["status"] != "not_applicable":
+                report["limitations"].append(html_check["reason"])
             break
         except UnsafeURL as exc:
             report["checks"].append({"name": "destination_safety", "status": "blocked", "error": str(exc)})
@@ -152,6 +174,9 @@ def investigate(url: str) -> dict:
 
     report["checks"].append({"name": "redirects", "status": "completed" if redirects_complete else "partial",
                              "reason": None if redirects_complete else redirect_error})
+    if not any(check["name"] == "html_inspection" for check in report["checks"]):
+        report["checks"].append({"name": "html_inspection", "status": "not_run",
+                                 "reason": "No successful terminal response was available for HTML inspection."})
     intelligence = reputation(reputation_urls)
     report["checks"].append({"name": "threat_intelligence", **intelligence})
     if intelligence["status"] != "completed":

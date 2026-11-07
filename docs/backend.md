@@ -133,14 +133,14 @@ responses, including classification through the investigation pipeline.
   findings, separate from the phishing classification. Weak naming signals alone
   do not establish phishing.
 - Low Risk requires successful core URL, DNS, HTTP, TLS (where applicable), redirect,
-  header, and reputation checks without significant phishing indicators. HTTP error
+  header, HTML (where applicable), and reputation checks without significant phishing indicators. HTTP error
   or unsupported responses cannot satisfy this coverage requirement.
 - Otherwise the result is Inconclusive. Low Risk never guarantees website safety.
 
 `assessment` records the policy version, decision rule, relevant finding IDs,
 signal groups, and configuration finding IDs. `evidence_coverage.checks` aggregates
 per-hop results into completed, partial, unavailable, failed, blocked, not_run, or
-not_applicable states. HTML, revocation, CT, and certificate key-strength checks
+not_applicable states. Revocation, CT, and certificate key-strength checks
 are explicitly not_implemented and excluded from core coverage. These are
 documented heuristic rules, not calibrated probabilities.
 
@@ -172,16 +172,51 @@ corroborating significant naming indicators. Identity signals share one group,
 so several variants of the same hostname concern cannot alone create High Risk.
 HTTPS downgrades are separate configuration findings, not proof of phishing.
 All actual redirect destinations retain the existing SSRF validation and pinned
-connection checks. Only HEAD is sent; HTML and JavaScript remain uninspected.
+connection checks. A bounded GET retrieves the terminal page; JavaScript remains unexecuted.
+
+### Static HTML inspection
+
+The pinned HTTP client requests HTML using GET and `Accept-Encoding: identity`.
+Only successful responses declared as `text/html` or `application/xhtml+xml` are
+read. Bodies are capped at 256 KiB, including responses without Content-Length.
+Oversized declarations, attachments, and compressed bodies are skipped. A
+five-second absolute socket deadline interrupts slow headers and slow body streams;
+redirects are returned to the existing validated traversal loop, never automatically
+followed. Non-HTML bodies are not read.
+
+The parser extracts title/heading text, sensitive forms (password inputs or payment
+autocomplete fields), submission methods and destinations, mixed-content references,
+and meta-refresh declarations. It accounts for the first base URL, external form
+ownership, and submit-button destination overrides. No input values, raw HTML,
+scripts, or full page text are persisted. `page_analysis` contains selected parsed
+observations; each HTML finding includes evidence, impact, remediation, and limitations.
+Actual page titles and destination URLs remain untrusted data and may still contain
+sensitive information, so protect stored reports and exports.
+
+HTTP sensitive-form actions and GET submission are configuration findings. A
+cross-domain form alone is a weak advisory because third-party login/payment
+providers can be legitimate. A title/heading brand mismatch needs a sensitive form
+to become significant; corroborating hostname evidence can strengthen it. No HTML
+heuristic produces Confirmed Malicious. Mixed content and refresh destinations
+are reported as declarations, not proof of resource loading or observed navigation.
+Form actions, refresh destinations, images, scripts, and frames are never fetched.
+
+HTML inspection is a core check in policy 2.1. Skipped, oversized, truncated,
+unparseable, or element-limited HTML cannot silently produce Low Risk. Non-HTML
+responses are explicitly not_applicable. The parser limits forms, controls, targets,
+resources, and tags. It does not model a browser's DOM repairs, scripts, CSS URLs,
+or disabled-fieldset behavior completely. Existing saved reports are unchanged;
+run a new investigation to inspect HTML. WebAssure shows page observations in
+**Checks**, and complete selected metadata under **Evidence** and JSON exports.
 
 Reports contain findings with sources, evidence, timestamps, recommendations,
 per-check results, redirect details, coverage, and limitations. TLS uses the system
 trust store and verifies the original hostname while connecting to a validated IP.
-Requests use HEAD, standard ports only, no cookies, and no environment proxies.
+Requests use GET, standard ports only, no cookies, and no environment proxies.
 All DNS answers must be public; every redirect is revalidated. Up to six requests
-are permitted, with five-second socket timeouts and a budget checked between hops.
+are permitted, with five-second absolute request deadlines and a budget checked between hops.
 DNS resolution uses the OS resolver and is not covered by the socket timeout;
-socket timeouts are inactivity limits, not a hard whole-investigation deadline.
+the hop budget is not a hard whole-investigation deadline.
 
 ## Tests
 
@@ -201,7 +236,7 @@ This is a local MVP. Run one worker; the four-scan concurrency limit is per proc
 Before public exposure add authentication, per-user rate limits, retention/deletion
 controls, network egress restrictions, and a durable worker with hard job deadlines.
 Reports contain submitted URLs and may contain sensitive query strings; protect the database.
-HEAD-only checks cannot inspect page content, and some websites reject HEAD.
+Static inspection cannot evaluate script-rendered pages, submit forms, or establish overall website safety.
 Revocation, compromised-CA intelligence, CT monitoring, signature/key-strength
 analysis, scam-message analysis, and blockchain reporting are not implemented.
 API provider failures never count as clean reputation results.

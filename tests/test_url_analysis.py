@@ -56,7 +56,7 @@ class URLAnalysisTests(unittest.TestCase):
         source, target = "https://paypal.com.attacker.com/", "https://different.org/"
         def response(url, addresses):
             return {"url": url, "status": 302 if url == source else 200,
-                    "headers": {"location": target} if url == source else {}, "tls": {"verified": True}, "address": addresses[0]}
+                    "headers": {"location": target} if url == source else {}, "tls": {"verified": True}, "address": addresses[0], "html": {"status": "completed", "text": "<title>Example</title>"}}
         with patch("backend.investigation.public_addresses", return_value=["8.8.8.8"]), \
                 patch("backend.investigation.fetch", side_effect=response), \
                 patch("backend.investigation.reputation", return_value={"status": "completed", "matches": []}):
@@ -70,7 +70,7 @@ class URLAnalysisTests(unittest.TestCase):
         def response(url, addresses):
             return {"url": url, "status": 302 if url == source else 200,
                     "headers": {"location": target} if url == source else {},
-                    "tls": {"verified": True} if url == source else None, "address": addresses[0]}
+                    "tls": {"verified": True} if url == source else None, "address": addresses[0], "html": {"status": "completed", "text": "<title>Example</title>"}}
         with patch("backend.investigation.public_addresses", return_value=["8.8.8.8"]), \
                 patch("backend.investigation.fetch", side_effect=response), \
                 patch("backend.investigation.reputation", return_value={"status": "completed", "matches": []}):

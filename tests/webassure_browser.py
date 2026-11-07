@@ -32,7 +32,8 @@ class WebAssureBrowserTests(unittest.TestCase):
         def fetch(url, addresses):
             time.sleep(.5)
             return {"url": url, "status": 200, "headers": {}, "address": addresses[0],
-                    "tls": {"verified": True, "protocol": "TLSv1.3", "issuer": {"commonName": "Test CA"}, "not_after": "Jan 1 00:00:00 2030 GMT"}}
+                    "tls": {"verified": True, "protocol": "TLSv1.3", "issuer": {"commonName": "Test CA"}, "not_after": "Jan 1 00:00:00 2030 GMT"},
+                    "html": {"status": "completed", "bytes_read": 28, "text": "<title>Example workspace</title>"}}
 
         def reputation(urls):
             if any("malicious.example" in url for url in urls):
@@ -140,7 +141,10 @@ class WebAssureBrowserTests(unittest.TestCase):
         expect(dialog.locator('.analysis-check-cell')).to_have_count(len(implemented))
         expect(dialog.locator('.analysis-coverage-bar > span')).to_have_count(len(implemented))
         expect(dialog.locator('.analysis-not-assessed li')).to_have_count(len(not_assessed))
-        expect(dialog.locator('.analysis-check-grid')).not_to_contain_text('HTML inspection')
+        expect(dialog.locator('.analysis-check-grid')).to_contain_text('HTML inspection')
+        expect(dialog.locator('.analysis-check-grid')).not_to_contain_text('Certificate revocation')
+        expect(dialog.get_by_role('heading', name='Page inspection', exact=True)).to_be_visible()
+        expect(dialog.locator('.page-inspection-summary')).to_contain_text('Example workspace')
         expect(dialog.get_by_role('heading', name='Not assessed', exact=True)).to_be_visible()
         dialog.get_by_role('tab', name='Evidence', exact=True).click()
         coverage = dialog.get_by_text("Completed, incomplete & unimplemented checks", exact=True)

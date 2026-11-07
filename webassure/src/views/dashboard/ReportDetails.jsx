@@ -91,7 +91,10 @@ export default function ReportDetails({ id, onClose }) {
       <section><SectionTitle icon={ShieldIcon} detail={`${report.findings.length} recorded`}>Findings</SectionTitle>
         {!report.findings.length && <p className="caption grey">No findings recorded. Review coverage before drawing conclusions.</p>}
         {report.findings.map((finding) => <article className="report-item analysis-finding" key={finding.id} data-severity={finding.severity}>
-          <div className="analysis-finding-head"><span className="analysis-category-icon">{finding.kind === 'security_configuration' ? <SettingsIcon /> : <ShieldIcon />}</span><strong>{finding.description}</strong><span className="analysis-severity">{finding.severity}</span></div><p className="caption grey">{finding.kind?.replaceAll('_', ' ') || finding.category} · {finding.source} · {formatDate(finding.observed_at)}</p><Evidence value={finding.evidence} />
+          <div className="analysis-finding-head"><span className="analysis-category-icon">{finding.kind === 'security_configuration' ? <SettingsIcon /> : <ShieldIcon />}</span><strong>{finding.description}</strong><span className="analysis-severity">{finding.severity}</span></div><p className="caption grey">{finding.kind?.replaceAll('_', ' ') || finding.category} · {finding.source} · {formatDate(finding.observed_at)}</p>
+          {finding.impact && <p className="report-finding-context"><strong>Impact</strong>{finding.impact}</p>}
+          {finding.remediation && <p className="report-finding-context"><strong>Recommended action</strong>{finding.remediation}</p>}
+          <Evidence value={finding.evidence} />
         </article>)}
       </section>
       <section className="analysis-explanation"><SectionTitle icon={FileIcon}>Understand this report</SectionTitle>
@@ -108,6 +111,7 @@ export default function ReportDetails({ id, onClose }) {
         </div>
         <div className="report-panel" role="tabpanel" id="report-panel-checks" aria-labelledby="report-tab-checks" hidden={tab !== 'checks'}>
       <section><SectionTitle icon={CheckIcon}>Coverage</SectionTitle><div className="analysis-availability"><span><GlobeIcon />Network inspection: {report.evidence_coverage?.network_complete ? 'Complete' : 'Incomplete'}</span><span><ShieldIcon />Threat intelligence: {report.evidence_coverage?.reputation_available ? 'Available' : 'Unavailable'}</span></div><Coverage coverage={report.evidence_coverage} /><p className="analysis-caution"><InfoIcon />No detected threats does not guarantee safety.</p></section>
+      {report.page_analysis && <section><SectionTitle icon={FileIcon}>Page inspection</SectionTitle><dl className="page-inspection-summary"><div><dt>Page title</dt><dd>{report.page_analysis.title || 'No title declared'}</dd></div><div><dt>Forms found</dt><dd>{report.page_analysis.form_count}</dd></div><div><dt>Mixed-content references</dt><dd>{report.page_analysis.mixed_content.length}</dd></div><div><dt>HTML refresh redirects</dt><dd>{report.page_analysis.meta_refreshes.length}</dd></div></dl><p className="caption grey">Static HTML only. No scripts, form submissions, or linked resources were executed.</p><Evidence title="Forms & page observations" value={report.page_analysis} /></section>}
       <section><SectionTitle icon={CheckIcon} detail={`${report.checks.length} observations`}>Individual checks</SectionTitle>
         {report.checks.map((check, index) => <article className="report-item analysis-check-row" key={index} data-tone={stateTone(check.status)}>
           <div className="analysis-check-row-title"><StateIcon state={check.status} /><strong>{label(check.name)}</strong><span className="analysis-check-state">{check.status.replaceAll('_', ' ')}</span></div>
@@ -134,6 +138,7 @@ export default function ReportDetails({ id, onClose }) {
           {report.assessment && <Evidence title="Assessment decision" value={report.assessment} />}
           {report.evidence_coverage?.checks && <Evidence title="Completed, incomplete & unimplemented checks" value={report.evidence_coverage.checks} />}
           {report.url_analysis && <Evidence title="Domain identity & URL indicators" value={report.url_analysis} />}
+          {report.page_analysis && <Evidence title="Static page analysis" value={report.page_analysis} />}
           <Evidence title="Full report JSON" value={report} />
         </div>
       </div>
