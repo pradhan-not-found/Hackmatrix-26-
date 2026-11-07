@@ -223,3 +223,15 @@
 [data-theme='dark'] .up__grid .up__tag--cur { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); }
 .up__grid .up__inc { margin-top: 24px; }
 .ck__apps { display: block; font-size: 12px; color: var(--grey); letter-spacing: 0.01em; text-align: center; }
+
+/* history refresh: outlined pill with icon + label */
+.history-status .hs__refresh {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; width: auto; padding: 0 14px 0 12px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; color: var(--ink); background: transparent; box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer; transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+[data-theme='dark'] .history-status .hs__refresh { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); }
+.history-status .hs__refresh:hover:not(:disabled) { background: var(--console); }
+.history-status .hs__refresh:disabled { color: var(--grey); cursor: default; }
+.history-status .hs__refresh svg { width: 14px; height: 14px; color: var(--grey); }
+.history-status .hs__refresh[data-spin] svg { animation: hs-spin 0.9s linear infinite; }
