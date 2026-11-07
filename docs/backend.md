@@ -122,5 +122,35 @@ controls, network egress restrictions, and a durable worker with hard job deadli
 Reports contain submitted URLs and may contain sensitive query strings; protect the database.
 HEAD-only checks cannot inspect page content, and some websites reject HEAD.
 Revocation, compromised-CA intelligence, CT monitoring, signature/key-strength
-analysis, scam-message analysis, AI explanations, and blockchain reporting are not implemented.
+analysis, scam-message analysis, and blockchain reporting are not implemented.
 API provider failures never count as clean reputation results.
+
+## Gemini explanations
+
+Add a [Google AI Studio API key](https://aistudio.google.com/apikey) to `.env`:
+
+```dotenv
+GEMINI_API_KEY=your_key
+GEMINI_MODEL=gemini-3.8-flash
+```
+
+Open a report and click **Explain findings**. Explanations run only on request,
+including for saved reports, via `POST /api/investigations/{id}/explanation`.
+The response is saved with the report and included in JSON exports. Errors and
+quota limits appear in the dashboard; the underlying report remains available.
+The model defaults to `gemini-3.8-flash`, verified against the live model list.
+The explanation has a 45-second socket timeout and uses low thinking effort.
+
+The hostname, finding descriptions, selected evidence, check statuses, coverage,
+and limitations are sent to Google. URL paths, queries, raw response headers, and
+certificate identities are excluded. Existing provider data policies and API
+quotas apply; never put the key in browser code or source control.
+
+Gemini receives structured evidence as untrusted input and returns schema-validated
+JSON. Every statement must reference existing evidence IDs. Unknown references,
+extra fields, and incomplete generations are rejected. Reference validation does
+not prove that a statement logically follows from its evidence; review the source
+checks. Gemini cannot change the deterministic risk classification.
+
+AI explanations are implemented; message analysis and blockchain reporting remain
+outside this endpoint.

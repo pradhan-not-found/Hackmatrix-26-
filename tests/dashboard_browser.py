@@ -63,7 +63,13 @@ class DashboardBrowserTests(unittest.TestCase):
 
         def api(route):
             request = route.request
-            if request.method == "POST":
+            if request.url.endswith("/explanation"):
+                route.fulfill(json={"status": "completed", "model": "gemini-test",
+                    "generated_at": REPORT["completed_at"],
+                    "summary": {"text": "Reputation verification is unavailable.", "evidence_ids": ["assessment"]},
+                    "explanations": [], "next_steps": [],
+                    "evidence": [{"id": "assessment", "risk_classification": "Suspicious"}]})
+            elif request.method == "POST":
                 self.assertEqual(request.post_data_json["url"], "https://example.com")
                 route.fulfill(status=201, json=REPORT)
             elif request.url.split("?")[0].endswith(REPORT["id"]):
@@ -92,6 +98,16 @@ class DashboardBrowserTests(unittest.TestCase):
         with page.expect_download() as event:
             page.get_by_role("button", name="Export JSON").click()
         self.assertEqual(json.loads(event.value.path().read_text()), REPORT)
+        page.get_by_role("button", name="Explain findings", exact=True).click()
+        page.get_by_text("Reputation verification is unavailable.", exact=True).wait_for()
+        page.get_by_text("Supporting evidence: assessment", exact=True).click()
+        self.assertIn("Suspicious", page.locator("#ai-content pre").inner_text())
+        self.assertEqual(page.locator("#risk").inner_text(), "Suspicious")
+        page.route("**/explanation", lambda route: route.fulfill(json={"status": "unavailable", "reason": "Gemini quota exceeded."}))
+        page.get_by_role("button", name="Explain again", exact=True).click()
+        page.get_by_text("Gemini quota exceeded.", exact=True).wait_for()
+        self.assertTrue(page.get_by_role("button", name="Explain findings", exact=True).is_enabled())
+        page.unroute("**/explanation")
         page.reload()
         page.locator("#report").wait_for(state="visible")
         page.get_by_role("button", name="New investigation").click()

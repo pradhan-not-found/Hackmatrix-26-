@@ -7,6 +7,7 @@ let historyTotal = 0;
 let busy = false;
 let historyVersion = 0;
 let reportVersion = 0;
+let explanationBusy = false;
 const labels = {url_structure: "URL structure", dns: "DNS resolution", http: "HTTP response", tls: "TLS verification", security_headers: "Security headers", threat_intelligence: "Threat intelligence", destination_safety: "Destination policy", network: "Network request"};
 
 function element(tag, className, text) {
@@ -122,6 +123,7 @@ function renderReport(report) {
   $("finding-count").textContent = String(report.findings.length);
   $("tab-count").textContent = String(report.findings.length);
   $("raw-json").textContent = JSON.stringify(report, null, 2);
+  renderExplanation(report.ai_explanation);
   $("findings").replaceChildren();
   for (const finding of report.findings) {
     const card = element("article", "finding");
@@ -158,6 +160,52 @@ function renderReport(report) {
   activateTab("findings");
   renderHistory();
 }
+
+function renderExplanation(explanation) {
+  $("ai-content").replaceChildren();
+  $("explain-report").disabled = explanationBusy;
+  $("explain-report").textContent = explanationBusy ? "Explaining…" : explanation?.status === "completed" ? "Explain again" : "Explain findings";
+  $("ai-status").textContent = explanationBusy ? "Gemini is reviewing the collected evidence…" : "";
+  if (!explanation || explanationBusy) return;
+  if (explanation.status !== "completed") {
+    $("ai-status").textContent = explanation.reason || "Explanation unavailable. Try again.";
+    return;
+  }
+  $("ai-status").textContent = `${explanation.model} · ${formattedTime(explanation.generated_at)} · Assessment unchanged`;
+  const appendCitedText = (parent, item) => {
+    const block = element("div", "ai-statement");
+    block.append(element("p", "", item.text));
+    const sources = (explanation.evidence || []).filter(source => item.evidence_ids.includes(source.id));
+    block.append(details(`Supporting evidence: ${item.evidence_ids.join(", ")}`, sources));
+    parent.append(block);
+  };
+  appendCitedText($("ai-content"), explanation.summary);
+  for (const [heading, items] of [["What the checks mean", explanation.explanations], ["What to do next", explanation.next_steps]]) {
+    if (!items.length) continue;
+    $("ai-content").append(element("h3", "", heading));
+    for (const item of items) appendCitedText($("ai-content"), item);
+  }
+}
+
+$("explain-report").addEventListener("click", async () => {
+  if (!currentReport || explanationBusy) return;
+  const report = currentReport;
+  explanationBusy = true;
+  renderExplanation(report.ai_explanation);
+  try {
+    report.ai_explanation = await request(`/api/investigations/${encodeURIComponent(report.id)}/explanation`, {method: "POST"});
+  } catch (failure) {
+    report.ai_explanation = {status: "unavailable", reason: failure.message};
+  } finally {
+    explanationBusy = false;
+    if (currentReport === report) {
+      renderExplanation(report.ai_explanation);
+      $("raw-json").textContent = JSON.stringify(report, null, 2);
+    } else if (currentReport) {
+      renderExplanation(currentReport.ai_explanation);
+    }
+  }
+});
 
 async function openReport(id) {
   if (busy) return;
