@@ -127,16 +127,12 @@ export function Faq() {
 /* ---------- CTA ---------- */
 export function Cta() {
   return (
-    <section className="section wrap closer" id="contact">
-      <p className="eyebrow reveal">Get started</p>
-      <h2 className="closer__t reveal">
-        Know your website before you trust it.{' '}
-        <span className="grey">Start free in under a minute, no card needed.</span>
-      </h2>
-      <div className="closer__btns reveal">
-        <Link href="/signup" className="pill-btn pill-btn--ink">Create free account</Link>
-        <a href="#top" className="pill-btn">Check a link</a>
-        <a href="mailto:hello@webassure.dev" className="pill-btn">hello@webassure.dev</a>
+    <section className="section wrap cx" id="contact">
+      <h2 className="cx__t reveal">Know your website before you trust it.</h2>
+      <p className="cx__d reveal">Free to start. No card required.</p>
+      <div className="cx__btns reveal">
+        <Link href="/signup" className="btn btn--ink">Get started <ArrowIcon /></Link>
+        <a href="mailto:hello@webassure.dev" className="btn btn--soft">Talk to sales</a>
       </div>
     </section>
   )

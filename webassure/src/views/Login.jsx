@@ -122,7 +122,7 @@ export default function Login({ mode }) {
           <span> Phishing, fake portals and forged certificates, caught in seconds.</span>
         </p>
         <div className="auth__mark">
-          <Thermal text="webassure" />
+          <Thermal text="webassure" tone="white" />
         </div>
       </aside>
     </div>

@@ -15,6 +15,13 @@ export const DARK = {
   B: '1 1 1 1 1 .25',
 }
 
+// White glow: bright core → silver → soft grey → page.
+export const WHITE = {
+  R: '1 .97 .88 .66 .38 .16',
+  G: '1 .97 .89 .68 .4 .17',
+  B: '1 1 .95 .76 .46 .2',
+}
+
 export function ColorFilter({ id, paper, table = { R, G, B }, x = '-10%', y = '-40%', width = '120%', height = '180%' }) {
   return (
     <filter id={id} x={x} y={y} width={width} height={height} colorInterpolationFilters="sRGB">
@@ -39,7 +46,7 @@ export function ColorFilter({ id, paper, table = { R, G, B }, x = '-10%', y = '-
   )
 }
 
-export default function Thermal({ text = 'webassure', className = '' }) {
+export default function Thermal({ text = 'webassure', className = '', tone }) {
   const uid = useId().replace(/:/g, '')
   const stripe = `${uid}-stripe`
   const material = `${uid}-material`
@@ -80,7 +87,7 @@ export default function Thermal({ text = 'webassure', className = '' }) {
           <feBlend in="SourceGraphic" mode="overlay" />
         </filter>
         <ColorFilter id={color} paper="1" />
-        <ColorFilter id={colorDark} paper="0.0706" table={DARK} />
+        <ColorFilter id={colorDark} paper="0.0706" table={tone === 'white' ? WHITE : DARK} />
       </defs>
       <g className="thermal__color">
         <text
