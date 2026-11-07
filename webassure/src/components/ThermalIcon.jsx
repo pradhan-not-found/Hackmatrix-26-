@@ -1,7 +1,14 @@
 'use client'
 
-import { useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { ColorFilter, DARK } from './Thermal.jsx'
+
+// Light-mode blue glow: deep navy core → blue → cyan → soft periwinkle → page.
+const LIGHT_BLUE = {
+  R: '.04 .13 .17 .45 .76 .9',
+  G: '.09 .3 .74 .55 .8 .93',
+  B: '.36 .9 .98 1 1 1',
+}
 
 // Icons drawn with the same heat-map treatment as the hero wordmark:
 // a moving black/white stripe, blurred and remapped through the thermal palette.
@@ -118,6 +125,21 @@ const SHAPES = {
 
 export default function ThermalIcon({ shape, size = 96, label }) {
   const uid = useId().replace(/:/g, '')
+  const ref = useRef(null)
+
+  // SMIL animation re-runs the filter every frame; only animate while on screen.
+  useEffect(() => {
+    const svg = ref.current
+    if (!svg || !svg.pauseAnimations) return
+    svg.pauseAnimations()
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const io = new IntersectionObserver(([e]) => (e.isIntersecting ? svg.unpauseAnimations() : svg.pauseAnimations()), {
+      rootMargin: '120px',
+    })
+    io.observe(svg)
+    return () => io.disconnect()
+  }, [])
+
   const ids = { s: `${uid}-s`, sd: `${uid}-sd`, m: `${uid}-m`, c: `${uid}-c`, cd: `${uid}-cd` }
   const region = { x: '-40%', y: '-40%', width: '180%', height: '180%' }
   const stripe = (id, edge) => (
@@ -131,6 +153,7 @@ export default function ThermalIcon({ shape, size = 96, label }) {
 
   return (
     <svg
+      ref={ref}
       className="ticon"
       width={size}
       height={size}
@@ -154,7 +177,7 @@ export default function ThermalIcon({ shape, size = 96, label }) {
           <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" />
           <feBlend in="SourceGraphic" mode="overlay" />
         </filter>
-        <ColorFilter id={ids.c} paper="1" {...region} />
+        <ColorFilter id={ids.c} paper="1" table={LIGHT_BLUE} {...region} />
         <ColorFilter id={ids.cd} paper="0.0706" table={DARK} {...region} />
       </defs>
       <g className="thermal__color">

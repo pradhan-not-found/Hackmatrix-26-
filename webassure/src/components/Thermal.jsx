@@ -8,11 +8,11 @@ const R = '0 0 0 1 1 .953'
 const G = '0 .0863 .6667 .7961 .2667 .5176'
 const B = '0 .4275 1 .3608 0 1'
 
-// Dark mode: warm bright core → amber → pink → violet → indigo → page.
+// Dark mode: electric glow — white core → cyan → blue → violet rim → page.
 export const DARK = {
-  R: '1 1 1 .659 .31 .118',
-  G: '.957 .71 .31 .333 .275 .106',
-  B: '.878 .278 .545 .969 .898 .294',
+  R: '1 .78 .3 .23 .42 .1',
+  G: '1 .94 .79 .42 .24 .07',
+  B: '1 1 1 1 1 .25',
 }
 
 export function ColorFilter({ id, paper, table = { R, G, B }, x = '-10%', y = '-40%', width = '120%', height = '180%' }) {

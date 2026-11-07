@@ -13,6 +13,7 @@ function Site({ url, tone, fake }) {
           )}
           {url}
         </span>
+        <span className={`pv__label pv__label--${tone}`}>{fake ? 'Clone' : 'Original'}</span>
       </div>
       <div className="pv__page">
         <span className="pv__logo" />
@@ -22,7 +23,6 @@ function Site({ url, tone, fake }) {
         <span className="pv__btn" />
         {fake && <span className="pv__scan" aria-hidden="true" />}
       </div>
-      <span className={`pv__label pv__label--${tone}`}>{fake ? 'Clone' : 'Original'}</span>
     </div>
   )
 }
