@@ -5,7 +5,8 @@ import { useDash } from './context.js'
 import { Badge } from '../../components/Sections.jsx'
 import { classificationTone, formatDate } from '../../lib/investigations.js'
 import { summarize } from '../../lib/overview.mjs'
-import { ArrowIcon, FileIcon, GlobeIcon, InfoIcon, ScanIcon, ShieldIcon } from '../../components/Icons.jsx'
+import { ArrowIcon, GlobeIcon, InfoIcon, ScanIcon } from '../../components/Icons.jsx'
+import SecurityIllustration from '../../components/SecurityIllustration.jsx'
 import { Empty } from './ui.jsx'
 import HistoryStatus from './HistoryStatus.jsx'
 
@@ -44,17 +45,17 @@ export default function Overview() {
   const { distribution, days } = summarize(scans)
   const count = (key) => distribution.find((item) => item.key === key)?.count || 0
   const metrics = [
-    ['Saved investigations', total, 'All saved records', FileIcon, 'blue'],
-    ['Known malicious', count('malicious'), 'In loaded history', ShieldIcon, 'red'],
-    ['Low risk', count('low'), 'No significant indicators found', ShieldIcon, 'green'],
-    ['Needs verification', count('inconclusive'), 'Inconclusive assessments', InfoIcon, 'amber'],
+    ['Saved investigations', total, 'All saved records', 'records', 'blue'],
+    ['Known malicious', count('malicious'), 'In loaded history', 'threat', 'red'],
+    ['Low risk', count('low'), 'No significant indicators found', 'verified', 'green'],
+    ['Needs verification', count('inconclusive'), 'Inconclusive assessments', 'review', 'amber'],
   ]
   return <div className="overview-workspace">
     <header className="overview-heading"><div><p className="overview-eyebrow">SECURITY WORKSPACE</p><h1>Investigation overview</h1><p>Welcome back, {user.name.split(' ')[0]}. Review your website assessments and recent activity.</p></div><button className="btn btn--ink" onClick={() => document.getElementById('dash-scan')?.focus()}><ScanIcon />New investigation</button></header>
-    <section className="overview-metrics" aria-label="Investigation metrics">{metrics.map(([title, value, note, Icon, accent]) => <article className="overview-metric" key={title} data-accent={accent}><div className="overview-metric-top"><span>{title}</span><span className="overview-metric-icon"><Icon /></span></div><strong>{historyLoading && !scans.length ? '...' : value}</strong><p>{note}</p></article>)}</section>
+    <section className="overview-metrics" aria-label="Investigation metrics">{metrics.map(([title, value, note, illustration, accent]) => <article className="overview-metric" key={title} data-accent={accent}><div className="overview-metric-top"><span>{title}</span></div><SecurityIllustration type={illustration} className="overview-metric-art" /><strong>{historyLoading && !scans.length ? '...' : value}</strong><p>{note}</p></article>)}</section>
     <div className="overview-analytics">
-      <section className="overview-surface"><div className="overview-section-head"><div><h2>Investigation activity</h2><p>Daily submissions in your loaded history</p></div><span className="overview-period">7 days</span></div><Activity days={days} /></section>
-      <section className="overview-surface"><div className="overview-section-head"><div><h2>Assessment breakdown</h2><p>Backend classifications / loaded records</p></div><ShieldIcon /></div><Distribution items={distribution} total={scans.length} /><p className="overview-scope"><InfoIcon />Low risk does not guarantee website safety.</p></section>
+      <section className="overview-surface"><div className="overview-section-head"><SecurityIllustration type="activity" className="overview-section-art" /><div><h2>Investigation activity</h2><p>Daily submissions in your loaded history</p></div><span className="overview-period">7 days</span></div><Activity days={days} /></section>
+      <section className="overview-surface"><div className="overview-section-head"><SecurityIllustration type="assessment" className="overview-section-art" /><div><h2>Assessment breakdown</h2><p>Backend classifications / loaded records</p></div></div><Distribution items={distribution} total={scans.length} /><p className="overview-scope"><InfoIcon />Low risk does not guarantee website safety.</p></section>
     </div>
     <section className="overview-surface overview-recent"><div className="overview-section-head"><div><h2>Recent investigations</h2><p>Latest saved evidence reports</p></div><Link href="/dashboard/scans" className="overview-view-all">View all scans<ArrowIcon /></Link></div>
       <HistoryStatus />

@@ -232,6 +232,8 @@ class WebAssureBrowserTests(unittest.TestCase):
         page.get_by_role('link', name='Overview', exact=True).click()
         expect(page.get_by_role('heading', name='Investigation overview', exact=True)).to_be_visible()
         expect(page.locator('.overview-ring strong')).to_have_text('33')
+        expect(page.locator('.overview-metric-art[aria-hidden="true"]')).to_have_count(4)
+        expect(page.locator('.overview-section-art[aria-hidden="true"]')).to_have_count(2)
         expect(page.locator('.overview-legend li').filter(has_text='Inconclusive').locator('strong')).to_have_text('32')
         expect(page.locator('.overview-legend li').filter(has_text='Confirmed Malicious').locator('strong')).to_have_text('1')
         expect(page.locator('.overview-metric').first.locator(':scope > strong')).to_have_text('33')
