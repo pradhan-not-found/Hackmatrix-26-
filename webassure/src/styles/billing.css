@@ -116,3 +116,17 @@
 }
 .upbtn:hover { background: linear-gradient(180deg, #b39cfb 0%, #8667f7 46%, #6447de 100%); }
 .upbtn svg { opacity: 0.95; }
+
+/* pricing cards: identical rhythm so every row aligns */
+.up__grid { gap: 18px; }
+.up__card { gap: 0; padding: 28px; }
+.up__top { min-height: 30px; }
+.up__tag--ghost { visibility: hidden; padding: 0; }
+.up__blurb { min-height: 44px; margin-top: 10px; line-height: 1.55; }
+.up__price { min-height: 48px; margin: 22px 0 22px; align-items: flex-end; }
+.up__card .btn--block { height: 46px; font-size: 14px; }
+.up__card .btn--soft { background: var(--console); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.up__card .btn--soft:hover { background: var(--hover, var(--console)); }
+.up__list { margin-top: 24px; padding-top: 22px; gap: 12px; }
+.up__card[data-popular] { background: linear-gradient(180deg, color-mix(in srgb, var(--workspace-accent) 7%, var(--card)) 0%, var(--card) 40%); }
+.up__head { gap: 12px; padding-bottom: 20px; }
