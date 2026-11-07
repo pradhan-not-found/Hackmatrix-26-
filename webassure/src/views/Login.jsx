@@ -79,7 +79,7 @@ export default function Login({ mode }) {
             <label className="field">
               <span className="field__row">
                 Password
-                {!isSignup && <a href="#" className="field__link">Forgot?</a>}
+                {!isSignup && <Link href="/forgot-password" className="field__link">Forgot?</Link>}
               </span>
               <input
                 type="password"
@@ -105,7 +105,7 @@ export default function Login({ mode }) {
         </div>
 
         <p className="auth__legal grey">
-          By continuing you agree to the <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+          By continuing you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
         </p>
       </div>
 

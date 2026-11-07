@@ -1365,3 +1365,53 @@
 .btn:hover, .plan .btn--block:hover, .cb .btn:hover, .pill-btn:hover { border-radius: 999px; }
 .auth__sso .btn:hover, .auth__fields .btn:hover { border-radius: 14px; }
 .member__link:hover { border-radius: 50%; }
+
+/* =====================================================================
+   Legal pages (Privacy, Terms)
+   ===================================================================== */
+.legal { padding-top: 160px; padding-bottom: 120px; }
+.legal__head { max-width: 760px; display: flex; flex-direction: column; gap: 14px; }
+.legal__t { font-size: clamp(40px, 5vw, 64px); line-height: 1.05; letter-spacing: -0.04em; font-weight: 600; }
+.legal__intro { font-size: var(--t-lead); line-height: 1.45; letter-spacing: -0.015em; color: var(--grey); }
+.legal__meta { font-size: var(--t-caption); color: var(--grey); }
+.legal__body { margin-top: 64px; display: grid; grid-template-columns: 240px minmax(0, 720px); gap: 72px; align-items: start; }
+.legal__toc { position: sticky; top: 104px; }
+.legal__toc-t { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey); margin-bottom: 12px; }
+.legal__toc ol { display: flex; flex-direction: column; gap: 2px; }
+.legal__toc a {
+  display: block; padding: 7px 12px; border-radius: 10px; font-size: var(--t-small); color: var(--grey);
+  transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.legal__toc a:hover { color: var(--ink); background: var(--tile); }
+.legal__content { display: flex; flex-direction: column; gap: 48px; }
+.legal__sec { scroll-margin-top: 110px; }
+.legal__sec h2 { font-size: clamp(20px, 1.8vw, 24px); letter-spacing: -0.02em; font-weight: 600; margin-bottom: 14px; }
+.legal__sec p, .legal__sec li { font-size: var(--t-body); line-height: 1.75; color: color-mix(in srgb, var(--ink) 78%, var(--grey)); }
+.legal__sec p + p { margin-top: 12px; }
+.legal__sec ul { display: flex; flex-direction: column; gap: 10px; }
+.legal__sec li { position: relative; padding-left: 22px; }
+.legal__sec li::before {
+  content: ''; position: absolute; left: 4px; top: 0.72em; width: 7px; height: 7px; border-radius: 50%;
+  background: linear-gradient(180deg, #8eb0ff, #3461f0);
+}
+@media (max-width: 900px) {
+  .legal__body { grid-template-columns: 1fr; gap: 32px; }
+  .legal__toc { position: static; }
+}
+
+/* =====================================================================
+   Forgot password
+   ===================================================================== */
+.fp__form { margin-top: 28px; }
+.fp__done { display: flex; flex-direction: column; align-items: flex-start; }
+.fp__icon {
+  width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 22px; color: #fff;
+  background: linear-gradient(180deg, #6b94ff 0%, #4672ff 46%, #2f56e6 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -2px 0 rgba(12, 32, 130, 0.38), 0 10px 22px -10px rgba(36, 72, 220, 0.8);
+}
+.fp__icon svg { width: 24px; height: 24px; }
+.fp__email { color: var(--ink); font-weight: 600; word-break: break-all; }
+.fp__done .auth__fields { margin-top: 24px; width: 100%; }
+.fp__done .btn--block { display: inline-flex; }
+.fp__resend { margin-top: 4px; font-size: var(--t-small); color: var(--grey); text-align: center; width: 100%; padding: 8px; transition: color 0.2s var(--ease); }
+.fp__resend:hover { color: var(--ink); }

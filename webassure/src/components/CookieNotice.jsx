@@ -34,7 +34,7 @@ export default function CookieNotice() {
       <p className="cookie__t">We use cookies</p>
       <p className="cookie__d">
         Essential cookies keep you signed in. Optional analytics help us improve WebAssure.{' '}
-        <Link href="/#faq">Privacy</Link>
+        <Link href="/privacy#cookies">Privacy</Link>
       </p>
       <div className="cookie__btns">
         <button className="btn btn--soft" onClick={() => choose('essential')}>Essential only</button>

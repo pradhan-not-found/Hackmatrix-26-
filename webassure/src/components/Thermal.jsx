@@ -21,7 +21,8 @@ const PRESS =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><radialGradient id="g">' +
-      '<stop offset="0" stop-opacity="1"/><stop offset=".55" stop-opacity=".55"/><stop offset="1" stop-opacity="0"/>' +
+      '<stop offset="0" stop-opacity="1"/><stop offset=".25" stop-opacity=".9"/><stop offset=".5" stop-opacity=".55"/>' +
+      '<stop offset=".75" stop-opacity=".18"/><stop offset="1" stop-opacity="0"/>' +
       '</radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/></svg>'
   )
 
@@ -108,7 +109,7 @@ export default function Thermal({ text = 'webassure', className = '', tone, view
       vel += (targetDepth(now) - depth) * 0.16
       vel *= 0.74
       depth = Math.max(0, depth + vel)
-      const R = 46 + 38 * Math.min(1, depth) // wider footprint under more pressure
+      const R = 56 + 44 * Math.min(1, depth) // wider footprint under more pressure
       img.setAttribute('x', (pos.x - R).toFixed(1))
       img.setAttribute('y', (pos.y - R).toFixed(1))
       img.setAttribute('width', (R * 2).toFixed(1))
@@ -229,12 +230,18 @@ export default function Thermal({ text = 'webassure', className = '', tone, view
           <feComponentTransfer in="pressRaw" result="press">
             <feFuncA ref={depthRef} type="linear" slope="0" />
           </feComponentTransfer>
-          <feComposite in="b" in2="press" operator="arithmetic" k1="0" k2="1" k3="0.75" k4="0" result="h" />
+          <feComposite in="b" in2="press" operator="arithmetic" k1="0" k2="1" k3="1.25" k4="0" result="h" />
           <feSpecularLighting in="h" surfaceScale="5.5" specularConstant="1.1" specularExponent="24" lightingColor="#ffffff" result="spec">
             <feDistantLight azimuth="240" elevation="52" />
           </feSpecularLighting>
           <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn" />
-          <feComposite in="SourceGraphic" in2="specIn" operator="arithmetic" k1="0" k2="1" k3="0.8" k4="0" result="lit" />
+          <feComposite in="SourceGraphic" in2="specIn" operator="arithmetic" k1="0" k2="1" k3="0.8" k4="0" result="litRaw" />
+          {/* diffuse shading from the same height map: the bump's far side falls into shadow */}
+          <feDiffuseLighting in="h" surfaceScale="5.5" diffuseConstant="1" lightingColor="#ffffff" result="diff">
+            <feDistantLight azimuth="240" elevation="52" />
+          </feDiffuseLighting>
+          <feComposite in="litRaw" in2="diff" operator="arithmetic" k1="0.62" k2="0.52" k3="0" k4="0" result="litShaded" />
+          <feComposite in="litShaded" in2="SourceAlpha" operator="in" result="lit" />
           <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="ib" />
           <feOffset in="ib" dy="-3" result="io" />
           <feComposite in="SourceAlpha" in2="io" operator="out" result="inner" />
@@ -244,14 +251,10 @@ export default function Thermal({ text = 'webassure', className = '', tone, view
           <feOffset in="sb" dy="6" result="so" />
           <feFlood floodColor="#000" floodOpacity=".55" />
           <feComposite in2="so" operator="in" result="shadow" />
-          <feComposite in="press" in2="SourceAlpha" operator="in" result="pressIn" />
-          <feFlood floodColor="#ffffff" floodOpacity=".22" />
-          <feComposite in2="pressIn" operator="in" result="pressLight" />
           <feMerge>
             <feMergeNode in="shadow" />
             <feMergeNode in="lit" />
             <feMergeNode in="innerShade" />
-            <feMergeNode in="pressLight" />
           </feMerge>
         </filter>
       </defs>

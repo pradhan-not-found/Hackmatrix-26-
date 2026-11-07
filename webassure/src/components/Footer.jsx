@@ -22,9 +22,9 @@ const COLUMNS = [
   {
     title: 'Legal',
     links: [
-      ['Privacy', '#'],
-      ['Terms', '#'],
-      ['Responsible disclosure', '#'],
+      ['Privacy', '/privacy'],
+      ['Terms', '/terms'],
+      ['Responsible disclosure', '/privacy#security'],
     ],
   },
 ]
@@ -44,7 +44,7 @@ export default function Footer() {
       </div>
       <div className="footer__top">
         <div className="footer__brand">
-          <a href="#top" className="footer__mark" aria-label="WebAssure home">webassure</a>
+          <Link href="/" className="footer__mark" aria-label="WebAssure home">webassure</Link>
           <p className="grey">
             AI threat detection for links, sites and certificates. Know before you click.
           </p>
