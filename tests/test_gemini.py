@@ -22,7 +22,7 @@ CONTENT = {"summary": {"text": "Reputation verification is incomplete.", "eviden
 
 class GeminiTests(unittest.TestCase):
     def setUp(self):
-        patch.dict(os.environ, {"GEMINI_API_KEY": "test-secret-key", "GEMINI_MODEL": "gemini-2.5-flash"}).start()
+        patch.dict(os.environ, {"GEMINI_API_KEY": "test-secret-key", "GEMINI_MODEL": "gemini-3.8-flash"}).start()
         self.opener = patch("backend.gemini.build_opener").start()
         self.response = self.opener.return_value.open.return_value.__enter__.return_value
         self.set_content(CONTENT)

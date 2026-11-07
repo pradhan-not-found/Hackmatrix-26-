@@ -49,7 +49,7 @@ def evidence_snapshot(report: dict) -> dict:
 def explain(report: dict) -> dict:
     local = dotenv_values(ENV_FILE, interpolate=False)
     key = os.environ.get("GEMINI_API_KEY", local.get("GEMINI_API_KEY") or "").strip()
-    model = os.environ.get("GEMINI_MODEL", local.get("GEMINI_MODEL") or "gemini-2.5-flash").strip()
+    model = os.environ.get("GEMINI_MODEL", local.get("GEMINI_MODEL") or "gemini-3.8-flash").strip()
     base = {"provider": "Gemini", "model": model,
             "generated_at": datetime.now(timezone.utc).isoformat()}
 
@@ -73,6 +73,7 @@ def explain(report: dict) -> dict:
         )}]},
         "contents": [{"role": "user", "parts": [{"text": json.dumps(snapshot)}]}],
         "generationConfig": {"temperature": 0.1, "maxOutputTokens": 4096,
+                             "thinkingConfig": {"thinkingLevel": "low"},
                              "responseMimeType": "application/json",
                              "responseJsonSchema": Explanation.model_json_schema()},
     }
@@ -80,7 +81,7 @@ def explain(report: dict) -> dict:
                       data=json.dumps(payload).encode(),
                       headers={"Content-Type": "application/json", "x-goog-api-key": key})
     try:
-        with build_opener(ProxyHandler({}), NoRedirect()).open(request, timeout=30) as response:
+        with build_opener(ProxyHandler({}), NoRedirect()).open(request, timeout=45) as response:
             raw = response.read(262145)
         if len(raw) > 262144:
             raise ValueError("Response too large")
