@@ -29,3 +29,6 @@ export const SettingsIcon = () => (
 export const LogoutIcon = () => (
   <I><path d="M15 4h2.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H15" /><path d="M10 16.5 14.5 12 10 7.5" /><path d="M14.5 12H4" /></I>
 )
+export const MessagesIcon = () => (
+  <I><path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4 3.5v-3.5H6.5a2 2 0 0 1-2-2Z" /><path d="M8.5 9h7M8.5 12h4.5" /></I>
+)

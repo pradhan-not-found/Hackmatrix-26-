@@ -14,12 +14,13 @@ import {
   GridIcon, SearchIcon, ThemeIcon,
 } from '../../components/Icons.jsx'
 import {
-  CertificatesIcon, LedgerIcon, LogoutIcon, OverviewIcon, ReportsIcon, ScansIcon, SettingsIcon, ThreatsIcon,
+  CertificatesIcon, LedgerIcon, LogoutIcon, MessagesIcon, OverviewIcon, ReportsIcon, ScansIcon, SettingsIcon, ThreatsIcon,
 } from './NavIcons.jsx'
 
 const NAV = [
   ['', 'Overview', OverviewIcon],
   ['scans', 'Scans', ScansIcon],
+  ['messages', 'Messages', MessagesIcon],
   ['threats', 'Threats', ThreatsIcon],
   ['certificates', 'Certificates', CertificatesIcon],
   ['reports', 'Reports', ReportsIcon],
