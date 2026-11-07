@@ -5,20 +5,20 @@ import { useRouter } from 'next/navigation'
 import { useDash } from './context.js'
 import { removeAvatar, resetPassword, signOut, updateUser, uploadAvatar } from '../../lib/auth.js'
 import Avatar from '../../components/Avatar.jsx'
+import Link from 'next/link'
 import { PageHead, Toggle } from './ui.jsx'
+import { usePlan } from './usePlan.js'
+import { PLANS, inr, priceFor } from '../../lib/plan.js'
 
+const Ic = ({ d }) => (
+  <svg className="nav-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+)
 const PAGES = [
-  ['profile', 'Profile'],
-  ['notifications', 'Notifications'],
-  ['password', 'Password'],
-  ['plan', 'Plan & billing'],
-  ['session', 'Session'],
-]
-
-const PLANS = [
-  { name: 'Personal', price: '₹0', per: ' / month', current: true, features: ['50 checks a month', 'Phishing and scam detection', 'Plain-language reports'] },
-  { name: 'Pro', price: '₹416', per: ' / month, billed yearly', cta: 'Upgrade to Pro', features: ['Unlimited checks', 'Certificate monitoring for 10 domains', 'Evidence export and alerts'] },
-  { name: 'Teams', price: '₹2,083', per: ' / month, billed yearly', cta: 'Upgrade to Teams', features: ['REST API and webhooks', 'Brand impersonation monitoring', 'SSO and priority support'] },
+  ['profile', 'Profile', <Ic key="p" d={<><circle cx="12" cy="8.5" r="3.5" /><path d="M5 19.5c1.3-3.3 3.9-5 7-5s5.7 1.7 7 5" /></>} />],
+  ['notifications', 'Notifications', <Ic key="n" d={<><path d="M6.5 10a5.5 5.5 0 0 1 11 0v3.5l1.5 2.5H5l1.5-2.5Z" /><path d="M10 19a2 2 0 0 0 4 0" /></>} />],
+  ['password', 'Password', <Ic key="k" d={<><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /><path d="M12 14.5v2" /></>} />],
+  ['plan', 'Plan & billing', <Ic key="b" d={<><rect x="3.5" y="5.5" width="17" height="13" rx="2.5" /><path d="M3.5 10h17" /><path d="M7.5 15h3" /></>} />],
+  ['session', 'Session', <Ic key="s" d={<><path d="M14.5 4h3A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-3" /><path d="M10 16.5 14.5 12 10 7.5" /><path d="M14.5 12H4" /></>} />],
 ]
 
 const ALERTS = [
@@ -38,7 +38,16 @@ export default function Settings() {
   const [notice, setNotice] = useState('')
   const [photoErr, setPhotoErr] = useState('')
   const fileRef = useRef(null)
-  const used = Math.min(50, scans.length)
+  const plan = usePlan(user.id)
+  const planInfo = PLANS[plan.id]
+  const now = new Date()
+  const monthScans = scans.filter((x) => { const d = new Date(x.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() }).length
+  const resetOn = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  const usage = [
+    ['Link checks', monthScans, planInfo.limits.checks],
+    ['Message analyses', 0, planInfo.limits.messages],
+    ['Monitored domains', Math.min(5, planInfo.limits.domains === Infinity ? 5 : planInfo.limits.domains), planInfo.limits.domains],
+  ]
 
   // Each settings page is addressable by hash (#profile, #plan, …).
   useEffect(() => {
@@ -121,8 +130,8 @@ export default function Settings() {
 
       <div className="stw">
         <nav className="stw__nav" aria-label="Settings" role="tablist">
-          {PAGES.map(([id, label]) => (
-            <button key={id} type="button" role="tab" aria-selected={active === id} className={`stw__link${active === id ? ' is-on' : ''}`} onClick={() => go(id)}>{label}</button>
+          {PAGES.map(([id, label, icon]) => (
+            <button key={id} type="button" role="tab" aria-selected={active === id} className={`stw__link${active === id ? ' is-on' : ''}`} onClick={() => go(id)}>{icon}<span>{label}</span></button>
           ))}
         </nav>
 
@@ -204,29 +213,47 @@ export default function Settings() {
           {active === 'plan' && <section className="st__sec" id="plan">
             <header className="st__head">
               <h2>Plan &amp; billing</h2>
-              <p>You are on the Personal plan. Upgrade any time.</p>
+              <p>Your subscription and this month&apos;s usage.</p>
             </header>
-            <div className="pl">
-              {PLANS.map((p) => (
-                <article key={p.name} className="pl__card" data-current={p.current || undefined}>
-                  <div className="pl__top">
-                    <p className="pl__name">{p.name}</p>
-                    {p.current && <span className="pl__tag">Current plan</span>}
-                  </div>
-                  <p className="pl__price">{p.price}<span>{p.per}</span></p>
-                  <ul className="pl__list">{p.features.map((f) => <li key={f}>{f}</li>)}</ul>
-                  {p.current
-                    ? <button className="btn btn--ghost btn--block" disabled>Current plan</button>
-                    : <button className="btn btn--ink btn--block">{p.cta}</button>}
-                </article>
-              ))}
-            </div>
-            <div className="st__card pl__usage">
-              <div>
-                <p className="st__t">This month&apos;s usage</p>
-                <p className="st__d">{used} of 50 free checks used</p>
+            <div className="st__card bl__plan">
+              <div className="bl__plan-main">
+                <span className="bl__badge">{planInfo.name}</span>
+                <p className="bl__price">{planInfo.monthly ? `${inr(priceFor(planInfo, plan.cycle))} / month` : 'Free'}</p>
+                <p className="st__d">
+                  {planInfo.monthly
+                    ? `Billed ${plan.cycle === 'yearly' ? 'yearly' : 'monthly'} · renews ${new Date(plan.renews).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+                    : 'Upgrade for unlimited link checks, more message analyses and certificate monitoring.'}
+                </p>
               </div>
-              <span className="pl__meter"><span style={{ width: `${(used / 50) * 100}%` }} /></span>
+              <Link href="/dashboard/upgrade" className="btn btn--ink">{plan.id === 'teams' ? 'Manage plan' : 'Upgrade plan'}</Link>
+            </div>
+
+            <div className="st__card bl__usage">
+              <div className="bl__usage-head">
+                <p className="st__t">Usage this month</p>
+                <p className="st__d">Resets {resetOn}</p>
+              </div>
+              {usage.map(([label, usedN, limit]) => {
+                const unlimited = limit === Infinity
+                const pct = unlimited ? 6 : Math.min(100, (usedN / limit) * 100)
+                return (
+                  <div key={label} className="bl__meter">
+                    <div className="bl__meter-top">
+                      <span>{label}</span>
+                      <span className="grey">{usedN.toLocaleString()} {unlimited ? 'used · unlimited' : `of ${limit.toLocaleString()}`}</span>
+                    </div>
+                    <span className="bl__bar"><span data-hot={!unlimited && pct >= 80 || undefined} style={{ width: `${pct}%` }} /></span>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="st__card st__danger">
+              <div>
+                <p className="st__t">Payment method</p>
+                <p className="st__d">{planInfo.monthly ? 'UPI · webassure@upi (demo)' : 'No payment method needed on the free plan.'}</p>
+              </div>
+              <Link href="/dashboard/upgrade" className="btn btn--soft">Compare plans</Link>
             </div>
           </section>}
 

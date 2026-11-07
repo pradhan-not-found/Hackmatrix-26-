@@ -10,6 +10,8 @@ import { useTheme } from '../../components/ThemeProvider.jsx'
 import { DashContext } from './context.js'
 import Avatar from '../../components/Avatar.jsx'
 import ShieldMark from '../../components/ShieldMark.jsx'
+import { usePlan } from './usePlan.js'
+import { PLANS } from '../../lib/plan.js'
 import {
   GridIcon, SearchIcon, ThemeIcon,
 } from '../../components/Icons.jsx'
@@ -32,6 +34,7 @@ export default function Shell({ children }) {
   const pathname = usePathname()
   const { theme, toggle } = useTheme()
   const [user, setUser] = useState(null)
+  const plan = usePlan(user?.id)
   const [scans, setScans] = useState([])
   const [total, setTotal] = useState(0)
   const [historyLoading, setHistoryLoading] = useState(false)
@@ -258,6 +261,12 @@ export default function Shell({ children }) {
               <input id="dash-scan" placeholder="Scan a URL or domain…" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
               <button className="btn btn--ink" type="submit" disabled={scanLoading}>{scanLoading ? 'Scanning…' : 'Scan'}</button>
             </form>
+            {plan.id !== 'teams' && (
+              <Link href="/dashboard/upgrade" className="upbtn" title={`You are on ${PLANS[plan.id].name}. See plans`}>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9Z" /><path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8Z" /></svg>
+                Upgrade
+              </Link>
+            )}
             <button className="icon-btn" onClick={toggle} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
               <ThemeIcon />
             </button>

@@ -518,3 +518,24 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--grey) 45
   color: #fff; background: linear-gradient(180deg, #ff8a8f 0%, #f4565d 46%, #db3640 100%);
 }
 .btn--danger:active { transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(100, 10, 20, 0.5), inset 0 0 0 1px rgba(170, 20, 30, 0.4); }
+
+/* content area: never squash cards (it scrolls instead) */
+.dash__content > * { flex-shrink: 0; }
+
+/* certificates: fixed columns so every row lines up */
+.cr { grid-template-columns: 38px minmax(0, 1.5fr) 200px minmax(200px, 1fr) 160px; }
+.cr__checks { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cr__status { display: flex; justify-content: flex-end; }
+@media (max-width: 1100px) {
+  .cr { grid-template-columns: 38px minmax(0, 1fr) auto; }
+  .cr__checks, .cr__expiry { grid-column: 2 / -1; }
+}
+
+/* settings menu: icons, single highlight */
+.stw__link { display: flex; align-items: center; gap: 10px; }
+.stw__link .nav-ic { width: 18px; height: 18px; color: var(--grey); transition: color 0.2s var(--ease); }
+.stw__link:hover { background: color-mix(in srgb, var(--console) 55%, transparent); color: var(--ink); }
+.stw__link:hover .nav-ic { color: var(--ink); }
+.stw__link.is-on, .stw__link.is-on:hover { background: var(--console); color: var(--ink); }
+.stw__link.is-on .nav-ic { color: var(--workspace-accent); }
+.stw__link:focus:not(:focus-visible) { outline: none; }

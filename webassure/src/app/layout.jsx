@@ -9,6 +9,7 @@ import '../styles/landing2.css'
 import '../styles/dashboard.css'
 import '../styles/polish.css'
 import '../styles/dashboard-skin.css'
+import '../styles/billing.css'
 
 const hanken = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '600'], variable: '--font-hanken', display: 'swap' })
 const outfit = Outfit({ subsets: ['latin'], weight: ['700', '800'], variable: '--font-outfit', display: 'swap' })
