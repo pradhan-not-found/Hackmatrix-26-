@@ -8,7 +8,6 @@ const COLORS = {
 export default function SecurityIllustration({ type = 'records', className = '' }) {
   const [primary, secondary] = COLORS[type] || COLORS.records
   return <svg className={`security-illustration ${className}`} viewBox="0 0 80 80" fill="none" aria-hidden="true" focusable="false" style={{ color: primary, '--art-secondary': secondary }}>
-    <rect x="7" y="9" width="64" height="62" rx="18" fill="currentColor" opacity=".08" />
     {type === 'records' && <>
       <rect x="21" y="19" width="37" height="48" rx="5" fill="currentColor" opacity=".14" transform="rotate(-9 21 19)" />
       <path d="M28 15h21l12 12v32a5 5 0 0 1-5 5H28a5 5 0 0 1-5-5V20a5 5 0 0 1 5-5Z" fill="var(--card)" stroke="currentColor" strokeWidth="2" />
