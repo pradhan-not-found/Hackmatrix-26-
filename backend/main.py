@@ -11,8 +11,9 @@ from pydantic import BaseModel, Field
 
 from backend.investigation import investigate
 from backend.network import UnsafeURL
-from backend.gemini import explain
+from backend.gemini import explain, explain_message_analysis
 from backend.explanation import explain_locally
+from backend.message_analysis import MAX_MESSAGE_LENGTH, analyze_message
 
 app = FastAPI(title="HackMatrix URL Investigation", version="0.1.0")
 # Bound simultaneous outbound scans in this single-process MVP.
@@ -31,9 +32,25 @@ class InvestigationRequest(BaseModel):
     url: str = Field(min_length=1, max_length=4096)
 
 
+class MessageAnalysisRequest(BaseModel):
+    message: str = Field(max_length=MAX_MESSAGE_LENGTH)
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post("/api/analyze-message")
+def create_message_analysis(body: MessageAnalysisRequest,
+                            provider: Literal["local", "gemini"] = "local"):
+    try:
+        report = analyze_message(body.message)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    if provider == "gemini":
+        report["ai_explanation"] = explain_message_analysis(report)
+    return report
 
 
 @app.post("/api/investigations", status_code=201)

@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from backend.gemini import evidence_snapshot, explain
+from backend.gemini import evidence_snapshot, explain, explain_message_analysis
 from backend.main import app
 
 
@@ -51,6 +51,29 @@ class GeminiTests(unittest.TestCase):
         snapshot = json.dumps(evidence_snapshot(report))
         self.assertNotIn("secret", snapshot)
         self.assertNotIn("set-cookie", snapshot)
+
+    def test_message_explanation_sends_only_minimized_assessment_evidence(self):
+        analysis = {"classification": "Suspicious", "risk_level": "Medium",
+                    "model_prediction": {"status": "available", "label": "spam", "confidence": 0.9,
+                                         "model": "LogisticRegression"},
+                    "heuristic_risk_score": 30, "indicators": [{"code": "otp_theft", "name": "OTP request",
+                    "evidence": ["OTP 123456"]}], "extracted_urls": ["https://secret.test/?token=secret"],
+                    "extracted_phone_numbers": ["+15555550123"], "limitations": ["Links are not checked."]}
+        safe_content = {"summary": {"text": "This message was assessed as suspicious.",
+                                     "evidence_ids": ["assessment"]},
+                        "explanations": [{"text": "An OTP request indicator was found.",
+                                          "evidence_ids": ["indicator-1"]}],
+                        "next_steps": [{"text": "Verify the sender independently.",
+                                        "evidence_ids": ["assessment"]}]}
+        self.set_content(safe_content)
+        result = explain_message_analysis(analysis)
+        request = self.opener.return_value.open.call_args.args[0]
+        payload = request.data.decode()
+        self.assertEqual(result["status"], "completed")
+        self.assertIn("otp_theft", payload)
+        self.assertNotIn("123456", payload)
+        self.assertNotIn("secret.test", payload)
+        self.assertNotIn("15555550123", payload)
 
     def test_unknown_citations_extra_fields_and_truncated_outputs_are_rejected(self):
         for content in ({**CONTENT, "summary": {"text": "Invented", "evidence_ids": ["fake"]}},

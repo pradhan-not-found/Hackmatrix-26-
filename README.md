@@ -52,6 +52,7 @@ Phishing pages, fake recruitment portals, fraudulent payment links and impersona
 - **Deterministic risk classification:** *Confirmed Malicious*, *Suspicious*, *Low Risk* or *Inconclusive*.
 - **Plain-language explanations.** Built-in, rule-based explanations reference the report's evidence. Optional Gemini explanations are schema-validated and cannot change the classification.
 - **History.** Reports are saved to SQLite with paginated retrieval and JSON export.
+- **Message spam/scam analysis.** A separate endpoint combines a trained TF-IDF text classifier with explainable indicators and does not open extracted links.
 - **Built-in investigation dashboard** served by the backend at `/`.
 
 ### Web app (UI prototype)
@@ -148,6 +149,7 @@ Never commit `.env` or place keys in browser code.
 | `GET` | `/api/investigations/{id}` | Retrieve a saved report. |
 | `GET` | `/api/investigations?limit=30&offset=0` | Recent report summaries, newest first (max `limit` 100). |
 | `POST` | `/api/investigations/{id}/explanation` | Generate an explanation. Local by default; add `?provider=gemini` for Gemini. |
+| `POST` | `/api/analyze-message` | Analyze an SMS or message body using the text classifier and heuristic indicators. |
 | `GET` | `/health` | Liveness check. |
 
 Example:
@@ -159,6 +161,16 @@ curl -X POST http://127.0.0.1:8000/api/investigations \
 ```
 
 Full behaviour, error codes and provider validation are documented in [`docs/backend.md`](docs/backend.md).
+
+### Message analysis model
+
+Install the updated requirements, download the [UCI SMS Spam Collection](https://archive.ics.uci.edu/dataset/228/sms%2Bspam%2Bcollection) dataset, and extract its `SMSSpamCollection` file. Train with:
+
+```powershell
+.venv\Scripts\python -m backend.train_message_model path\to\SMSSpamCollection
+```
+
+The command compares Logistic Regression with Multinomial Naive Bayes on a stratified holdout set, prints real evaluation metrics, and saves the Logistic Regression artifact under `backend/models/` and metrics under ignored `data/`. The dataset is English SMS spam/ham, so it is not a comprehensive scam or phishing corpus. See [`docs/backend.md`](docs/backend.md#message-spam-scam-analysis) for the API schema and limitations.
 
 ## Testing
 
