@@ -18,12 +18,14 @@ function SectionTitle({ icon: Icon, children, detail }) {
 function Coverage({ coverage }) {
   const checks = coverage?.checks || []
   const implemented = checks.filter((check) => check.status !== 'not_implemented')
+  const notAssessed = checks.filter((check) => check.status === 'not_implemented')
   const completed = implemented.filter((check) => check.status === 'completed').length
   return <div className="analysis-coverage">
     <div className="analysis-coverage-top"><strong>Inspection coverage</strong><span>{checks.length ? `${completed} completed · ${implemented.length} implemented checks` : 'Detailed coverage unavailable in this saved report'}</span></div>
-    {!!checks.length && <div className="analysis-coverage-bar" aria-hidden="true">{checks.map((check) => <span key={check.name} data-tone={stateTone(check.status)} />)}</div>}
-    <div className="analysis-check-grid">{checks.map((check) => <div className="analysis-check-cell" key={check.name} data-tone={stateTone(check.status)}><StateIcon state={check.status} /><div><strong>{label(check.name)}</strong><span>{check.status.replaceAll('_', ' ')}</span></div></div>)}</div>
-    <p className="caption grey">Coverage describes checks performed, not a safety score. Unimplemented checks are shown separately.</p>
+    {!!implemented.length && <div className="analysis-coverage-bar" aria-hidden="true">{implemented.map((check) => <span key={check.name} data-tone={stateTone(check.status)} />)}</div>}
+    <div className="analysis-check-grid">{implemented.map((check) => <div className="analysis-check-cell" key={check.name} data-tone={stateTone(check.status)}><StateIcon state={check.status} /><div><strong>{label(check.name)}</strong><span>{check.status === 'completed' ? 'Check ran' : check.status.replaceAll('_', ' ')}</span></div></div>)}</div>
+    <p className="caption grey">A completed check may still report warnings or threats. This is execution coverage, not a safety score.</p>
+    {!!notAssessed.length && <div className="analysis-not-assessed"><h4>Not assessed</h4><p className="caption grey">These capabilities are not available in this version and are excluded from the coverage bar.</p><ul>{notAssessed.map((check) => <li key={check.name}><InfoIcon /><span>{label(check.name)}</span></li>)}</ul></div>}
   </div>
 }
 

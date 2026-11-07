@@ -133,7 +133,13 @@ class WebAssureBrowserTests(unittest.TestCase):
         self.assertGreater(dialog.locator('svg[aria-hidden="true"]').count(), 10)
         expect(dialog.get_by_role("heading", name="Domain identity", exact=True)).to_be_visible()
         expect(dialog.locator('.analysis-coverage-top')).to_contain_text('implemented checks')
-        expect(dialog.locator('.analysis-check-cell')).to_have_count(len(report['evidence_coverage']['checks']))
+        implemented = [check for check in report['evidence_coverage']['checks'] if check['status'] != 'not_implemented']
+        not_assessed = [check for check in report['evidence_coverage']['checks'] if check['status'] == 'not_implemented']
+        expect(dialog.locator('.analysis-check-cell')).to_have_count(len(implemented))
+        expect(dialog.locator('.analysis-coverage-bar > span')).to_have_count(len(implemented))
+        expect(dialog.locator('.analysis-not-assessed li')).to_have_count(len(not_assessed))
+        expect(dialog.locator('.analysis-check-grid')).not_to_contain_text('HTML inspection')
+        expect(dialog.get_by_role('heading', name='Not assessed', exact=True)).to_be_visible()
         coverage = dialog.get_by_text("Completed, incomplete & unimplemented checks", exact=True)
         coverage.click()
         expect(coverage.locator('..').locator('pre')).to_contain_text('"status": "not_implemented"')
