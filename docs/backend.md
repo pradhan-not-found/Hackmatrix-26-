@@ -50,6 +50,37 @@ user consent before enabling this for other users. Review Google's current terms
 and attribution requirements before public deployment:
 https://developers.google.com/safe-browsing/v4/lookup-api
 
+### Validate the provider
+
+With the key configured, run:
+
+```powershell
+.venv\Scripts\python -m backend.validate_threat_intelligence
+```
+
+This sends three real API requests: `https://example.com/` (expected no match),
+Google's [documented v4 MALWARE test URL](https://github.com/google/safebrowsing/blob/master/README.md)
+(expected MALWARE match), and an intentionally invalid key (expected HTTP
+400/401/403, reported as unavailable). It never visits the submitted URLs.
+The invalid key is used for that request only and does not replace your key.
+Results, source, and UTC timestamps are saved to the ignored
+`data/threat-intelligence-validation.json`. Exit code 0 means all three passed;
+missing configuration, failed lookups, or unexpected matches produce exit code 1.
+Do not describe skipped or mocked checks as live validation.
+
+The exact provider test URL is:
+
+```text
+http://testsafebrowsing.appspot.com/apiv4/ANY_PLATFORM/MALWARE/URL/
+```
+
+You can also submit it to the dashboard to test the complete investigation report.
+It should be Confirmed Malicious **only if the provider returns a matching listing**;
+this is a provider test fixture, not evidence of an actual malicious deployment.
+Past reports are snapshots; run a new investigation after configuring the key.
+The automated unit suite exercises all three outcomes with mocked provider
+responses, including classification through the investigation pipeline.
+
 ## Assessment behavior
 
 - A validated provider match produces Confirmed Malicious.

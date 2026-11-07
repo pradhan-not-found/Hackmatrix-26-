@@ -5,9 +5,11 @@ import tempfile
 import unittest
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from backend.threat_intelligence import api_key, reputation
+from backend.validate_threat_intelligence import validate
+from backend.investigation import investigate
 
 BENIGN_URL = "https://example.com/"
 MALICIOUS_TEST_URL = "http://testsafebrowsing.appspot.com/apiv4/ANY_PLATFORM/MALWARE/URL/"
@@ -92,3 +94,46 @@ class ThreatIntelligenceTests(unittest.TestCase):
         request = self.opener.return_value.open.call_args.args[0]
         entries = json.loads(request.data)["threatInfo"]["threatEntries"]
         self.assertEqual(entries, [{"url": BENIGN_URL}])
+
+    def test_provider_results_reach_pipeline_classification(self):
+        response = {"url": BENIGN_URL, "address": "8.8.8.8", "status": 200,
+                    "headers": {}, "tls": {"verified": True}}
+        with patch("backend.investigation.public_addresses", return_value=["8.8.8.8"]):
+            with patch("backend.investigation.fetch", return_value=response) as fetch:
+                self.assertEqual(investigate(BENIGN_URL)["risk_classification"], "Low Risk")
+                fetch.return_value = {**response, "url": MALICIOUS_TEST_URL}
+                self.response.read.return_value = json.dumps({"matches": [MATCH]}).encode()
+                flagged = investigate(MALICIOUS_TEST_URL)
+                self.assertEqual(flagged["risk_classification"], "Confirmed Malicious")
+                fetch.return_value = response
+                self.opener.return_value.open.side_effect = HTTPError("https://provider.test", 403, "denied", {}, None)
+                failed = investigate(BENIGN_URL)
+                self.assertEqual(failed["risk_classification"], "Inconclusive")
+                self.assertFalse(failed["evidence_coverage"]["reputation_available"])
+
+    def test_redirected_url_is_checked_even_when_its_http_fetch_fails(self):
+        response = {"url": BENIGN_URL, "address": "8.8.8.8", "status": 302,
+                    "headers": {"location": "https://example.org/"}, "tls": {"verified": True}}
+        with patch("backend.investigation.public_addresses", return_value=["8.8.8.8"]):
+            with patch("backend.investigation.fetch", side_effect=[response, TimeoutError()]):
+                report = investigate(BENIGN_URL)
+                intelligence = report["checks"][-1]
+                self.assertIn(BENIGN_URL, intelligence["checked_urls"])
+                self.assertIn("https://example.org/", intelligence["checked_urls"])
+
+    def test_validation_runner_reports_all_three_results(self):
+        rejected = HTTPError("https://provider.test", 400, "invalid", {}, None)
+        benign = self.opener.return_value.open.return_value
+        flagged = MagicMock()
+        flagged.__enter__.return_value.read.return_value = json.dumps({"matches": [MATCH]}).encode()
+        self.opener.return_value.open.side_effect = [benign, flagged, rejected]
+        evidence = validate()
+        self.assertTrue(evidence["passed"])
+        self.assertEqual([case["outcome"] for case in evidence["cases"]], ["passed"] * 3)
+
+    def test_validation_runner_does_not_claim_unconfigured_or_failed_success(self):
+        self.opener.return_value.open.side_effect = TimeoutError()
+        with patch.dict(os.environ, {"GOOGLE_SAFE_BROWSING_API_KEY": ""}):
+            evidence = validate()
+        self.assertFalse(evidence["passed"])
+        self.assertEqual([case["outcome"] for case in evidence["cases"]], ["skipped", "skipped", "failed"])

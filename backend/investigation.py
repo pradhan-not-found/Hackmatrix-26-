@@ -47,6 +47,7 @@ def investigate(url: str) -> dict:
                 "Verify the hostname through an independently trusted source.")
     report["checks"].append({"name": "url_structure", "status": "completed"})
     current = normalized
+    reputation_urls = [normalized]
     visited = set()
     started = time.monotonic()
     for hop in range(6):
@@ -60,6 +61,8 @@ def investigate(url: str) -> dict:
         try:
             parts = urlsplit(current)
             addresses = public_addresses(parts.hostname, 443 if parts.scheme == "https" else 80)
+            if current not in reputation_urls:
+                reputation_urls.append(current)
             report["checks"].append({"name": "dns", "status": "completed", "url": current,
                                      "addresses": addresses})
             result = fetch(current, addresses)
@@ -109,7 +112,7 @@ def investigate(url: str) -> dict:
             report["checks"].append({"name": "http", "status": "failed", "error": "Invalid HTTP response"})
             break
 
-    intelligence = reputation(list(dict.fromkeys([normalized, *[hop["url"] for hop in report["redirect_chain"]]])))
+    intelligence = reputation(reputation_urls)
     report["checks"].append({"name": "threat_intelligence", **intelligence})
     if intelligence["status"] != "completed":
         report["limitations"].append(intelligence["reason"])
