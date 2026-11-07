@@ -15,7 +15,7 @@ export const ThreatsIcon = () => (
   <I><path d="M12 3.5 19 6v5.5c0 4.3-2.9 7.6-7 9-4.1-1.4-7-4.7-7-9V6l7-2.5Z" /><path d="M12 8.5v4" /><path d="M12 15.6h.01" /></I>
 )
 export const CertificatesIcon = () => (
-  <I><rect x="3.5" y="4.5" width="17" height="12" rx="2" /><path d="M7.5 9h6M7.5 12h4" /><circle cx="16.5" cy="16.5" r="2.5" /><path d="m15.3 18.8-.8 2.7 2-1 2 1-.8-2.7" /></I>
+  <I><path d="M13.5 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h4" /><path d="M13.5 3.5V8H18" /><path d="M18 8v2.5" /><rect x="13" y="14.5" width="7.5" height="6" rx="1.5" /><path d="M14.75 14.5v-1.6a2 2 0 0 1 4 0v1.6" /><path d="M8.5 11h5M8.5 14.5h2.5" /></I>
 )
 export const ReportsIcon = () => (
   <I><path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8Z" /><path d="M14 3.5V8h4.5" /><path d="M9 13h6M9 16.5h4" /></I>

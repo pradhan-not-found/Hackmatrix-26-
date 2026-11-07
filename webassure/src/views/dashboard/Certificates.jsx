@@ -3,9 +3,51 @@
 import { useState } from 'react'
 import { Badge } from '../../components/Sections.jsx'
 import { CERTS } from '../../lib/data.js'
-import { PageHead } from './ui.jsx'
+import { Kpi, PageHead } from './ui.jsx'
+import { CertificatesIcon } from './NavIcons.jsx'
 
-const label = { ok: 'Valid', warn: 'Expiring', bad: 'Alert' }
+const STATUS = { ok: 'Valid', warn: 'Expiring soon', bad: 'Needs attention' }
+const LIFETIME = 365 // days, used to draw the remaining-validity bar
+
+function Lock() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </svg>
+  )
+}
+
+function CertRow({ c }) {
+  const pct = c.days == null ? 0 : Math.max(4, Math.min(100, (c.days / LIFETIME) * 100))
+  const tone = c.pending ? 'warn' : c.status
+  return (
+    <li className="cr">
+      <span className={`cr__icon cr__icon--${tone}`}><Lock /></span>
+      <div className="cr__main">
+        <p className="cr__host">{c.host}</p>
+        <p className="cr__issuer">{c.issuer}</p>
+      </div>
+      <div className="cr__checks">
+        <span className={`cr__check${c.key === 'RSA 1024' ? ' cr__check--bad' : ''}`}>
+          <span className="cr__k">Key</span>{c.key}
+        </span>
+        <span className={`cr__check${c.ct === false ? ' cr__check--bad' : ''}`}>
+          <span className="cr__k">CT logs</span>{c.ct == null ? '—' : c.ct ? 'Logged' : 'Missing'}
+        </span>
+      </div>
+      <div className="cr__expiry">
+        <div className="cr__exp-top">
+          <span>{c.expires}</span>
+          <span className="cr__days">{c.days == null ? 'Pending' : `${c.days} days left`}</span>
+        </div>
+        <span className="cr__bar"><span className={`cr__fill cr__fill--${tone}`} style={{ width: `${pct}%` }} /></span>
+      </div>
+      <div className="cr__status">
+        <Badge tone={tone}>{c.pending ? 'Queued' : STATUS[c.status]}</Badge>
+      </div>
+    </li>
+  )
+}
 
 export default function Certificates() {
   const [certs, setCerts] = useState(CERTS)
@@ -22,41 +64,41 @@ export default function Certificates() {
     setHost('')
   }
 
+  const count = (s) => certs.filter((c) => !c.pending && c.status === s).length
+
   return (
     <>
-      <PageHead title="Certificates" sub="Demo preview — monitoring is not connected. Actual TLS results are available in each scan report." />
+      <PageHead title="Certificates" />
 
-      <form className="card panel addbar" onSubmit={add}>
-        <div>
+      <section className="kpis">
+        <Kpi label="Monitored domains" value={certs.length} delta="TLS certificates watched" />
+        <Kpi label="Valid" value={count('ok')} delta="Trusted chain, logged in CT" />
+        <Kpi label="Expiring soon" value={count('warn')} delta="Within 14 days" />
+        <Kpi label="Needs attention" value={count('bad')} delta="Weak key, unknown issuer or missing CT" />
+      </section>
+
+      <form className="card panel cmon" onSubmit={add}>
+        <span className="cmon__icon"><CertificatesIcon /></span>
+        <div className="cmon__txt">
           <p className="panel__title">Monitor a domain</p>
-          <p className="caption grey">We alert you on expiry, weak keys, unknown issuers and missing CT entries.</p>
+          <p className="caption grey">Get alerts on expiry, weak keys, unknown issuers and missing Certificate Transparency entries.</p>
         </div>
-        <div className="addbar__field">
+        <div className="cmon__field">
           <input className="input-sm" placeholder="shop.example.com" value={host} onChange={(e) => setHost(e.target.value)} aria-label="Domain to monitor" />
-          <button className="btn btn--ink" type="submit">Add</button>
+          <button className="btn btn--ink" type="submit">Add domain</button>
         </div>
-        {err && <p className="dash__err addbar__err" role="alert">{err}</p>}
+        {err && <p className="dash__err cmon__err" role="alert">{err}</p>}
       </form>
 
-      <div className="card panel panel--flush">
-        <div className="table-wrap">
-          <table className="table">
-            <thead><tr><th>Domain</th><th>Issuer</th><th>Key</th><th>CT logs</th><th>Expires</th><th>Status</th></tr></thead>
-            <tbody>
-              {certs.map((c) => (
-                <tr key={c.host} data-fresh={c.pending || undefined}>
-                  <td className="table__url">{c.host}</td>
-                  <td className="grey">{c.issuer}</td>
-                  <td className={c.key === 'RSA 1024' ? 'text-bad' : 'grey'}>{c.key}</td>
-                  <td>{c.ct === null ? <span className="grey">—</span> : c.ct ? <span className="grey">Logged</span> : <span className="text-bad">Missing</span>}</td>
-                  <td className="grey">{c.expires}{c.days !== null && <span className="table__sub caption">{c.days} days</span>}</td>
-                  <td>{c.pending ? <Badge tone="warn">Queued</Badge> : <Badge tone={c.status}>{label[c.status]}</Badge>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <section className="card panel panel--flush">
+        <div className="panel__head cl__head">
+          <h2 className="panel__title">TLS certificates</h2>
+          <span className="caption grey">Preview data · live TLS results appear in each scan report</span>
         </div>
-      </div>
+        <ul className="cl">
+          {certs.map((c) => <CertRow key={c.host} c={c} />)}
+        </ul>
+      </section>
     </>
   )
 }

@@ -1,0 +1,13 @@
+// The WebAssure split-shield mark (same geometry as the favicon), in currentColor.
+export default function ShieldMark({ size = 24, className = '' }) {
+  return (
+    <svg className={className} width={size} height={size} viewBox="6 8 52 48" aria-hidden="true">
+      <g fill="currentColor" stroke="currentColor" strokeWidth="3" strokeLinejoin="round">
+        <path d="M8.9 16.2 C15.3 16 21.6 14 27.1 11.1 C28.3 10.5 29.2 11.1 29.2 12.6 V35.8 H12 C10.1 31.2 8.9 26.8 8.9 22 Z" />
+        <path d="M55.1 16.2 C48.7 16 42.4 14 36.9 11.1 C35.7 10.5 34.8 11.1 34.8 12.6 V35.8 H52 C53.9 31.2 55.1 26.8 55.1 22 Z" />
+        <path d="M16.9 41.6 H29.2 V51.8 C29.2 53.3 28.1 54 26.9 53.2 C22.7 50.3 19.7 47.2 16.9 43.3 Z" />
+        <path d="M47.1 41.6 H34.8 V51.8 C34.8 53.3 35.9 54 37.1 53.2 C41.3 50.3 44.3 47.2 47.1 43.3 Z" />
+      </g>
+    </svg>
+  )
+}

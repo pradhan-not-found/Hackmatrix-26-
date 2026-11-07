@@ -8,8 +8,10 @@ import { getUser, watchAuth, signOut } from '../../lib/auth.js'
 import { takePendingScan } from '../../lib/pending.js'
 import { useTheme } from '../../components/ThemeProvider.jsx'
 import { DashContext } from './context.js'
+import Avatar from '../../components/Avatar.jsx'
+import ShieldMark from '../../components/ShieldMark.jsx'
 import {
-  PersonPlaceholder, GridIcon, SearchIcon, ThemeIcon,
+  GridIcon, SearchIcon, ThemeIcon,
 } from '../../components/Icons.jsx'
 import {
   CertificatesIcon, LedgerIcon, LogoutIcon, OverviewIcon, ReportsIcon, ScansIcon, SettingsIcon, ThreatsIcon,
@@ -205,7 +207,7 @@ export default function Shell({ children }) {
           <div className="rail__head">
             <Link href="/" className="wordmark dash__logo" aria-label="WebAssure home">
               <span className="rail__full">webassure</span>
-              <span className="rail__mini" aria-hidden="true">w.</span>
+              <span className="rail__mini" aria-hidden="true"><ShieldMark size={28} /></span>
             </Link>
             <button className="rail__toggle" onClick={toggleCollapsed} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!collapsed}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -226,9 +228,7 @@ export default function Shell({ children }) {
               <SettingsIcon /><span className="rail__label">Settings</span>
             </Link>
             <div className="dash__user">
-              <span className="dash__avatar">
-                {user.avatar ? <img src={user.avatar} alt="" /> : <PersonPlaceholder />}
-              </span>
+              <Avatar src={user.avatar} size={34} className="dash__av" />
               <div className="dash__user-txt">
                 <p>{user.name}</p>
                 <p className="caption grey">{user.email}</p>
@@ -262,9 +262,11 @@ export default function Shell({ children }) {
               <ThemeIcon />
             </button>
           </header>
-          {scanLoading && <p className="scan-status caption" role="status">Investigating URL. Collecting network checks and threat intelligence…</p>}
-          {error && <div className="dash__err" role="alert">{error} <button className="btn btn--ghost" disabled={scanLoading} onClick={() => runInvestigation(failedInput)}>Retry scan</button></div>}
-          {children}
+          <div className="dash__content" id="dash-content">
+            {scanLoading && <p className="scan-status caption" role="status">Investigating URL. Collecting network checks and threat intelligence…</p>}
+            {error && <div className="dash__err" role="alert">{error} <button className="btn btn--ghost" disabled={scanLoading} onClick={() => runInvestigation(failedInput)}>Retry scan</button></div>}
+            {children}
+          </div>
         </div>
         <button className="dash__scrim" onClick={() => setNavOpen(false)} aria-label="Close navigation" tabIndex={navOpen ? 0 : -1} />
       </div>

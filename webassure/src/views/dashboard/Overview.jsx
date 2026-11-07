@@ -7,7 +7,7 @@ import { classificationTone, formatDate } from '../../lib/investigations.js'
 import { summarize } from '../../lib/overview.mjs'
 import { Bars, Empty, Kpi, PageHead, TrendChart } from './ui.jsx'
 import HistoryStatus from './HistoryStatus.jsx'
-import { PersonPlaceholder } from '../../components/Icons.jsx'
+import Avatar from '../../components/Avatar.jsx'
 
 function greeting() {
   const h = new Date().getHours()
@@ -25,9 +25,7 @@ export default function Overview() {
   return (
     <>
       <div className="greet">
-        <span className="greet__avatar">
-          {user.avatar ? <img src={user.avatar} alt="" /> : <PersonPlaceholder />}
-        </span>
+        <Avatar src={user.avatar} size={48} />
         <PageHead title={`${greeting()}, ${user.name.split(' ')[0]}`} sub="Here is what WebAssure has investigated for you." />
       </div>
 
