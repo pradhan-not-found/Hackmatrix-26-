@@ -5,7 +5,7 @@ import threading
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from backend.investigation import investigate
@@ -52,6 +52,24 @@ def create_investigation(body: InvestigationRequest):
         return report
     finally:
         slots.release()
+
+
+@app.get("/api/investigations")
+def list_investigations(limit: int = Query(default=30, ge=1, le=100),
+                        offset: int = Query(default=0, ge=0)):
+    connection = database()
+    try:
+        rows = connection.execute(
+            "SELECT report FROM investigations ORDER BY rowid DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        ).fetchall()
+        total = connection.execute("SELECT COUNT(*) FROM investigations").fetchone()[0]
+    finally:
+        connection.close()
+    fields = ("id", "submitted_url", "normalized_url", "risk_classification", "created_at", "status")
+    items = [{key: report.get(key) for key in fields}
+             for report in (json.loads(row[0]) for row in rows)]
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @app.get("/api/investigations/{investigation_id}")

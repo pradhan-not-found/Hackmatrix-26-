@@ -143,6 +143,22 @@ class PipelineTests(unittest.TestCase):
                     self.assertEqual(client.post("/api/investigations", json={"url": "file:///etc/passwd"}).status_code, 422)
                     self.assertEqual(client.get("/api/investigations/00000000-0000-0000-0000-000000000000").status_code, 404)
 
+    def test_history_is_recent_first_paginated_and_summary_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.dict(os.environ, {"INVESTIGATION_DB": f"{directory}/reports.sqlite3"}):
+                with TestClient(app) as client:
+                    self.assertEqual(client.get("/api/investigations").json()["items"], [])
+                    first = client.post("/api/investigations", json={"url": "example.com"}).json()
+                    second = client.post("/api/investigations", json={"url": "example.org"}).json()
+                    page = client.get("/api/investigations?limit=1").json()
+                    self.assertEqual(page["total"], 2)
+                    self.assertEqual(page["items"][0]["id"], second["id"])
+                    self.assertNotIn("findings", page["items"][0])
+                    older = client.get("/api/investigations?limit=1&offset=1").json()
+                    self.assertEqual(older["items"][0]["id"], first["id"])
+                    for query in ("limit=0", "limit=101", "offset=-1"):
+                        self.assertEqual(client.get(f"/api/investigations?{query}").status_code, 422)
+
 
 if __name__ == "__main__":
     unittest.main()
