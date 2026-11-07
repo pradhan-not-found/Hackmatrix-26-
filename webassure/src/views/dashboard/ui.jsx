@@ -55,12 +55,14 @@ export function Toggle({ checked, onChange, label }) {
 }
 
 /* Single-series line chart with crosshair + tooltip */
-export function TrendChart({ labels, values }) {
+export function TrendChart({ labels, values, unit = 'scans' }) {
   const [hover, setHover] = useState(null)
   const W = 640
   const H = 240
   const P = { t: 16, r: 12, b: 28, l: 40 }
-  const max = Math.ceil(Math.max(...values) / 100) * 100
+  // Nice scale that works for 0, small counts and large counts.
+  const top = Math.max(0, ...values)
+  const max = top <= 4 ? 4 : top <= 100 ? Math.ceil(top / 4) * 4 : Math.ceil(top / 100) * 100
   const ticks = [0, max / 4, max / 2, (3 * max) / 4, max]
   const x = (i) => P.l + (i * (W - P.l - P.r)) / (values.length - 1)
   const y = (v) => P.t + (1 - v / max) * (H - P.t - P.b)
@@ -105,7 +107,7 @@ export function TrendChart({ labels, values }) {
       {hover !== null && (
         <div className="chart__tip" style={{ left: `${(x(hover) / W) * 100}%`, top: `${(y(values[hover]) / H) * 100}%` }}>
           <span className="caption grey">{labels[hover]}</span>
-          <strong>{values[hover]} scans</strong>
+          <strong>{values[hover]} {unit}</strong>
         </div>
       )}
       <table className="skip">
@@ -118,8 +120,8 @@ export function TrendChart({ labels, values }) {
 
 /* Single-hue horizontal bars, direct-labelled */
 export function Bars({ data }) {
-  const max = Math.max(...data.map(([, v]) => v))
-  const total = data.reduce((a, [, v]) => a + v, 0)
+  const max = Math.max(1, ...data.map(([, v]) => v))
+  const total = Math.max(1, data.reduce((a, [, v]) => a + v, 0))
   return (
     <ul className="bars">
       {data.map(([label, v]) => (

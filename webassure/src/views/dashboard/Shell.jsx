@@ -9,15 +9,18 @@ import { takePendingScan } from '../../lib/pending.js'
 import { useTheme } from '../../components/ThemeProvider.jsx'
 import { DashContext } from './context.js'
 import {
-  PersonPlaceholder, FileIcon, GridIcon, LedgerIcon, LockIcon, LogoutIcon, ScanIcon, SearchIcon, SettingsIcon, ShieldIcon, ThemeIcon,
+  PersonPlaceholder, GridIcon, SearchIcon, ThemeIcon,
 } from '../../components/Icons.jsx'
+import {
+  CertificatesIcon, LedgerIcon, LogoutIcon, OverviewIcon, ReportsIcon, ScansIcon, SettingsIcon, ThreatsIcon,
+} from './NavIcons.jsx'
 
 const NAV = [
-  ['', 'Overview', GridIcon],
-  ['scans', 'Scans', ScanIcon],
-  ['threats', 'Threats', ShieldIcon],
-  ['certificates', 'Certificates', LockIcon],
-  ['reports', 'Reports', FileIcon],
+  ['', 'Overview', OverviewIcon],
+  ['scans', 'Scans', ScansIcon],
+  ['threats', 'Threats', ThreatsIcon],
+  ['certificates', 'Certificates', CertificatesIcon],
+  ['reports', 'Reports', ReportsIcon],
   ['ledger', 'Threat ledger', LedgerIcon],
 ]
 
@@ -38,7 +41,16 @@ export default function Shell({ children }) {
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const [navOpen, setNavOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Desktop sidebar can collapse to an icon rail; the choice is remembered.
+  useEffect(() => {
+    try { setCollapsed(localStorage.getItem('wa-sidebar') === 'collapsed') } catch {}
+  }, [])
+  const toggleCollapsed = () => setCollapsed((c) => {
+    try { localStorage.setItem('wa-sidebar', c ? 'open' : 'collapsed') } catch {}
+    return !c
+  })
   const menuRef = useRef(null)
   const [focusId, setFocusId] = useState(null)
   const [introDone, setIntroDone] = useState(false)
@@ -161,34 +173,30 @@ export default function Shell({ children }) {
 
   return (
     <DashContext.Provider value={ctx}>
-      <div className="dash" data-nav={navOpen || undefined} data-collapsed={sidebarCollapsed || undefined}>
+      <div className="dash" data-nav={navOpen || undefined} data-rail={collapsed || undefined}>
         <aside className="dash__side" id="dashboard-sidebar">
-          <div className="dash__side-head">
+          <div className="rail__head">
             <Link href="/" className="wordmark dash__logo" aria-label="WebAssure home">
-              <span className="dash__brand-full" aria-hidden="true">webassure</span>
-              <span className="dash__brand-compact" aria-hidden="true">W</span>
+              <span className="rail__full">webassure</span>
+              <span className="rail__mini" aria-hidden="true">w.</span>
             </Link>
-            <button className="dash__menu dash__collapse-toggle" onClick={() => setSidebarCollapsed((collapsed) => !collapsed)} aria-controls="dashboard-sidebar" aria-expanded={!sidebarCollapsed} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" />
-                <path className="dash__menu-arrow" d="m15 9-3 3 3 3" />
+            <button className="rail__toggle" onClick={toggleCollapsed} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!collapsed}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /><path className="rail__chev" d="m15.5 10-2 2 2 2" />
               </svg>
             </button>
           </div>
-          <button className="dash__close" onClick={() => { setNavOpen(false); menuRef.current?.focus() }} aria-label="Close navigation">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
-          </button>
           <nav className="dash__nav" aria-label="Dashboard">
             {NAV.map(([p, label, Icon]) => (
-              <Link key={label} href={href(p)} title={label} className={`dash__link${current === label ? ' active' : ''}`} aria-current={current === label ? 'page' : undefined}>
+              <Link key={label} href={href(p)} className={`dash__link${current === label ? ' active' : ''}`} aria-current={current === label ? 'page' : undefined} data-tip={label}>
                 <Icon />
-                <span className="dash__link-label">{label}</span>
+                <span className="rail__label">{label}</span>
               </Link>
             ))}
           </nav>
           <div className="dash__side-foot">
-            <Link href="/dashboard/settings" title="Settings" className={`dash__link${current === 'Settings' ? ' active' : ''}`}>
-              <SettingsIcon /><span className="dash__link-label">Settings</span>
+            <Link href="/dashboard/settings" className={`dash__link${current === 'Settings' ? ' active' : ''}`} data-tip="Settings">
+              <SettingsIcon /><span className="rail__label">Settings</span>
             </Link>
             <div className="dash__user">
               <span className="dash__avatar">
@@ -205,13 +213,18 @@ export default function Shell({ children }) {
 
         <div className="dash__main">
           <header className="dash__top">
-            <button ref={menuRef} className="dash__menu dash__mobile-menu" onClick={() => setNavOpen((o) => !o)} aria-controls="dashboard-sidebar" aria-expanded={navOpen} aria-label={navOpen ? 'Close navigation' : 'Open navigation'} title="Toggle navigation">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" />
-                <path className="dash__menu-arrow" d="m15 9-3 3 3 3" />
-              </svg>
+            <button ref={menuRef} className="icon-btn dash__menu" onClick={() => setNavOpen((o) => !o)} aria-label="Toggle navigation">
+              <GridIcon />
             </button>
-            <p className="dash__crumb"><span className="grey">Workspace</span> / {current}</p>
+            <p className="dash__crumb crumb">
+              {(() => {
+                const Icon = current === 'Settings' ? SettingsIcon : (NAV.find(([, l]) => l === current) || NAV[0])[2]
+                return <Icon />
+              })()}
+              <span className="crumb__root">Workspace</span>
+              <span className="crumb__sep" aria-hidden="true">/</span>
+              <span className="crumb__now">{current}</span>
+            </p>
             <form className="dash__scan" onSubmit={runScan} role="search" aria-busy={scanLoading}>
               <SearchIcon />
               <label htmlFor="dash-scan" className="skip">URL to scan</label>
