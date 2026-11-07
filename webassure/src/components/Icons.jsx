@@ -54,3 +54,11 @@ export const AlertIcon = () => (
 export const SearchIcon = () => (
   <svg {...base}><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4-4" /></svg>
 )
+
+// Neutral silhouette used until a real photo is added.
+export const PersonPlaceholder = () => (
+  <svg viewBox="0 0 64 64" aria-hidden="true" className="person-ph">
+    <circle cx="32" cy="24" r="11" fill="currentColor" />
+    <path d="M10 60c0-12.2 9.8-20 22-20s22 7.8 22 20z" fill="currentColor" />
+  </svg>
+)

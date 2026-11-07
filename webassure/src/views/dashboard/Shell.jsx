@@ -10,7 +10,7 @@ import { takePendingScan } from '../../lib/pending.js'
 import { useTheme } from '../../components/ThemeProvider.jsx'
 import { DashContext } from './context.js'
 import {
-  FileIcon, GridIcon, LedgerIcon, LockIcon, LogoutIcon, ScanIcon, SearchIcon, SettingsIcon, ShieldIcon, ThemeIcon,
+  PersonPlaceholder, FileIcon, GridIcon, LedgerIcon, LockIcon, LogoutIcon, ScanIcon, SearchIcon, SettingsIcon, ShieldIcon, ThemeIcon,
 } from '../../components/Icons.jsx'
 
 const NAV = [
@@ -130,7 +130,7 @@ export default function Shell({ children }) {
             </Link>
             <div className="dash__user">
               <span className="dash__avatar">
-                {user.avatar ? <img src={user.avatar} alt="" /> : user.name.slice(0, 1).toUpperCase()}
+                {user.avatar ? <img src={user.avatar} alt="" /> : <PersonPlaceholder />}
               </span>
               <div className="dash__user-txt">
                 <p>{user.name}</p>

@@ -129,7 +129,7 @@ export function Cta() {
     <section className="section wrap mc" id="contact">
       <h2 className="mc__t reveal">Know your website before you trust it.</h2>
       <div className="mc__btns reveal">
-        <Link href="/signup" className="pill-btn">Get started</Link>
+        <Link href="/signup" className="pill-btn pill-btn--glow">Get started</Link>
         <a href="#pricing" className="pill-btn">See pricing</a>
       </div>
     </section>

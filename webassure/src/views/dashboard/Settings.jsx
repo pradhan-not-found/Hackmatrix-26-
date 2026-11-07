@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDash } from './context.js'
 import { signOut, updateUser } from '../../lib/auth.js'
+import { PersonPlaceholder } from '../../components/Icons.jsx'
 import { PageHead, Toggle } from './ui.jsx'
 
 function newKey() {
@@ -81,7 +82,7 @@ export default function Settings() {
           <form className="set__body" onSubmit={save}>
             <div className="photo">
               <span className="photo__img">
-                {user.avatar ? <img src={user.avatar} alt="" /> : <span>{user.name.slice(0, 1).toUpperCase()}</span>}
+                {user.avatar ? <img src={user.avatar} alt="" /> : <PersonPlaceholder />}
               </span>
               <div className="photo__meta">
                 <p className="set__t">Profile photo</p>

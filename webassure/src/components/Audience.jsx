@@ -1,9 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import ScrollText from './ScrollText.jsx'
 import ThermalIcon from './ThermalIcon.jsx'
-import { ArrowIcon } from './Icons.jsx'
 
 const SIGNALS = [
   ['redirect', 'Redirect chains', 'Every hop followed to where the link really ends.'],
@@ -70,21 +68,15 @@ export default function Audience() {
           <p className="eyebrow">Where we come in</p>
           <p className="moments__lead">Four moments where a few seconds of checking saves the most.</p>
         </div>
-        <div className="moments__grid">
+        <ol className="mrow">
           {MOMENTS.map(([title, text], i) => (
-            <Link key={title} href="/signup" className="mo reveal" style={{ transitionDelay: `${i * 90}ms` }}>
-              <span className="mo__glow" aria-hidden="true" />
-              <span className="mo__head">
-                <span className="mo__n">{String(i + 1).padStart(2, '0')}</span>
-                <span className="mo__go" aria-hidden="true"><ArrowIcon /></span>
-              </span>
-              <span className="mo__body">
-                <span className="mo__t">{title}</span>
-                <span className="mo__d">{text}</span>
-              </span>
-            </Link>
+            <li key={title} className="mrow__item reveal" style={{ transitionDelay: `${i * 90}ms` }}>
+              <span className="mrow__n">{String(i + 1).padStart(2, '0')}</span>
+              <span className="mrow__t">{title}</span>
+              <span className="mrow__d">{text}</span>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   )

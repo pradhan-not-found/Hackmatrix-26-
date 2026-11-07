@@ -20,6 +20,23 @@ const SHAPES = {
     </>
   ),
   check: <path d="M34 106 L80 152 L168 52" fill="none" />,
+  user: (
+    <>
+      <circle cx="100" cy="66" r="34" stroke="none" />
+      <path d="M36 178 C36 136 64 114 100 114 C136 114 164 136 164 178 Z" stroke="none" />
+    </>
+  ),
+  bolt: <path d="M114 14 L44 112 H96 L84 186 L156 86 H104 Z" stroke="none" />,
+  team: (
+    <>
+      <circle cx="100" cy="62" r="28" stroke="none" />
+      <path d="M50 170 C50 132 72 112 100 112 C128 112 150 132 150 170 Z" stroke="none" />
+      <circle cx="44" cy="84" r="20" stroke="none" />
+      <path d="M8 170 C8 142 22 126 44 126 C52 126 58 128 63 131 C52 142 46 156 46 170 Z" stroke="none" />
+      <circle cx="156" cy="84" r="20" stroke="none" />
+      <path d="M192 170 C192 142 178 126 156 126 C148 126 142 128 137 131 C148 142 154 156 154 170 Z" stroke="none" />
+    </>
+  ),
   alert: (
     <>
       <path d="M100 24 L182 170 H18 Z" fill="none" />

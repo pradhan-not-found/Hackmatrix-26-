@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 const COLUMNS = [
   {
     title: 'Product',
@@ -45,6 +47,9 @@ export default function Footer() {
           <a href="#top" className="footer__mark" aria-label="WebAssure home">webassure</a>
           <p className="grey">
             AI threat detection for links, sites and certificates. Know before you click.
+          </p>
+          <p className="footer__made">
+            Made by <Link href="/team" className="footer__team">Fantastic <span>4</span></Link>
           </p>
         </div>
         <nav className="footer__cols" aria-label="Footer">

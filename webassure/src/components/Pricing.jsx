@@ -8,7 +8,7 @@ import ThermalIcon from './ThermalIcon.jsx'
 const PLANS = [
   {
     name: 'Personal',
-    icon: 'check',
+    icon: 'user',
     monthly: 0,
     blurb: 'Check links before you trust them.',
     cta: 'Start free',
@@ -17,7 +17,7 @@ const PLANS = [
   },
   {
     name: 'Pro',
-    icon: 'spark',
+    icon: 'bolt',
     monthly: 499,
     blurb: 'For professionals and small businesses.',
     cta: 'Start 14-day trial',
@@ -27,7 +27,7 @@ const PLANS = [
   },
   {
     name: 'Teams',
-    icon: 'nodes',
+    icon: 'team',
     monthly: 2499,
     blurb: 'For security teams protecting a brand.',
     cta: 'Start 14-day trial',
