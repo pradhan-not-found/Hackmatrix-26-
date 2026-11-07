@@ -30,9 +30,22 @@ No model training, vector database, or RAG is required.
 
 ## Reputation lookup
 
-Optionally set `GOOGLE_SAFE_BROWSING_API_KEY` before starting the server to enable
-Google Safe Browsing v4 threat matches. Without a key, the check is explicitly
-unavailable. URLs, including query strings, are sent to Google when enabled; obtain
+Create a Google Cloud project, enable **Safe Browsing APIs**, and create an API key
+as described in [Google's setup guide](https://developers.google.com/safe-browsing/v4/get-started).
+Restrict the key to that API. In the repository root:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Edit the ignored `.env` file and set `GOOGLE_SAFE_BROWSING_API_KEY=your_key`.
+Install updated requirements and restart the server. The provider reads `.env`
+directly; a process environment variable takes precedence (an empty one disables
+the provider). Keys are never included in reports or error messages.
+
+Without a key, the check is explicitly unavailable. Configuration errors, quota
+exhaustion, timeouts, TLS failures, and invalid responses have distinct error codes
+in the report's threat intelligence check. URLs, including query strings, are sent to Google when enabled; obtain
 user consent before enabling this for other users. Review Google's current terms
 and attribution requirements before public deployment:
 https://developers.google.com/safe-browsing/v4/lookup-api

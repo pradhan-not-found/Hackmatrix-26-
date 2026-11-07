@@ -66,13 +66,13 @@ class NetworkTests(unittest.TestCase):
         connection.return_value.close.assert_called_once()
 
     def test_reputation_disabled_without_key(self):
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {"GOOGLE_SAFE_BROWSING_API_KEY": ""}):
             self.assertEqual(reputation(["https://example.com/"])["status"], "unavailable")
 
     def test_reputation_provider_payload_and_errors(self):
         import json
         with patch.dict(os.environ, {"GOOGLE_SAFE_BROWSING_API_KEY": "test"}):
-            with patch("backend.investigation.build_opener") as opener:
+            with patch("backend.threat_intelligence.build_opener") as opener:
                 response = opener.return_value.open.return_value.__enter__.return_value
                 response.read.return_value = b'{}'
                 self.assertEqual(reputation(["https://example.com/"])["matches"], [])

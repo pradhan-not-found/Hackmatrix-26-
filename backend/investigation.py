@@ -1,55 +1,16 @@
-import json
-import os
 import http.client
 import ssl
 import time
 from datetime import datetime, timezone
-from urllib.parse import urlencode, urljoin, urlsplit
-from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+from urllib.parse import urljoin, urlsplit
 from uuid import uuid4
 
 from backend.network import UnsafeURL, fetch, normalize_url, public_addresses
+from backend.threat_intelligence import reputation
 
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def reputation(urls: list[str]) -> dict:
-    """Optional Google Safe Browsing v4 lookup; submitted URLs leave this service."""
-    key = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY")
-    if not key:
-        return {"status": "unavailable", "reason": "Google Safe Browsing API key not configured"}
-    endpoint = "https://safebrowsing.googleapis.com/v4/threatMatches:find?" + urlencode({"key": key})
-    payload = {"client": {"clientId": "hackmatrix", "clientVersion": "1.0"},
-               "threatInfo": {"threatTypes": ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE"],
-                              "platformTypes": ["ANY_PLATFORM"], "threatEntryTypes": ["URL"],
-                              "threatEntries": [{"url": url} for url in urls]}}
-    request = Request(endpoint, data=json.dumps(payload).encode(),
-                      headers={"Content-Type": "application/json"})
-    try:
-        # Do not inherit environment proxies, and do not follow provider redirects.
-        class NoRedirect(HTTPRedirectHandler):
-            def redirect_request(self, req, fp, code, msg, headers, newurl):
-                return None
-
-        with build_opener(ProxyHandler({}), NoRedirect()).open(request, timeout=5) as response:
-            raw = response.read(262145)
-        if len(raw) > 262144:
-            raise ValueError("Provider response too large")
-        data = json.loads(raw)
-        if not isinstance(data, dict):
-            raise ValueError("Invalid provider response")
-        matches = data.get("matches", [])
-        if not isinstance(matches, list) or not all(
-            isinstance(match, dict) and isinstance(match.get("threat"), dict)
-            and match["threat"].get("url") in urls and match.get("threatType")
-            for match in matches
-        ):
-            raise ValueError("Invalid provider response")
-        return {"status": "completed", "source": "Google Safe Browsing v4", "matches": matches}
-    except (OSError, ValueError, TypeError):
-        return {"status": "unavailable", "reason": "Threat intelligence provider request failed"}
 
 
 def investigate(url: str) -> dict:
@@ -148,7 +109,7 @@ def investigate(url: str) -> dict:
             report["checks"].append({"name": "http", "status": "failed", "error": "Invalid HTTP response"})
             break
 
-    intelligence = reputation([result["url"] for result in report["redirect_chain"]] or [normalized])
+    intelligence = reputation(list(dict.fromkeys([normalized, *[hop["url"] for hop in report["redirect_chain"]]])))
     report["checks"].append({"name": "threat_intelligence", **intelligence})
     if intelligence["status"] != "completed":
         report["limitations"].append(intelligence["reason"])
