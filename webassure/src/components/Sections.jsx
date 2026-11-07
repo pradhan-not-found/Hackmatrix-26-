@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { AlertIcon, ArrowIcon, CheckIcon } from './Icons.jsx'
+import ScrollText from './ScrollText.jsx'
+import ThermalIcon from './ThermalIcon.jsx'
 
 export function Badge({ tone, children }) {
   return (
@@ -36,56 +38,53 @@ export function ScoreRing({ value, label, size = 132 }) {
 
 /* ---------- Report preview ---------- */
 const FINDINGS = [
-  ['bad', 'Brand impersonation', 'Page imitates the SBI login screen (visual similarity 94%).'],
-  ['bad', 'Certificate anomaly', 'Certificate issued 2 days ago and absent from CT logs.'],
-  ['warn', 'Risky domain', '.xyz domain registered 3 days ago, privacy-protected owner.'],
-  ['ok', 'No malware', 'No malicious scripts or drive-by downloads detected.'],
+  ['bad', 'Brand impersonation', 'Copies the SBI login screen. Visual similarity 94%.'],
+  ['bad', 'Certificate anomaly', 'Issued two days ago and missing from public logs.'],
+  ['warn', 'New, hidden domain', 'Registered three days ago with a privacy-protected owner.'],
+  ['ok', 'No malware', 'No malicious scripts or drive-by downloads found.'],
 ]
 
 export function Report() {
   return (
-    <section className="section wrap report" id="report">
-      <div className="report__copy reveal">
+    <section className="section wrap" id="report">
+      <div className="wwd__head">
         <p className="eyebrow">The report</p>
-        <h2 className="t-statement">Evidence, not guesses.</h2>
-        <p className="t-lead grey">
-          Rather than a bare safe-or-malicious label, every check comes back as an assessment you can read,
-          verify and share.
-        </p>
-        <ul className="ticks">
-          <li><CheckIcon /> Every indicator explained in plain language</li>
-          <li><CheckIcon /> Certificate chain and CT-log evidence attached</li>
-          <li><CheckIcon /> Clear recommendation: avoid, review or proceed</li>
-          <li><CheckIcon /> One-click report to the shared threat ledger</li>
-        </ul>
+        <ScrollText
+          className="t-statement wwd__statement"
+          lead="Evidence, not guesses."
+          rest="Every verdict comes with the reasons behind it, written so anyone can act on it."
+        />
       </div>
 
-      <div className="card report__card reveal" aria-label="Sample WebAssure report">
-        <div className="report__top">
-          <div>
-            <p className="caption grey">Scanned URL</p>
-            <p className="report__url">secure-sbi-kyc-update.xyz/login</p>
-            <p className="caption grey">Scanned 12 seconds ago · 4.2s</p>
+      <div className="rp reveal" aria-label="Sample WebAssure report">
+        <div className="rp__verdict">
+          <div className="rp__meta">
+            <span className="rp__k">Scanned link</span>
+            <span className="rp__url">secure-sbi-kyc-update.xyz/login</span>
           </div>
-          <ScoreRing value={82} label="High risk" size={104} />
+          <div className="rp__score">
+            <span className="rp__n">82</span>
+            <span className="rp__of">/ 100</span>
+          </div>
+          <div className="rp__meter" aria-hidden="true">
+            <span className="rp__marker" style={{ left: '82%' }} />
+          </div>
+          <div className="rp__scale" aria-hidden="true"><span>Safe</span><span>Suspicious</span><span>High risk</span></div>
+          <div className="rp__rec">
+            <Badge tone="bad">Avoid</Badge>
+            <span>Do not enter credentials on this page.</span>
+          </div>
         </div>
-        <ul className="findings">
+
+        <ul className="rp__grid">
           {FINDINGS.map(([tone, title, text]) => (
-            <li key={title} className="finding">
-              <span className={`finding__icon finding__icon--${tone}`}>
-                {tone === 'ok' ? <CheckIcon /> : <AlertIcon />}
-              </span>
-              <div>
-                <p className="finding__t">{title}</p>
-                <p className="caption grey">{text}</p>
-              </div>
+            <li key={title} className="rp__item">
+              <span className={`rp__icon rp__icon--${tone}`}>{tone === 'ok' ? <CheckIcon /> : <AlertIcon />}</span>
+              <p className="rp__t">{title}</p>
+              <p className="rp__d">{text}</p>
             </li>
           ))}
         </ul>
-        <div className="report__rec">
-          <Badge tone="bad">Avoid</Badge>
-          <span className="caption">Do not enter credentials. Report sent to the threat ledger.</span>
-        </div>
       </div>
     </section>
   )
@@ -128,14 +127,16 @@ export function Faq() {
 /* ---------- CTA ---------- */
 export function Cta() {
   return (
-    <section className="section wrap" id="contact">
-      <div className="cta reveal">
-        <h2 className="t-display">Know your website before you trust it.</h2>
-        <p className="t-lead grey">Free for individuals. Built for teams.</p>
-        <div className="cta__btns">
-          <Link href="/signup" className="btn btn--ink btn--lg">Get started <ArrowIcon /></Link>
-          <a href="#top" className="btn btn--ghost btn--lg">Check a link</a>
-        </div>
+    <section className="section wrap closer" id="contact">
+      <p className="eyebrow reveal">Get started</p>
+      <h2 className="closer__t reveal">
+        Know your website before you trust it.{' '}
+        <span className="grey">Start free in under a minute, no card needed.</span>
+      </h2>
+      <div className="closer__btns reveal">
+        <Link href="/signup" className="pill-btn pill-btn--ink">Create free account</Link>
+        <a href="#top" className="pill-btn">Check a link</a>
+        <a href="mailto:hello@webassure.dev" className="pill-btn">hello@webassure.dev</a>
       </div>
     </section>
   )

@@ -9,15 +9,15 @@ const G = '0 .0863 .6667 .7961 .2667 .5176'
 const B = '0 .4275 1 .3608 0 1'
 
 // Dark mode: warm bright core → amber → pink → violet → indigo → page.
-const DARK = {
+export const DARK = {
   R: '1 1 1 .659 .31 .118',
   G: '.957 .71 .31 .333 .275 .106',
   B: '.878 .278 .545 .969 .898 .294',
 }
 
-function ColorFilter({ id, paper, table = { R, G, B } }) {
+export function ColorFilter({ id, paper, table = { R, G, B }, x = '-10%', y = '-40%', width = '120%', height = '180%' }) {
   return (
-    <filter id={id} x="-10%" y="-40%" width="120%" height="180%" colorInterpolationFilters="sRGB">
+    <filter id={id} x={x} y={y} width={width} height={height} colorInterpolationFilters="sRGB">
       <feGaussianBlur in="SourceAlpha" stdDeviation="11" />
       <feComponentTransfer result="glow">
         <feFuncA type="linear" slope="4" />

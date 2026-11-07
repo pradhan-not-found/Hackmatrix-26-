@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { CheckIcon } from './Icons.jsx'
+import ThermalIcon from './ThermalIcon.jsx'
 
 const PLANS = [
   {
     name: 'Personal',
+    icon: 'check',
     monthly: 0,
     blurb: 'Check links before you trust them.',
     cta: 'Start free',
@@ -15,6 +17,7 @@ const PLANS = [
   },
   {
     name: 'Pro',
+    icon: 'spark',
     monthly: 499,
     blurb: 'For professionals and small businesses.',
     cta: 'Start 14-day trial',
@@ -24,6 +27,7 @@ const PLANS = [
   },
   {
     name: 'Teams',
+    icon: 'nodes',
     monthly: 2499,
     blurb: 'For security teams protecting a brand.',
     cta: 'Start 14-day trial',
@@ -58,6 +62,7 @@ export default function Pricing() {
           return (
             <article key={p.name} className="plan" data-featured={p.featured || undefined}>
               {p.featured && <span className="plan__glow" aria-hidden="true" />}
+              <span className="plan__icon"><ThermalIcon shape={p.icon} size={64} /></span>
               <header className="plan__top">
                 <h3 className="plan__name">{p.name}</h3>
                 {p.featured && <span className="plan__tag">Most popular</span>}
