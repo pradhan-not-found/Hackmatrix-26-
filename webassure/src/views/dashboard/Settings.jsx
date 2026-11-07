@@ -131,14 +131,15 @@ export default function Settings() {
 
   return (
     <>
-      <PageHead title="Settings" />
-
       <div className="stw">
-        <nav className="stw__nav" aria-label="Settings" role="tablist">
-          {PAGES.map(([id, label, icon]) => (
-            <button key={id} type="button" role="tab" aria-selected={active === id} className={`stw__link${active === id ? ' is-on' : ''}`} onClick={() => go(id)}>{icon}<span>{label}</span></button>
-          ))}
-        </nav>
+        <aside className="stw__aside">
+          <PageHead title="Settings" />
+          <nav className="stw__nav" aria-label="Settings" role="tablist">
+            {PAGES.map(([id, label, icon]) => (
+              <button key={id} type="button" role="tab" aria-selected={active === id} className={`stw__link${active === id ? ' is-on' : ''}`} onClick={() => go(id)}>{icon}<span>{label}</span></button>
+            ))}
+          </nav>
+        </aside>
 
         <div className="st">
           {active === 'profile' && <section className="st__sec" id="profile">
