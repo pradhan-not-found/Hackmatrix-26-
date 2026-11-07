@@ -136,12 +136,3 @@ export function Bars({ data }) {
     </ul>
   )
 }
-
-export function RiskCell({ risk, tone }) {
-  return (
-    <span className="risk">
-      <span className="risk__bar"><span style={{ width: `${risk}%`, background: `var(--st-${tone})` }} /></span>
-      {risk}
-    </span>
-  )
-}

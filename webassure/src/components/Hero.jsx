@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { analyze } from '../lib/analyze.js'
 import { getUser } from '../lib/auth.js'
 import { setPendingScan } from '../lib/pending.js'
 import Thermal from './Thermal.jsx'
@@ -17,7 +16,6 @@ export default function Hero() {
   const submit = (e) => {
     e.preventDefault()
     if (!value.trim()) return
-    if (!analyze(value)) return setError('That does not look like a URL or domain.')
     setError('')
     setPendingScan(value)
     router.push(getUser() ? '/dashboard/scans' : '/login?next=/dashboard/scans')

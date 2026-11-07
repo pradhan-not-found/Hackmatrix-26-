@@ -31,4 +31,3 @@ export async function proxy(request, { params }) {
       : 'Cannot reach the investigation backend. Start FastAPI and try again.' }, { status: timeout ? 504 : 502 })
   }
 }
-

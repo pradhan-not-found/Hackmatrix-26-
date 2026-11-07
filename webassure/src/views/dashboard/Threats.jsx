@@ -14,7 +14,7 @@ export default function Threats() {
 
   return (
     <>
-      <PageHead title="Threats" sub="Campaigns grouped from related malicious URLs." />
+      <PageHead title="Threats" sub="Demo preview — sample campaigns, not live investigation results. Use Scans for backend assessments." />
 
       <section className="kpis kpis--3">
         <Kpi label="Active campaigns" value={count('Active')} />

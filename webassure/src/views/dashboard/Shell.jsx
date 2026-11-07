@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { analyze } from '../../lib/analyze.js'
+import { api } from '../../lib/investigations.js'
 import { getUser, signIn, signOut } from '../../lib/auth.js'
-import { SEED_SCANS } from '../../lib/data.js'
 import { takePendingScan } from '../../lib/pending.js'
 import { useTheme } from '../../components/ThemeProvider.jsx'
 import { DashContext } from './context.js'
@@ -27,7 +26,15 @@ export default function Shell({ children }) {
   const pathname = usePathname()
   const { theme, toggle } = useTheme()
   const [user, setUser] = useState(null)
-  const [scans, setScans] = useState(SEED_SCANS)
+  const [scans, setScans] = useState([])
+  const [total, setTotal] = useState(0)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState('')
+  const [scanLoading, setScanLoading] = useState(false)
+  const [failedInput, setFailedInput] = useState('')
+  const reportCache = useRef(new Map())
+  const historyVersion = useRef(0)
+  const submitting = useRef(false)
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const [navOpen, setNavOpen] = useState(false)
@@ -43,59 +50,77 @@ export default function Shell({ children }) {
 
   useEffect(() => setNavOpen(false), [pathname])
 
+  const loadHistory = useCallback(async (offset = 0) => {
+    const version = ++historyVersion.current
+    setHistoryLoading(true)
+    setHistoryError('')
+    try {
+      const page = await api(`?limit=30&offset=${offset}`)
+      if (version !== historyVersion.current) return
+      setScans((previous) => offset ? [...new Map([...previous, ...page.items].map((item) => [item.id, item])).values()] : page.items)
+      setTotal(page.total)
+    } catch (failure) {
+      if (version === historyVersion.current) setHistoryError(failure.message)
+    } finally {
+      if (version === historyVersion.current) setHistoryLoading(false)
+    }
+  }, [])
+
+  const getReport = useCallback(async (id) => {
+    if (reportCache.current.has(id)) return reportCache.current.get(id)
+    const report = await api(`/${encodeURIComponent(id)}`)
+    reportCache.current.set(id, report)
+    return report
+  }, [])
+
+  const runInvestigation = useCallback(async (input) => {
+    if (!input.trim() || submitting.current) return
+    submitting.current = true
+    setScanLoading(true)
+    setError('')
+    setFailedInput('')
+    try {
+      const report = await api('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: input.trim() }) })
+      reportCache.current.set(report.id, report)
+      ++historyVersion.current
+      setScans((previous) => [report, ...previous.filter((item) => item.id !== report.id)])
+      setTotal((previous) => previous + 1)
+      setFocusId(report.id)
+      setQuery('')
+      router.push('/dashboard/scans')
+      await loadHistory()
+    } catch (failure) {
+      setError(failure.message)
+      setFailedInput(input)
+    } finally {
+      submitting.current = false
+      setScanLoading(false)
+    }
+  }, [loadHistory, router])
+
   useEffect(() => {
     if (!user) return
+    loadHistory()
     const pending = takePendingScan()
-    if (!pending) return
-    const r = analyze(pending)
-    if (!r) return
-    const id = `s-${1100 + Math.floor(Math.random() * 800)}`
-    setScans((s) => [{
-      id, url: pending.trim().replace(/^https?:\/\//, ''), risk: r.risk,
-      category: r.findings[0]?.weight ? 'Heuristic flags' : 'No flags', when: 'Just now', source: 'Website',
-      findings: r.findings.map((f) => f.text), fresh: true,
-    }, ...s])
-    setFocusId(id)
-  }, [user])
+    if (pending) { setQuery(pending); runInvestigation(pending) }
+  }, [user, loadHistory, runInvestigation])
 
+  const clearFocus = useCallback(() => setFocusId(null), [])
   if (!user) return <div className="dash-loading" aria-busy="true" />
-
   const seg = pathname.split('/')[2] || ''
   const current = seg === 'settings' ? 'Settings' : (NAV.find(([p]) => p === seg) || NAV[0])[1]
   const href = (p) => `/dashboard${p ? `/${p}` : ''}`
 
-  const addScan = (input) => {
-    const r = analyze(input)
-    if (!r) return null
-    const scan = {
-      id: `s-${1043 + scans.length}`,
-      url: input.trim().replace(/^https?:\/\//, ''),
-      risk: r.risk,
-      category: r.findings[0]?.weight ? 'Heuristic flags' : 'No flags',
-      when: 'Just now',
-      source: 'Manual',
-      findings: r.findings.map((f) => f.text),
-      fresh: true,
-    }
-    setScans((s) => [scan, ...s])
-    return scan
-  }
-
-  const runScan = (e) => {
-    e.preventDefault()
-    if (!query.trim()) return
-    if (!addScan(query)) return setError('Enter a valid URL or domain.')
-    setError('')
-    setQuery('')
-    if (seg !== '' && seg !== 'scans') router.push('/dashboard/scans')
-  }
+  const runScan = (event) => { event.preventDefault(); runInvestigation(query) }
 
   const logout = () => {
     signOut()
     router.push('/')
   }
 
-  const ctx = { scans, addScan, user, setUser, focusId, clearFocus: () => setFocusId(null) }
+  const ctx = { scans, total, historyLoading, historyError, refreshHistory: loadHistory,
+    loadMore: () => loadHistory(scans.length), getReport, scanLoading,
+    user, setUser, focusId, clearFocus }
 
   return (
     <DashContext.Provider value={ctx}>
@@ -131,17 +156,18 @@ export default function Shell({ children }) {
               <GridIcon />
             </button>
             <p className="dash__crumb"><span className="grey">Workspace</span> / {current}</p>
-            <form className="dash__scan" onSubmit={runScan} role="search">
+            <form className="dash__scan" onSubmit={runScan} role="search" aria-busy={scanLoading}>
               <SearchIcon />
               <label htmlFor="dash-scan" className="skip">URL to scan</label>
               <input id="dash-scan" placeholder="Scan a URL or domain…" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
-              <button className="btn btn--ink" type="submit">Scan</button>
+              <button className="btn btn--ink" type="submit" disabled={scanLoading}>{scanLoading ? 'Scanning…' : 'Scan'}</button>
             </form>
             <button className="icon-btn" onClick={toggle} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
               <ThemeIcon />
             </button>
           </header>
-          {error && <p className="dash__err" role="alert">{error}</p>}
+          {scanLoading && <p className="scan-status caption" role="status">Investigating URL. Collecting network checks and threat intelligence…</p>}
+          {error && <div className="dash__err" role="alert">{error} <button className="btn btn--ghost" disabled={scanLoading} onClick={() => runInvestigation(failedInput)}>Retry scan</button></div>}
           {children}
         </div>
         <button className="dash__scrim" onClick={() => setNavOpen(false)} aria-label="Close navigation" tabIndex={navOpen ? 0 : -1} />
