@@ -276,3 +276,10 @@ html, * { scrollbar-width: auto; scrollbar-color: auto; }
 
 /* Pro trial button: no texture overlay, plain plastic on hover */
 .plan[data-featured] .btn--ink::before, .plan[data-featured] .btn--ink:hover::before { content: none; display: none; animation: none; }
+
+/* hero: pump lines from the screen edges into the first and last letters */
+.hero__logo .thermal { position: relative; z-index: 1; }
+.hero__wires {
+  position: absolute; z-index: 0; pointer-events: none;
+  left: 50%; width: 100vw; transform: translateX(-50%); top: -40%; height: 180%;
+}

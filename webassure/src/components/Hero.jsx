@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getUser } from '../lib/auth.js'
 import { setPendingScan } from '../lib/pending.js'
 import Thermal from './Thermal.jsx'
+import HeroWires from './HeroWires.jsx'
 
 export default function Hero() {
   const router = useRouter()
@@ -26,6 +27,7 @@ export default function Hero() {
     <section className="hero" id="top">
       <h1 className="skip">WebAssure</h1>
       <div className="hero__logo">
+        <HeroWires />
         <Thermal text="webassure" />
       </div>
       <div className="hero__band wrap">
