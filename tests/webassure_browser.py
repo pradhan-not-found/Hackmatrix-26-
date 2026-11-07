@@ -1,9 +1,10 @@
-"""End-to-end Next.js -> FastAPI -> SQLite checks; only outbound probes are mocked.
+"""Offline browser regression: mocked Supabase Auth, real proxy/API, isolated storage.
 
 Build webassure first, then run unittest discovery with -p webassure_browser.py.
 """
 
 import json
+import base64
 import os
 from pathlib import Path
 import shutil
@@ -18,6 +19,20 @@ from urllib.request import urlopen
 
 import uvicorn
 from playwright.sync_api import expect, sync_playwright
+from fastapi import Depends
+from backend.main import app
+from backend.supabase import authenticated_user, investigation_store
+from tests.support_store import SQLiteFixtureStore
+
+USER = {'id': '00000000-0000-0000-0000-000000000100', 'email': 'test@example.com', 'aud': 'authenticated',
+        'role': 'authenticated', 'user_metadata': {'name': 'Test user'}, 'app_metadata': {'provider': 'email'}}
+
+
+def test_session():
+    expires = int(time.time()) + 3600
+    encode = lambda value: base64.urlsafe_b64encode(json.dumps(value).encode()).decode().rstrip('=')
+    token = encode({'alg': 'HS256', 'typ': 'JWT'}) + '.' + encode({'sub': USER['id'], 'exp': expires, 'aud': 'authenticated', 'role': 'authenticated'}) + '.test-signature'
+    return {'access_token': token, 'refresh_token': 'offline-refresh-token', 'token_type': 'bearer', 'expires_at': expires, 'expires_in': 3600, 'user': USER}
 
 
 class WebAssureBrowserTests(unittest.TestCase):
@@ -28,6 +43,17 @@ class WebAssureBrowserTests(unittest.TestCase):
         environment = patch.dict(os.environ, {"INVESTIGATION_DB": f"{cls.directory.name}/reports.sqlite3"})
         environment.start()
         cls.addClassCleanup(environment.stop)
+        def fixture_store(principal=Depends(authenticated_user)):
+            return SQLiteFixtureStore()
+        original_overrides = app.dependency_overrides.copy()
+        app.dependency_overrides[investigation_store] = fixture_store
+        def restore_overrides():
+            app.dependency_overrides.clear()
+            app.dependency_overrides.update(original_overrides)
+        cls.addClassCleanup(restore_overrides)
+        auth = patch('backend.supabase.request_supabase', return_value=(USER, {}))
+        auth.start()
+        cls.addClassCleanup(auth.stop)
 
         def fetch(url, addresses):
             time.sleep(.5)
@@ -101,12 +127,85 @@ class WebAssureBrowserTests(unittest.TestCase):
         cls.browser = cls.playwright.chromium.launch(channel="msedge", headless=True)
         cls.addClassCleanup(cls.browser.close)
 
+    def test_account_login_profile_preferences_password_recovery_and_logout(self):
+        page = self.browser.new_page(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(page.close)
+        current_user = json.loads(json.dumps(USER))
+        updates = []
+        recovered = []
+        page.add_init_script("localStorage.setItem('wa-cookies', JSON.stringify({choice: 'essential'}))")
+        def auth_response(route):
+            path = route.request.url
+            if '/token' in path:
+                route.fulfill(json=test_session())
+            elif '/recover' in path:
+                recovered.append(route.request.post_data_json)
+                route.fulfill(json={})
+            elif '/logout' in path:
+                route.fulfill(status=204)
+            elif '/user' in path:
+                if route.request.method == 'PUT':
+                    body = route.request.post_data_json
+                    updates.append(body)
+                    current_user['user_metadata'].update(body.get('data', {}))
+                route.fulfill(json=current_user)
+            else:
+                route.fulfill(status=400, json={'message': 'Unexpected auth test request'})
+        page.route('**/auth/v1/**', auth_response)
+        page.goto(self.url + '/login')
+        page.get_by_label('Work email', exact=True).fill(USER['email'])
+        page.locator('input[type=password]').fill('test-password-123')
+        page.get_by_role('button', name='Log in', exact=True).click()
+        expect(page.locator('.greet .dash__title')).to_be_visible()
+        page.get_by_role('link', name='Settings', exact=True).click()
+        page.get_by_label('Full name', exact=True).fill('Updated profile')
+        page.get_by_role('button', name='Save changes', exact=True).click()
+        expect(page.get_by_role('button', name='Saved', exact=True)).to_be_visible()
+        self.assertEqual(current_user['user_metadata']['name'], 'Updated profile')
+        image_bytes = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aY5kAAAAASUVORK5CYII=')
+        uploads = []
+        def avatar_upload(route):
+            uploads.append(route.request.url)
+            route.fulfill(json={'Key': USER['id'] + '/profile.jpg'})
+        page.route('**/storage/v1/object/avatars/**', avatar_upload)
+        page.route('**/storage/v1/object/public/avatars/**', lambda route: route.fulfill(body=image_bytes, content_type='image/png'))
+        page.locator('input[type=file]').set_input_files({'name': 'avatar.png', 'mimeType': 'image/png', 'buffer': image_bytes})
+        expect(page.locator('.photo__img img')).to_have_attribute('src', __import__('re').compile('/storage/v1/object/public/avatars/'))
+        self.assertEqual(len(uploads), 1)
+        self.assertIn(USER['id'] + '/profile.jpg', uploads[0])
+        self.assertFalse(current_user['user_metadata']['avatar'].startswith('data:'))
+        page.get_by_role('switch', name='Weekly summary', exact=True).click()
+        page.get_by_role('button', name='Save preferences', exact=True).click()
+        expect(page.get_by_role('status')).to_contain_text('Preferences saved.')
+        self.assertTrue(current_user['user_metadata']['preferences']['weekly'])
+        page.reload()
+        expect(page.get_by_role('switch', name='Weekly summary', exact=True)).to_have_attribute('aria-checked', 'true')
+        page.get_by_role('button', name='Send password reset email', exact=True).click()
+        expect(page.get_by_role('status')).to_contain_text('Check your email')
+        self.assertEqual(recovered[-1]['email'], USER['email'])
+        page.goto(self.url + '/auth/reset-password')
+        page.get_by_label('New password', exact=True).fill('new-password-123')
+        page.get_by_label('Confirm password', exact=True).fill('mismatch-123')
+        page.get_by_role('button', name='Save password', exact=True).click()
+        expect(page.locator('.auth__error[role=alert]')).to_have_text('Passwords do not match.')
+        page.get_by_label('Confirm password', exact=True).fill('new-password-123')
+        page.get_by_role('button', name='Save password', exact=True).click()
+        expect(page.get_by_role('status')).to_have_text('Your password has been updated.')
+        self.assertEqual(updates[-1]['password'], 'new-password-123')
+        page.goto(self.url + '/dashboard/settings')
+        page.locator('.st__danger').get_by_role('button', name='Log out', exact=True).click()
+        expect(page).to_have_url(self.url + '/login')
+        page.goto(self.url + '/dashboard/scans')
+        expect(page).to_have_url(self.url + '/login?next=%2Fdashboard%2Fscans')
+
     def test_real_submission_persistence_evidence_download_and_retries(self):
         page = self.browser.new_page(viewport={"width": 1440, "height": 1000})
         self.addCleanup(page.close)
         failures = []
         page.on("pageerror", lambda failure: failures.append(str(failure)))
-        page.add_init_script("localStorage.setItem('wa-user', JSON.stringify({name: 'Test user', email: 'test@example.com'}))")
+        page.route('**/auth/v1/user', lambda route: route.fulfill(json=USER))
+        page.add_init_script("localStorage.setItem('wa-theme', 'light')")
+        page.add_init_script("localStorage.setItem('sb-ldrspcimsdzazhbckmca-auth-token', JSON.stringify(" + json.dumps(test_session()) + "))")
         page.goto(self.url + "/dashboard/scans")
         expect(page.get_by_text("No saved investigations", exact=True)).to_be_visible()
         page.get_by_label("URL to scan", exact=True).fill("https://example.com")
@@ -234,16 +333,13 @@ class WebAssureBrowserTests(unittest.TestCase):
         expect(page.get_by_text("33 of 33 saved investigations loaded", exact=True)).to_be_visible()
         expect(page.locator("tbody tr")).to_have_count(33)
         page.get_by_role('link', name='Overview', exact=True).click()
-        expect(page.get_by_role('heading', name='Investigation overview', exact=True)).to_be_visible()
-        expect(page.locator('.overview-ring strong')).to_have_text('33')
-        expect(page.locator('.overview-metric-art[aria-hidden="true"]')).to_have_count(4)
-        expect(page.locator('.overview-section-art[aria-hidden="true"]')).to_have_count(2)
-        expect(page.locator('.overview-legend li').filter(has_text='Inconclusive').locator('strong')).to_have_text('32')
-        expect(page.locator('.overview-legend li').filter(has_text='Confirmed Malicious').locator('strong')).to_have_text('1')
-        expect(page.locator('.overview-metric').first.locator(':scope > strong')).to_have_text('33')
-        expect(page.locator('tbody tr')).to_have_count(6)
-        page.get_by_role('button', name='New investigation', exact=True).click()
-        expect(page.get_by_label('URL to scan', exact=True)).to_be_focused()
+        expect(page.locator('.greet .dash__title')).to_be_visible()
+        expect(page.locator('.kpi').filter(has_text='Saved investigations').locator('.kpi__v')).to_have_text('33')
+        expect(page.locator('.kpi').filter(has_text='Known malicious').locator('.kpi__v')).to_have_text('1')
+        expect(page.locator('.kpi').filter(has_text='Needs verification').locator('.kpi__v')).to_have_text('32')
+        expect(page.locator('.bars__row').filter(has_text='Inconclusive').locator('.bars__meta .grey')).to_have_text('32')
+        expect(page.locator('.table-wrap tbody tr')).to_have_count(5)
+        expect(page.get_by_role('img', name='Scans per day', exact=True)).to_be_visible()
         page.screenshot(path='data/webassure-overview-dark.png', full_page=True)
         page.get_by_role('button', name='Switch to light theme', exact=True).click()
         page.screenshot(path='data/webassure-overview-light.png', full_page=True)

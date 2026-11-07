@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from backend.investigation import investigate, reputation
 from backend.main import app
+from tests.support_store import isolated_storage
 from backend.network import UnsafeURL, fetch, normalize_url, public_addresses
 
 
@@ -140,6 +141,7 @@ class PipelineTests(unittest.TestCase):
                 self.assertEqual(report["status"], "completed")
                 self.assertNotEqual(report["risk_classification"], "Low Risk")
 
+    @isolated_storage()
     def test_api_persists_and_retrieves(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.dict(os.environ, {"INVESTIGATION_DB": f"{directory}/reports.sqlite3"}):
@@ -153,6 +155,7 @@ class PipelineTests(unittest.TestCase):
                     self.assertEqual(client.post("/api/investigations", json={"url": "file:///etc/passwd"}).status_code, 422)
                     self.assertEqual(client.get("/api/investigations/00000000-0000-0000-0000-000000000000").status_code, 404)
 
+    @isolated_storage()
     def test_history_is_recent_first_paginated_and_summary_only(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.dict(os.environ, {"INVESTIGATION_DB": f"{directory}/reports.sqlite3"}):

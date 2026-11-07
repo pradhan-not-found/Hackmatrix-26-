@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from backend.explanation import explain_locally
 from backend.main import app, database
+from tests.support_store import isolated_storage
 
 
 REPORT = {"id": "00000000-0000-0000-0000-000000000001", "normalized_url": "https://example.com/",
@@ -56,6 +57,7 @@ class LocalExplanationTests(unittest.TestCase):
             self.assertTrue(set(item["evidence_ids"]) <= allowed)
         self.assertEqual(report, before)
 
+    @isolated_storage()
     def test_default_endpoint_is_local_even_with_a_gemini_key(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.dict(os.environ, {"INVESTIGATION_DB": f"{directory}/reports.sqlite3", "GEMINI_API_KEY": "unused"}):

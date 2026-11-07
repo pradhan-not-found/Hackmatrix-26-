@@ -3,6 +3,8 @@ export async function proxy(request, { params }) {
   const validId = path.length === 1 && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path[0])
   if (path.length && !validId) return Response.json({ detail: 'Unknown investigation endpoint.' }, { status: 404 })
   if (request.method === 'POST' && path.length) return Response.json({ detail: 'Method not allowed.' }, { status: 405 })
+  const authorization = request.headers.get('authorization')
+  if (!/^Bearer\s+\S+$/i.test(authorization || '')) return Response.json({ detail: 'Sign in to access investigations.' }, { status: 401, headers: { 'Cache-Control': 'no-store' } })
   try {
     const base = (process.env.BACKEND_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
     const upstream = new URL(`${base}/api/investigations${path.length ? `/${path[0]}` : ''}`)
@@ -19,7 +21,7 @@ export async function proxy(request, { params }) {
     }
     const response = await fetch(upstream, {
       method: request.method, body, cache: 'no-store', redirect: 'error',
-      headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(90000),
+      headers: { 'Content-Type': 'application/json', Authorization: authorization }, signal: AbortSignal.timeout(90000),
     })
     return new Response(await response.text(), {
       status: response.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },

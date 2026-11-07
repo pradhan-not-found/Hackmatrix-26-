@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { api } from '../../lib/investigations.js'
-import { getUser, signIn, signOut } from '../../lib/auth.js'
+import { getUser, watchAuth, signOut } from '../../lib/auth.js'
 import { takePendingScan } from '../../lib/pending.js'
 import { useTheme } from '../../components/ThemeProvider.jsx'
 import { DashContext } from './context.js'
@@ -37,6 +37,8 @@ export default function Shell({ children }) {
   const [failedInput, setFailedInput] = useState('')
   const reportCache = useRef(new Map())
   const historyVersion = useRef(0)
+  const accountId = useRef(null)
+  const accountVersion = useRef(0)
   const submitting = useRef(false)
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
@@ -61,12 +63,34 @@ export default function Shell({ children }) {
     return () => clearTimeout(t)
   }, [])
 
-  // Client-side guard (demo auth lives in localStorage). ?demo opens a demo session.
+  // Restore a verified Supabase user; a demo URL cannot bypass sign-in.
   useEffect(() => {
-    let u = getUser()
-    if (!u && new URLSearchParams(window.location.search).has('demo')) u = signIn('demo@webassure.dev', 'Demo user')
-    if (!u) router.replace('/login')
-    else setUser(u)
+    let active = true
+    let stop = () => {}
+    const acceptUser = (next) => {
+      if (accountId.current !== (next?.id || null)) {
+        accountId.current = next?.id || null
+        ++accountVersion.current
+        ++historyVersion.current
+        reportCache.current.clear()
+        submitting.current = false
+        setScans([]); setTotal(0); setFocusId(null)
+        setQuery(''); setFailedInput(''); setError(''); setHistoryError('')
+        setHistoryLoading(false); setScanLoading(false)
+      }
+      setUser(next)
+    }
+    getUser().then((u) => {
+      if (!active) return
+      if (!u) { router.replace(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); return }
+      acceptUser(u)
+      stop = watchAuth((next) => {
+        if (!active) return
+        acceptUser(next)
+        if (!next) router.replace('/login')
+      })
+    }).catch((failure) => { if (active) setError(failure.message) })
+    return () => { active = false; stop() }
   }, [router])
 
   useEffect(() => setNavOpen(false), [pathname])
@@ -108,8 +132,10 @@ export default function Shell({ children }) {
   }, [])
 
   const getReport = useCallback(async (id) => {
+    const account = accountVersion.current
     if (reportCache.current.has(id)) return reportCache.current.get(id)
     const report = await api(`/${encodeURIComponent(id)}`)
+    if (account !== accountVersion.current) throw new Error('Your account changed. Reopen the report.')
     reportCache.current.set(id, report)
     return report
   }, [])
@@ -117,11 +143,13 @@ export default function Shell({ children }) {
   const runInvestigation = useCallback(async (input) => {
     if (!input.trim() || submitting.current) return
     submitting.current = true
+    const account = accountVersion.current
     setScanLoading(true)
     setError('')
     setFailedInput('')
     try {
       const report = await api('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: input.trim() }) })
+      if (account !== accountVersion.current) return
       reportCache.current.set(report.id, report)
       ++historyVersion.current
       setScans((previous) => [report, ...previous.filter((item) => item.id !== report.id)])
@@ -131,11 +159,9 @@ export default function Shell({ children }) {
       router.push('/dashboard/scans')
       await loadHistory()
     } catch (failure) {
-      setError(failure.message)
-      setFailedInput(input)
+      if (account === accountVersion.current) { setError(failure.message); setFailedInput(input) }
     } finally {
-      submitting.current = false
-      setScanLoading(false)
+      if (account === accountVersion.current) { submitting.current = false; setScanLoading(false) }
     }
   }, [loadHistory, router])
 
@@ -152,6 +178,7 @@ export default function Shell({ children }) {
       <div className="dash-loading" role="status" aria-label="Loading your workspace">
         <span className="dl__mark">webassure</span>
         <span className="dl__note">Preparing your workspace</span>
+        {error && <><p role="alert">{error}</p><Link href="/login">Return to sign in</Link></>}
       </div>
     )
   }
@@ -162,9 +189,9 @@ export default function Shell({ children }) {
 
   const runScan = (event) => { event.preventDefault(); runInvestigation(query) }
 
-  const logout = () => {
-    signOut()
-    router.push('/')
+  const logout = async () => {
+    try { await signOut(); router.replace('/login') }
+    catch (failure) { setError(failure.message) }
   }
 
   const ctx = { scans, total, historyLoading, historyError, refreshHistory: loadHistory,
@@ -211,7 +238,7 @@ export default function Shell({ children }) {
           </div>
         </aside>
 
-        <div className="dash__main">
+        <div className="dash__main" key={user.id}>
           <header className="dash__top">
             <button ref={menuRef} className="icon-btn dash__menu" onClick={() => setNavOpen((o) => !o)} aria-label="Toggle navigation">
               <GridIcon />

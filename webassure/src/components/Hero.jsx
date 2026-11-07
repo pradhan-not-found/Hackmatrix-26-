@@ -13,12 +13,13 @@ export default function Hero() {
 
   // Checking a link hands it to the dashboard: logged-in users go straight there,
   // everyone else logs in first and the scan runs right after.
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     if (!value.trim()) return
     setError('')
     setPendingScan(value)
-    router.push(getUser() ? '/dashboard/scans' : '/login?next=/dashboard/scans')
+    try { router.push(await getUser() ? '/dashboard/scans' : '/login?next=/dashboard/scans') }
+    catch { router.push('/login?next=/dashboard/scans') }
   }
 
   return (

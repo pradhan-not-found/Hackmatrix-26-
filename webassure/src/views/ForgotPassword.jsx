@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { resetPassword } from '../lib/auth.js'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
@@ -9,16 +10,14 @@ export default function ForgotPassword() {
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
 
-  // Demo flow: a real deployment would call the auth provider's reset endpoint here.
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     if (!/^\S+@\S+\.\S+$/.test(email)) return setError('Enter a valid email address.')
     setError('')
     setBusy(true)
-    setTimeout(() => {
-      setBusy(false)
-      setSent(true)
-    }, 700)
+    try { await resetPassword(email.trim()); setSent(true) }
+    catch (failure) { setError(failure.message) }
+    finally { setBusy(false) }
   }
 
   return (
@@ -35,7 +34,7 @@ export default function ForgotPassword() {
               </span>
               <h1 className="auth__title">Check your email</h1>
               <p className="auth__sub grey">
-                If an account exists for <b className="fp__email">{email}</b>, we&apos;ve sent a link to reset your password. It expires in 30 minutes.
+                If an account exists for <b className="fp__email">{email}</b>, we&apos;ve sent a link to reset your password. Open the link in this browser to choose a new password.
               </p>
               <div className="auth__fields">
                 <Link href="/login" className="btn btn--ink btn--block">Back to log in</Link>

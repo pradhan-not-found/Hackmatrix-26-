@@ -20,11 +20,12 @@ export default function Header() {
   const [user, setUser] = useState(null)
 
   useEffect(() => {
-    setUser(getUser())
+    let active = true
+    getUser().then((user) => { if (active) setUser(user) }).catch(() => {})
     const onScroll = () => setScrolled(window.scrollY > 24)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => { active = false; window.removeEventListener('scroll', onScroll) }
   }, [])
 
   return (

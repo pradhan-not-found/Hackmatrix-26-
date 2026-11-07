@@ -1,4 +1,3 @@
-import json
 import os
 import sqlite3
 import threading
@@ -6,7 +5,7 @@ from pathlib import Path
 from uuid import UUID
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from backend.investigation import investigate
@@ -14,6 +13,7 @@ from backend.network import UnsafeURL
 from backend.gemini import explain, explain_message_analysis
 from backend.explanation import explain_locally
 from backend.message_analysis import MAX_MESSAGE_LENGTH, analyze_message
+from backend.supabase import investigation_store
 
 app = FastAPI(title="HackMatrix URL Investigation", version="0.1.0")
 # Bound simultaneous outbound scans in this single-process MVP.
@@ -21,6 +21,7 @@ slots = threading.BoundedSemaphore(4)
 
 
 def database():
+    """Legacy SQLite access for offline fixtures/export; the API uses Supabase."""
     path = Path(os.getenv("INVESTIGATION_DB", "data/investigations.sqlite3"))
     path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(path, timeout=5)
@@ -54,7 +55,7 @@ def create_message_analysis(body: MessageAnalysisRequest,
 
 
 @app.post("/api/investigations", status_code=201)
-def create_investigation(body: InvestigationRequest):
+def create_investigation(body: InvestigationRequest, store=Depends(investigation_store)):
     if not slots.acquire(blocking=False):
         raise HTTPException(429, "Investigation capacity reached; retry later")
     try:
@@ -62,13 +63,7 @@ def create_investigation(body: InvestigationRequest):
             report = investigate(body.url)
         except UnsafeURL as exc:
             raise HTTPException(422, str(exc)) from exc
-        connection = database()
-        try:
-            with connection:
-                connection.execute("INSERT INTO investigations VALUES (?, ?)",
-                                   (report["id"], json.dumps(report)))
-        finally:
-            connection.close()
+        store.create(report)
         return report
     finally:
         slots.release()
@@ -76,49 +71,23 @@ def create_investigation(body: InvestigationRequest):
 
 @app.get("/api/investigations")
 def list_investigations(limit: int = Query(default=30, ge=1, le=100),
-                        offset: int = Query(default=0, ge=0)):
-    connection = database()
-    try:
-        rows = connection.execute(
-            "SELECT report FROM investigations ORDER BY rowid DESC LIMIT ? OFFSET ?",
-            (limit, offset),
-        ).fetchall()
-        total = connection.execute("SELECT COUNT(*) FROM investigations").fetchone()[0]
-    finally:
-        connection.close()
-    fields = ("id", "submitted_url", "normalized_url", "risk_classification", "created_at", "status")
-    items = [{key: report.get(key) for key in fields}
-             for report in (json.loads(row[0]) for row in rows)]
-    return {"items": items, "total": total, "limit": limit, "offset": offset}
+                        offset: int = Query(default=0, ge=0), store=Depends(investigation_store)):
+    return store.list(limit, offset)
 
 
 @app.get("/api/investigations/{investigation_id}")
-def get_investigation(investigation_id: UUID):
-    connection = database()
-    try:
-        row = connection.execute("SELECT report FROM investigations WHERE id = ?",
-                                 (str(investigation_id),)).fetchone()
-    finally:
-        connection.close()
-    if row is None:
-        raise HTTPException(404, "Investigation not found")
-    return json.loads(row[0])
+def get_investigation(investigation_id: UUID, store=Depends(investigation_store)):
+    return store.get(str(investigation_id))
 
 
 @app.post("/api/investigations/{investigation_id}/explanation")
-def explain_investigation(investigation_id: UUID, provider: Literal["local", "gemini"] = "local"):
+def explain_investigation(investigation_id: UUID, provider: Literal["local", "gemini"] = "local", store=Depends(investigation_store)):
     if not slots.acquire(blocking=False):
         raise HTTPException(429, "Investigation capacity reached; retry later")
     try:
-        report = get_investigation(investigation_id)
+        report = store.get(str(investigation_id))
         report["ai_explanation"] = explain(report) if provider == "gemini" else explain_locally(report)
-        connection = database()
-        try:
-            with connection:
-                connection.execute("UPDATE investigations SET report = ? WHERE id = ?",
-                                   (json.dumps(report), str(investigation_id)))
-        finally:
-            connection.close()
+        store.update(str(investigation_id), report)
         return report["ai_explanation"]
     finally:
         slots.release()

@@ -7,12 +7,15 @@ let server
 let base
 let received
 const previous = process.env.BACKEND_URL
+function authorizedRequest(url, options = {}) {
+  return new Request(url, { ...options, headers: { ...options.headers, Authorization: 'Bearer test-session-token' } })
+}
 
 before(async () => {
   server = createServer(async (request, response) => {
     let body = ''
     for await (const chunk of request) body += chunk
-    received = { url: request.url, method: request.method, body }
+    received = { url: request.url, method: request.method, body, authorization: request.headers.authorization }
     response.writeHead(request.method === 'POST' ? 201 : 200, { 'Content-Type': 'application/json' })
     response.end(JSON.stringify(request.method === 'POST' ? { id: 'saved-report' } : { items: [], total: 0 }))
   })
@@ -27,14 +30,15 @@ after(async () => {
 })
 
 test('history forwards pagination, disables caching and strips unrelated query parameters', async () => {
-  const response = await GET(new Request('http://local/api/investigations?limit=5&offset=2&other=x'), { params: {} })
+  const response = await GET(authorizedRequest('http://local/api/investigations?limit=5&offset=2&other=x'), { params: {} })
   assert.equal(response.status, 200)
   assert.equal(received.url, '/api/investigations?limit=5&offset=2')
   assert.equal(response.headers.get('Cache-Control'), 'no-store')
+  assert.equal(received.authorization, 'Bearer test-session-token')
 })
 
 test('submission reaches the backend and preserves its response status', async () => {
-  const response = await POST(new Request('http://local/api/investigations', { method: 'POST', body: JSON.stringify({ url: 'example.com' }) }), { params: {} })
+  const response = await POST(authorizedRequest('http://local/api/investigations', { method: 'POST', body: JSON.stringify({ url: 'example.com' }) }), { params: {} })
   assert.equal(response.status, 201)
   assert.equal(received.method, 'POST')
   assert.deepEqual(JSON.parse(received.body), { url: 'example.com' })
@@ -43,7 +47,7 @@ test('submission reaches the backend and preserves its response status', async (
 
 test('detail requests accept only an investigation UUID', async () => {
   const id = '00000000-0000-0000-0000-000000000001'
-  await GET(new Request('http://local/api/investigations/' + id), { params: { path: [id] } })
+  await GET(authorizedRequest('http://local/api/investigations/' + id), { params: { path: [id] } })
   assert.equal(received.url, '/api/investigations/' + id)
   const bad = await GET(new Request('http://local/api/investigations/bad'), { params: { path: ['bad'] } })
   assert.equal(bad.status, 404)
@@ -51,7 +55,7 @@ test('detail requests accept only an investigation UUID', async () => {
 
 test('malformed and oversized submissions are rejected', async () => {
   for (const [body, status] of [['{', 400], ['x'.repeat(8193), 413]]) {
-    const response = await POST(new Request('http://local/api/investigations', { method: 'POST', body }), { params: {} })
+    const response = await POST(authorizedRequest('http://local/api/investigations', { method: 'POST', body }), { params: {} })
     assert.equal(response.status, status)
   }
 })
@@ -59,8 +63,17 @@ test('malformed and oversized submissions are rejected', async () => {
 test('unreachable backend produces an actionable error', async () => {
   process.env.BACKEND_URL = 'http://127.0.0.1:1'
   try {
-    const response = await GET(new Request('http://local/api/investigations'), { params: {} })
+    const response = await GET(authorizedRequest('http://local/api/investigations'), { params: {} })
     assert.equal(response.status, 502)
     assert.match((await response.json()).detail, /Start FastAPI/)
   } finally { process.env.BACKEND_URL = base }
+})
+
+test('missing or malformed authorization is rejected before contacting the backend', async () => {
+  const previousRequest = received
+  for (const authorization of ['', 'Basic anything', 'Bearer ']) {
+    const response = await GET(new Request('http://local/api/investigations', { headers: { authorization } }), { params: {} })
+    assert.equal(response.status, 401)
+    assert.equal(received, previousRequest)
+  }
 })

@@ -37,7 +37,7 @@ Phishing pages, fake recruitment portals, fraudulent payment links and impersona
 | Part | Path | Stack | Purpose |
 | --- | --- | --- | --- |
 | **Web app** | [`webassure/`](webassure/) | Next.js 14, React 18 | Product website, sign-up and login, and the user dashboard |
-| **Investigation backend** | [`backend/`](backend/) | Python 3.11+, FastAPI, SQLite | Runs real URL investigations and stores evidence-based reports |
+| **Investigation backend** | [`backend/`](backend/) | Python 3.11+, FastAPI, Supabase | Runs URL investigations and stores reports under each user's account |
 | **Tests** | [`tests/`](tests/) | `unittest`, Playwright | Pipeline, provider, explanation and dashboard tests |
 | **Docs** | [`docs/`](docs/) | Markdown | Problem statement and detailed backend guide |
 
@@ -51,42 +51,36 @@ Phishing pages, fake recruitment portals, fraudulent payment links and impersona
 - **Reputation lookup.** Optional Google Safe Browsing integration with explicit, distinct error states. A provider failure never counts as a clean result.
 - **Deterministic risk classification:** *Confirmed Malicious*, *Suspicious*, *Low Risk* or *Inconclusive*.
 - **Plain-language explanations.** Built-in, rule-based explanations reference the report's evidence. Optional Gemini explanations are schema-validated and cannot change the classification.
-- **History.** Reports are saved to SQLite with paginated retrieval and JSON export.
-- **Message spam/scam analysis.** A separate endpoint combines a trained TF-IDF text classifier with explainable indicators and does not open extracted links.
-- **Built-in investigation dashboard** served by the backend at `/`.
+- **Private history.** Supabase stores paginated reports with owner-only RLS and JSON export. API requests verify the user's Supabase session.
+- **Account management.** Google/email sign-in, password recovery, persistent profile/preferences, and avatar uploads through Supabase Storage.
+- **Message spam/scam analysis.** A separate endpoint combines a trained text classifier with explainable indicators and does not open extracted links.
 
-### Web app (UI prototype)
+### Web app
 
 - **Landing page** with live link checker, product walkthrough, sector coverage, sample report, pricing and FAQ.
 - **Sign-up and login** with a hand-off flow: a link pasted on the landing page is scanned automatically after sign-in.
-- **Dashboard** with Overview, Scans, Threats, Certificates, Reports, Threat ledger and Settings (profile photo, notifications, API key).
+- **Dashboard** with Overview, Scans, Reports and account Settings. Threat campaigns, monitoring and the ledger remain previews.
 - **Light and dark themes**, responsive layout, SEO metadata, Open Graph image, sitemap, robots rules and web manifest.
 
-> The web app currently uses demo data and browser-local demo authentication, and its link checker runs quick client-side heuristics. It is not yet connected to the investigation backend. See [Status and limitations](#status-and-limitations).
+> Complete the [Supabase setup](docs/auth.md), including the database migration and Google provider configuration, before signing in. Notification preferences are saved; email alert delivery is not connected.
 
 ## Architecture
 
-```text
-┌──────────────────────────┐        ┌──────────────────────────────────────┐
-│  Web app  (webassure/)   │        │  Investigation backend  (backend/)   │
-│  Next.js · React         │        │  FastAPI · Python                    │
-│                          │  API   │                                      │
-│  Landing · Auth · Dash   │ ─ ─ ─▶ │  /api/investigations                 │
-│  (demo data today)       │planned │   ├─ URL & DNS validation            │
-└──────────────────────────┘        │   ├─ Redirect + TLS inspection       │
-                                    │   ├─ Safe Browsing reputation (opt.) │
-                                    │   ├─ Risk classification             │
-                                    │   └─ Explanation (local / Gemini)    │
-                                    │                                      │
-                                    │  SQLite report store                 │
-                                    └──────────────────────────────────────┘
+```mermaid
+flowchart LR
+  Browser[Next.js dashboard] -->|Sign-in and session| Auth[Supabase Auth]
+  Browser -->|User bearer token| Proxy[Next.js API proxy]
+  Proxy --> API[FastAPI investigation service]
+  API -->|Verify user token| Auth
+  API -->|User token and owner filter| DB[Supabase Postgres with RLS]
+  Browser -->|Owner-only uploads| Photos[Supabase avatar Storage]
 ```
 
 ## Getting started
 
 ### Prerequisites
 
-- **Node.js 18.17+** and npm, for the web app
+- **Node.js 22+** and npm, for the web app and current Supabase client
 - **Python 3.11+**, for the backend
 - Optional: a Google Safe Browsing API key and a Gemini API key
 
@@ -104,7 +98,7 @@ python -m venv .venv
 .venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-- Dashboard: <http://127.0.0.1:8000/>
+- Dashboard: <http://localhost:3000/dashboard>
 - Interactive API docs: <http://127.0.0.1:8000/docs>
 
 ### 2. Web app
@@ -115,7 +109,7 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. To view the dashboard without signing up, visit <http://localhost:3000/dashboard?demo=1>.
+Open <http://localhost:3000/login>. The demo bypass is removed. Apply the [Supabase migration and environment setup](docs/auth.md) first.
 
 Production build:
 
@@ -137,9 +131,12 @@ cp .env.example .env        # Windows: Copy-Item .env.example .env
 | `GOOGLE_SAFE_BROWSING_API_KEY` | Optional | Enables reputation lookups. Without it, the check is reported as unavailable. |
 | `GEMINI_API_KEY` | Optional | Enables on-demand Gemini explanations. Local explanations work without it. |
 | `GEMINI_MODEL` | Optional | Gemini model name (default `gemini-3.8-flash`). |
-| `INVESTIGATION_DB` | Optional | SQLite path (default `data/investigations.sqlite3`). |
+| `SUPABASE_URL` | Required, backend | Supabase project URL. |
+| `SUPABASE_PUBLISHABLE_KEY` | Required, backend | Publishable key; requests also require the signed-in user's token. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Required, frontend | Set in `webassure/.env.local` or the hosting build environment. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Required, frontend | Browser publishable key. |
 
-Never commit `.env` or place keys in browser code.
+Never commit `.env` or `.env.local`. Only publishable Supabase keys belong in frontend variables; keep provider secrets and service-role keys out of browser code.
 
 ## API
 
@@ -156,6 +153,7 @@ Example:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/investigations \
+  -H "Authorization: Bearer YOUR_SUPABASE_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"url":"https://example.com"}'
 ```
@@ -182,7 +180,7 @@ python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 
 # Dashboard browser tests (uses installed Microsoft Edge, no outbound scans)
-python -m unittest discover -s tests -p dashboard_browser.py -v
+python -m unittest discover -s tests -p webassure_browser.py -v
 
 # Live Safe Browsing validation (requires a configured key)
 python -m backend.validate_threat_intelligence
@@ -201,14 +199,14 @@ Tests use mocked responses and do not measure real-world detection accuracy.
 │   ├── threat_intelligence.py  Safe Browsing provider
 │   ├── explanation.py       Local rule-based explanations
 │   ├── gemini.py            Optional Gemini explanations
-│   └── static/              Built-in investigation dashboard
+│   └── supabase.py          Verified sessions and owner-scoped Supabase storage
 ├── webassure/               Next.js web app
 │   ├── public/              Favicon, icons, Open Graph image, manifest
 │   └── src/
 │       ├── app/             Routes, layout, metadata, robots, sitemap
 │       ├── components/      Landing page sections and shared UI
 │       ├── views/           Landing, auth and dashboard pages
-│       ├── lib/             Demo auth, demo data and link heuristics
+│       ├── lib/             Supabase auth, API client and dashboard data
 │       └── styles/          Design system and page styles
 ├── tests/                   Backend and dashboard tests
 ├── docs/                    Problem statement and backend guide
@@ -226,15 +224,15 @@ WebAssure is a hackathon-stage project. To be clear about what is real today:
 | URL investigation, redirects, TLS verification, risk classification | Working (backend) |
 | Safe Browsing reputation lookup | Working with an API key |
 | Local and Gemini explanations | Working |
-| Web app UI: landing, auth, dashboard | Working, on demo data |
-| Web app ↔ backend integration | Planned |
-| Real authentication and user accounts | Planned (demo auth stored in the browser) |
+| Web app UI: landing, auth, dashboard | Connected to the investigation backend |
+| Web app ↔ backend integration | Authenticated proxy and per-user Supabase report storage |
+| Real authentication and user accounts | Supabase Google/email, recovery, profile and Storage integration; project setup required |
 | Page-content analysis (HEAD-only today) | Planned |
 | Certificate Transparency monitoring, revocation and key-strength analysis | Planned |
 | Scam-message analysis | Planned |
 | Blockchain threat ledger | Planned (shown as a UI concept) |
 
-The backend is a local MVP. Run a single worker. Before any public deployment, add authentication, per-user rate limits, data retention controls, network egress restrictions and a durable job queue with hard deadlines.
+The backend is a local MVP. Run a single worker. Before any public deployment, add per-user rate limits, data retention controls, network egress restrictions and a durable job queue with hard deadlines.
 
 ## Security and privacy
 

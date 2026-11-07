@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from backend.gemini import evidence_snapshot, explain, explain_message_analysis
 from backend.main import app
+from tests.support_store import isolated_storage
 
 
 REPORT = {"id": "00000000-0000-0000-0000-000000000001", "risk_classification": "Inconclusive",
@@ -100,6 +101,7 @@ class GeminiTests(unittest.TestCase):
         self.opener.return_value.open.side_effect = TimeoutError()
         self.assertEqual(explain(REPORT)["error_code"], "network_error")
 
+    @isolated_storage()
     def test_endpoint_persists_explanation_without_changing_assessment(self):
         from backend.main import database
         with tempfile.TemporaryDirectory() as directory:

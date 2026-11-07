@@ -13,14 +13,15 @@ the standalone dashboard and its assets have been removed. Use the WebAssure
 frontend below for investigations and reports.
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:8000/api/investigations -Method Post -ContentType application/json -Body '{"url":"https://example.com"}'
+Invoke-RestMethod http://127.0.0.1:8000/api/investigations -Method Post -Headers @{Authorization="Bearer YOUR_SUPABASE_ACCESS_TOKEN"} -ContentType application/json -Body '{"url":"https://example.com"}'
 ```
 
 `POST /api/investigations` returns a completed report (201). It runs synchronously;
 `GET /api/investigations/{id}` retrieves the saved report.
 `GET /api/investigations?limit=30&offset=0` returns recent report summaries,
 newest first (maximum limit 100). `GET /health` is a liveness check.
-SQLite defaults to `data/investigations.sqlite3`; override with `INVESTIGATION_DB`.
+Investigations are saved to Supabase and scoped to the verified signed-in user.
+Apply the schema and configure both environments as described in [Supabase setup](auth.md).
 No model training, vector database, or RAG is required.
 
 ## Run the WebAssure frontend
@@ -33,11 +34,11 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:3000/dashboard/scans?demo to use the existing demo session.
+Open http://localhost:3000/login and sign in through Google or email.
 Development writes compiled assets to `webassure/.next-dev`; production build/start
 uses `webassure/.next`. This prevents verification builds from overwriting an
 active development server's chunks. Restart Next.js after updating this config.
-The session is a frontend preview, not real authentication. Scans, Reports, and
+Supabase provides real authentication. Scans, Reports, and
 Overview now use real backend investigation data; they contain no seeded scans or
 browser-generated risk scores. Submit a URL in the top bar. The saved report opens
 with backend classification, coverage, findings, local explanations, individual
@@ -46,13 +47,13 @@ report URL reopens it by its database ID. History loads 30 records at a time wit
 **Load more**; filters and overview assessment counts apply to loaded records.
 
 Next.js proxies `/api/investigations` to `http://127.0.0.1:8000` on the server;
-no browser CORS configuration or API keys are needed. To use another backend,
+the user's bearer token is forwarded and verified by FastAPI. To use another backend,
 set the server-side `BACKEND_URL` environment variable before starting Next.js.
 Keep the root `.env` API keys on the backend; do not copy them into frontend
 variables. The proxy has a 90-second timeout. A timed-out submission may still
 finish in the backend, so refresh saved history before retrying it.
 
-Certificate monitoring, threat campaigns, ledger entries, and authentication are
+Certificate monitoring, threat campaigns, and ledger entries are
 still demo features, labeled accordingly. Real TLS evidence is in scan reports.
 This integration does not make the application ready for public multi-user use;
 the deployment limits below still apply.
@@ -65,8 +66,8 @@ npm --prefix webassure run build
 .venv\Scripts\python -m unittest discover -s tests -p webassure_browser.py -v
 ```
 
-The browser suite starts Next.js and FastAPI with a temporary SQLite database.
-Only outbound DNS, HTTP/TLS probes, and reputation responses are mocked; submissions,
+The browser suite starts Next.js and FastAPI with mocked Supabase Auth and a temporary SQLite fixture database.
+Outbound DNS, HTTP/TLS probes, and reputation responses are mocked; submissions,
 proxying, persistence, retrieval, and exports run through the real application.
 
 ## Reputation lookup
@@ -233,7 +234,7 @@ suspicious cases. They do not establish real-world phishing detection accuracy.
 ## Deployment limits
 
 This is a local MVP. Run one worker; the four-scan concurrency limit is per process.
-Before public exposure add authentication, per-user rate limits, retention/deletion
+Before public exposure add per-user rate limits, retention/deletion
 controls, network egress restrictions, and a durable worker with hard job deadlines.
 Reports contain submitted URLs and may contain sensitive query strings; protect the database.
 Static inspection cannot evaluate script-rendered pages, submit forms, or establish overall website safety.
