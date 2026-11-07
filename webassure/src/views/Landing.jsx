@@ -26,7 +26,6 @@ export default function Landing() {
   return (
     <>
       {loading && <Preloader onDone={done} />}
-      <a href="#main" className="skip">Skip to content</a>
       <Header />
       <main id="main">
         <Hero />

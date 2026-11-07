@@ -17,6 +17,17 @@ export function signIn(email, name) {
   return user
 }
 
+// Merge changes into the stored profile (keeps fields like the avatar intact).
+export function updateUser(patch) {
+  const user = { ...(getUser() || {}), ...patch }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(user))
+  } catch {
+    return null // storage full (e.g. very large image)
+  }
+  return user
+}
+
 export function signOut() {
   try {
     localStorage.removeItem(KEY)
