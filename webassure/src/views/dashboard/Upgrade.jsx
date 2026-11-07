@@ -121,22 +121,29 @@ export default function Upgrade() {
             <article key={id} className="up__card" data-popular={p.popular || undefined} data-current={isCurrent || undefined}>
               <div className="up__top">
                 <h2>{p.name}</h2>
-                {isCurrent ? <span className="up__tag up__tag--cur">Current plan</span> : p.popular ? <span className="up__tag">Most popular</span> : <span className="up__tag up__tag--ghost" aria-hidden="true" />}
+                {isCurrent ? <span className="up__tag up__tag--cur">Current plan</span>
+                  : p.popular ? <span className="up__tag">Most popular</span>
+                  : <span className="up__tag up__tag--ghost" aria-hidden="true">Plan</span>}
               </div>
               <p className="up__blurb">{p.blurb}</p>
-              <p className="up__price">
-                {inr(priceFor(p, cycle))}
-                <span>{p.monthly ? `/ month${cycle === 'yearly' ? ', billed yearly' : ''}` : 'free forever'}</span>
-              </p>
+              <div className="up__price">
+                <p className="up__amt">{inr(priceFor(p, cycle))}<span>/ month</span></p>
+                <p className="up__note">
+                  {!p.monthly ? 'Free forever, no card needed'
+                    : cycle === 'yearly' ? `${inr(chargeFor(p, cycle))} billed yearly`
+                    : 'Billed monthly'}
+                </p>
+              </div>
               {isCurrent ? (
-                <button className="btn btn--ghost btn--block" disabled>Your current plan</button>
+                <button className="btn btn--block up__btn up__btn--cur" disabled><Check />Your current plan</button>
               ) : rank > 0 ? (
-                <button className={`btn btn--block ${p.popular ? 'btn--ink' : 'btn--soft'}`} onClick={() => setCheckout(id)}>Upgrade to {p.name}</button>
+                <button className={`btn btn--block up__btn ${p.popular ? 'btn--ink' : 'up__btn--sec'}`} onClick={() => setCheckout(id)}>Upgrade to {p.name}</button>
               ) : (
-                <button className="btn btn--soft btn--block" onClick={() => { setPlan(user.id, id, 'monthly') }}>Switch to {p.name}</button>
+                <button className="btn btn--block up__btn up__btn--sec" onClick={() => { setPlan(user.id, id, 'monthly') }}>Switch to {p.name}</button>
               )}
+              <p className="up__inc">{id === 'personal' ? 'Includes' : id === 'pro' ? 'Everything in Personal, plus' : 'Everything in Pro, plus'}</p>
               <ul className="up__list">
-                {p.features.map((f) => <li key={f}><Check />{f}</li>)}
+                {p.features.filter((f) => f !== 'Everything in Pro').map((f) => <li key={f}><Check />{f}</li>)}
               </ul>
             </article>
           )

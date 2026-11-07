@@ -117,19 +117,30 @@
 .upbtn:hover { background: linear-gradient(180deg, #b39cfb 0%, #8667f7 46%, #6447de 100%); }
 .upbtn svg { opacity: 0.95; }
 
-/* pricing cards: identical rhythm so every row aligns */
-.up__grid { gap: 18px; }
-.up__card { gap: 0; padding: 28px; }
-.up__top { min-height: 30px; }
-.up__tag--ghost { visibility: hidden; padding: 0; }
-.up__blurb { min-height: 44px; margin-top: 10px; line-height: 1.55; }
-.up__price { min-height: 48px; margin: 22px 0 22px; align-items: flex-end; }
-.up__card .btn--block { height: 46px; font-size: 14px; }
-.up__card .btn--soft { background: var(--console); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
-.up__card .btn--soft:hover { background: var(--hover, var(--console)); }
-.up__list { margin-top: 24px; padding-top: 22px; gap: 12px; }
-.up__card[data-popular] { background: linear-gradient(180deg, color-mix(in srgb, var(--workspace-accent) 7%, var(--card)) 0%, var(--card) 40%); }
-.up__head { gap: 12px; padding-bottom: 20px; }
+/* pricing cards: fixed rows so every card lines up exactly */
+.up__head { gap: 12px; padding-bottom: 24px; }
+.up__grid { gap: 16px; max-width: 1040px; }
+.up__card { gap: 0; padding: 26px; border-radius: 20px; }
+.up__card[data-popular] { background: var(--card); box-shadow: 0 0 0 1.5px var(--workspace-accent); }
+.up__card[data-current] { box-shadow: 0 0 0 1px var(--line); }
+.up__top { height: 26px; }
+.up__top h2 { font-size: 17px; }
+.up__tag { height: 24px; display: inline-flex; align-items: center; padding: 0 10px; line-height: 1; }
+.up__tag--ghost { visibility: hidden; }
+.up__blurb { min-height: 0; height: 42px; margin-top: 8px; font-size: 13.5px; line-height: 1.55; }
+.up__price { display: block; min-height: 0; margin: 18px 0 20px; font-size: inherit; letter-spacing: 0; line-height: normal; }
+.up__amt { display: flex; align-items: baseline; gap: 6px; font-size: 38px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; }
+.up__amt span { font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--grey); }
+.up__note { margin-top: 8px; font-size: 12.5px; color: var(--grey); height: 18px; }
+.up__card .up__btn { height: 44px; font-size: 14px; gap: 8px; }
+.up__btn--sec { background: var(--console); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.up__btn--sec:hover { background: var(--tile); }
+.up__btn--cur, .up__btn--cur:disabled { background: transparent; color: var(--grey); box-shadow: inset 0 0 0 1px var(--line); opacity: 1; cursor: default; }
+.up__btn--cur svg { width: 15px; height: 15px; }
+.up__inc { margin-top: 22px; padding-top: 20px; box-shadow: inset 0 1px 0 var(--line); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--grey); }
+.up__list { margin-top: 14px; padding-top: 0; box-shadow: none; gap: 11px; font-size: 13.5px; }
+.up__list svg { width: 15px; height: 15px; margin-top: 2px; }
+@media (max-width: 1000px) { .up__blurb { height: auto; } }
 
 /* dashboard 404 (inside the app shell) */
 .dnf { width: 100%; max-width: 640px; margin: 4vh auto 0; display: flex; flex-direction: column; gap: 14px; }
@@ -190,3 +201,6 @@
   .bl__th { display: none; }
   .bl__actions .btn { flex: 1; }
 }
+.up__blurb { height: 40px; }
+.up__price { margin-top: 14px; }
+.up__foot { margin-top: 22px; }
