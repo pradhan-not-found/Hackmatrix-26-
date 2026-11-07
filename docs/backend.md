@@ -34,6 +34,9 @@ npm run dev
 ```
 
 Open http://localhost:3000/dashboard/scans?demo to use the existing demo session.
+Development writes compiled assets to `webassure/.next-dev`; production build/start
+uses `webassure/.next`. This prevents verification builds from overwriting an
+active development server's chunks. Restart Next.js after updating this config.
 The session is a frontend preview, not real authentication. Scans, Reports, and
 Overview now use real backend investigation data; they contain no seeded scans or
 browser-generated risk scores. Submit a URL in the top bar. The saved report opens
