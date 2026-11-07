@@ -500,3 +500,21 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--grey) 45
 .dash .table tbody tr + tr td { box-shadow: inset 0 1px 0 var(--line); }
 .dash .table th + th, .dash .table td + td { border-left: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
 [data-theme='dark'] .dash { --line: #2e2e33; }
+
+/* danger button: filled red plastic (matches the blue plastic buttons) */
+.btn--danger, .dash .btn--danger {
+  position: relative; overflow: hidden; isolation: isolate; color: #fff; border-radius: 999px;
+  background: linear-gradient(180deg, #ff7a7f 0%, #f04a51 46%, #d42f37 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -2px 0 rgba(120, 10, 20, 0.38),
+    inset 0 0 0 1px rgba(170, 20, 30, 0.35), 0 1px 2px rgba(60, 10, 15, 0.3);
+  text-shadow: 0 1px 0 rgba(120, 10, 20, 0.35);
+}
+.btn--danger::after {
+  content: ''; position: absolute; left: 3px; right: 3px; top: 2px; height: 48%; z-index: -1; pointer-events: none;
+  border-radius: 999px 999px 40% 40% / 999px 999px 100% 100%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.04));
+}
+.btn--danger:hover, .dash .btn--danger:hover {
+  color: #fff; background: linear-gradient(180deg, #ff8a8f 0%, #f4565d 46%, #db3640 100%);
+}
+.btn--danger:active { transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(100, 10, 20, 0.5), inset 0 0 0 1px rgba(170, 20, 30, 0.4); }
