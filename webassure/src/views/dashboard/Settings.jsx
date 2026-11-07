@@ -8,7 +8,7 @@ import Avatar from '../../components/Avatar.jsx'
 import Link from 'next/link'
 import { PageHead, Toggle } from './ui.jsx'
 import { usePlan } from './usePlan.js'
-import { PLANS, inr, priceFor } from '../../lib/plan.js'
+import { PLANS, chargeFor, inr, priceFor } from '../../lib/plan.js'
 
 const Ic = ({ d }) => (
   <svg className="nav-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
@@ -30,7 +30,11 @@ const ALERTS = [
 export default function Settings() {
   const { user, setUser, scans } = useDash()
   const router = useRouter()
-  const [active, setActive] = useState('profile')
+  // Open the page named in the hash straight away, so /settings#plan lands on billing without flashing the profile page.
+  const [active, setActive] = useState(() => {
+    const h = typeof window === 'undefined' ? '' : window.location.hash.slice(1)
+    return PAGES.some(([id]) => id === h) ? h : 'profile'
+  })
   const [name, setName] = useState(user.name)
   const [saved, setSaved] = useState(false)
   const [notif, setNotif] = useState(user.preferences || { high: true, certs: true, weekly: false })
@@ -43,6 +47,7 @@ export default function Settings() {
   const now = new Date()
   const monthScans = scans.filter((x) => { const d = new Date(x.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() }).length
   const resetOn = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
   const usage = [
     ['Link checks', monthScans, planInfo.limits.checks],
     ['Message analyses', 0, planInfo.limits.messages],
@@ -215,45 +220,71 @@ export default function Settings() {
               <h2>Plan &amp; billing</h2>
               <p>Your subscription and this month&apos;s usage.</p>
             </header>
-            <div className="st__card bl__plan">
-              <div className="bl__plan-main">
-                <span className="bl__badge">{planInfo.name}</span>
-                <p className="bl__price">{planInfo.monthly ? `${inr(priceFor(planInfo, plan.cycle))} / month` : 'Free'}</p>
-                <p className="st__d">
-                  {planInfo.monthly
-                    ? `Billed ${plan.cycle === 'yearly' ? 'yearly' : 'monthly'} · renews ${new Date(plan.renews).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
-                    : 'Upgrade for unlimited link checks, more message analyses and certificate monitoring.'}
-                </p>
+            <div className="st__card bl__hero">
+              <div className="bl__hero-top">
+                <div>
+                  <p className="bl__k">Current plan</p>
+                  <div className="bl__name">
+                    <h3>{planInfo.name}</h3>
+                    <span className="bl__badge">{planInfo.monthly ? (plan.cycle === 'yearly' ? 'Yearly' : 'Monthly') : 'Free'}</span>
+                  </div>
+                  <p className="st__d">{planInfo.blurb}</p>
+                </div>
+                <div className="bl__cost">
+                  <p className="bl__price">{inr(priceFor(planInfo, plan.cycle))}<span>/ month</span></p>
+                  {planInfo.monthly > 0 && plan.cycle === 'yearly' && <p className="st__d">{inr(chargeFor(planInfo, plan.cycle))} billed yearly</p>}
+                </div>
               </div>
-              <Link href="/dashboard/upgrade" className="btn btn--ink">{plan.id === 'teams' ? 'Manage plan' : 'Upgrade plan'}</Link>
+              <dl className="bl__facts">
+                <div><dt>Billing period</dt><dd>{planInfo.monthly ? (plan.cycle === 'yearly' ? 'Yearly' : 'Monthly') : 'None'}</dd></div>
+                <div><dt>{planInfo.monthly ? 'Renews on' : 'Usage resets'}</dt><dd>{planInfo.monthly && plan.renews ? fmtDate(plan.renews) : resetOn}</dd></div>
+                <div><dt>Payment method</dt><dd>{planInfo.monthly ? 'UPI · webassure@upi' : 'Not required'}</dd></div>
+              </dl>
+              <div className="bl__actions">
+                {plan.id !== 'teams' && <Link href="/dashboard/upgrade" className="btn btn--ink">Upgrade plan</Link>}
+                <Link href="/dashboard/upgrade" className="btn btn--soft">Compare plans</Link>
+              </div>
             </div>
 
-            <div className="st__card bl__usage">
-              <div className="bl__usage-head">
+            <div className="st__card">
+              <div className="bl__sec-head">
                 <p className="st__t">Usage this month</p>
                 <p className="st__d">Resets {resetOn}</p>
               </div>
-              {usage.map(([label, usedN, limit]) => {
-                const unlimited = limit === Infinity
-                const pct = unlimited ? 6 : Math.min(100, (usedN / limit) * 100)
-                return (
-                  <div key={label} className="bl__meter">
-                    <div className="bl__meter-top">
-                      <span>{label}</span>
-                      <span className="grey">{usedN.toLocaleString()} {unlimited ? 'used · unlimited' : `of ${limit.toLocaleString()}`}</span>
+              <div className="bl__meters">
+                {usage.map(([label, usedN, limit]) => {
+                  const unlimited = limit === Infinity
+                  const pct = unlimited ? 100 : Math.min(100, (usedN / limit) * 100)
+                  return (
+                    <div key={label} className="bl__meter">
+                      <p className="bl__meter-k">{label}</p>
+                      <p className="bl__meter-v">{usedN.toLocaleString()}<span>{unlimited ? ' · Unlimited' : ` / ${limit.toLocaleString()}`}</span></p>
+                      <span className="bl__bar"><span data-hot={!unlimited && pct >= 80 || undefined} data-unl={unlimited || undefined} style={{ width: `${pct}%` }} /></span>
+                      <p className="bl__meter-f">{unlimited ? 'No limit on your plan' : `${Math.max(0, limit - usedN).toLocaleString()} remaining`}</p>
                     </div>
-                    <span className="bl__bar"><span data-hot={!unlimited && pct >= 80 || undefined} style={{ width: `${pct}%` }} /></span>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
 
-            <div className="st__card st__danger">
-              <div>
-                <p className="st__t">Payment method</p>
-                <p className="st__d">{planInfo.monthly ? 'UPI · webassure@upi (demo)' : 'No payment method needed on the free plan.'}</p>
+            <div className="st__card">
+              <div className="bl__sec-head">
+                <p className="st__t">Billing history</p>
+                <p className="st__d">Amounts include 18% GST</p>
               </div>
-              <Link href="/dashboard/upgrade" className="btn btn--soft">Compare plans</Link>
+              {planInfo.monthly && plan.since ? (
+                <div className="bl__table" role="table" aria-label="Invoices">
+                  <div className="bl__tr bl__th" role="row"><span>Date</span><span>Description</span><span>Amount</span><span>Status</span></div>
+                  <div className="bl__tr" role="row">
+                    <span>{fmtDate(plan.since)}</span>
+                    <span>WebAssure {planInfo.name} · {plan.cycle === 'yearly' ? 'Yearly' : 'Monthly'}</span>
+                    <span>{inr(Math.round(chargeFor(planInfo, plan.cycle) * 1.18))}</span>
+                    <span><em className="bl__paid">Paid</em></span>
+                  </div>
+                </div>
+              ) : (
+                <p className="bl__empty">No invoices yet. They appear here after your first payment.</p>
+              )}
             </div>
           </section>}
 

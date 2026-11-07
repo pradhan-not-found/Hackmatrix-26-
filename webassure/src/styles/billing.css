@@ -130,3 +130,46 @@
 .up__list { margin-top: 24px; padding-top: 22px; gap: 12px; }
 .up__card[data-popular] { background: linear-gradient(180deg, color-mix(in srgb, var(--workspace-accent) 7%, var(--card)) 0%, var(--card) 40%); }
 .up__head { gap: 12px; padding-bottom: 20px; }
+
+/* billing page (settings → plan) */
+.bl__hero { display: flex; flex-direction: column; gap: 22px; }
+.bl__hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+.bl__k { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey); }
+.bl__name { display: flex; align-items: center; gap: 10px; margin: 6px 0 4px; }
+.bl__name h3 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.bl__cost { text-align: right; }
+.bl__hero .bl__price { margin: 0; font-size: 30px; display: flex; align-items: baseline; gap: 6px; justify-content: flex-end; }
+.bl__price span { font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--grey); }
+.bl__facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 14px; background: var(--tile); }
+.bl__facts > div { padding: 14px 16px; min-width: 0; }
+.bl__facts > div + div { box-shadow: inset 1px 0 0 var(--line); }
+.bl__facts dt { font-size: 12px; color: var(--grey); }
+.bl__facts dd { margin-top: 4px; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bl__actions { display: flex; gap: 10px; }
+.st__sec > .st__card + .st__card { margin-top: 14px; }
+.bl__sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.bl__sec-head .st__d { margin: 0; }
+.bl__meters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.bl__meter { padding: 16px; border-radius: 14px; background: var(--tile); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.bl__meter-k { font-size: 13px; color: var(--grey); }
+.bl__meter-v { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.bl__meter-v span { font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--grey); }
+.bl__meter .bl__bar { height: 6px; }
+.bl__bar span[data-unl] { background: color-mix(in srgb, var(--workspace-accent) 28%, transparent); }
+.bl__meter-f { font-size: 12px; color: var(--grey); }
+.bl__table { font-size: 13.5px; }
+.bl__tr { display: grid; grid-template-columns: 130px minmax(0, 1fr) 110px 80px; gap: 12px; align-items: center; padding: 12px 4px; box-shadow: inset 0 -1px 0 var(--line); }
+.bl__tr:last-child { box-shadow: none; }
+.bl__th { font-size: 12px; color: var(--grey); padding-top: 0; }
+.bl__paid { font-style: normal; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; color: var(--st-ok); background: color-mix(in srgb, var(--st-ok) 14%, transparent); }
+.bl__empty { padding: 22px; border-radius: 14px; background: var(--tile); text-align: center; font-size: 13.5px; color: var(--grey); }
+@media (max-width: 760px) {
+  .bl__facts, .bl__meters { grid-template-columns: 1fr; }
+  .bl__facts > div + div { box-shadow: inset 0 1px 0 var(--line); }
+  .bl__cost { text-align: left; }
+  .bl__hero .bl__price { justify-content: flex-start; }
+  .bl__tr { grid-template-columns: 1fr auto; }
+  .bl__tr > span:nth-child(2) { grid-column: 1 / -1; order: -1; font-weight: 600; }
+  .bl__th { display: none; }
+  .bl__actions .btn { flex: 1; }
+}

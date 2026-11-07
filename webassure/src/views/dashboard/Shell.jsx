@@ -190,7 +190,8 @@ export default function Shell({ children }) {
   }
 
   const seg = pathname.split('/')[2] || ''
-  const current = seg === 'settings' ? 'Settings' : (NAV.find(([p]) => p === seg) || NAV[0])[1]
+  const current = seg === 'settings' || seg === 'upgrade' ? 'Settings' : (NAV.find(([p]) => p === seg) || NAV[0])[1]
+  const crumbNow = seg === 'upgrade' ? 'Plans' : current
   const href = (p) => `/dashboard${p ? `/${p}` : ''}`
 
   const runScan = (event) => { event.preventDefault(); runInvestigation(query) }
@@ -251,9 +252,9 @@ export default function Shell({ children }) {
                 const Icon = current === 'Settings' ? SettingsIcon : (NAV.find(([, l]) => l === current) || NAV[0])[2]
                 return <Icon />
               })()}
-              <span className="crumb__root">Workspace</span>
+              <span className="crumb__root">{seg === 'upgrade' ? 'Settings' : 'Workspace'}</span>
               <span className="crumb__sep" aria-hidden="true">/</span>
-              <span className="crumb__now">{current}</span>
+              <span className="crumb__now">{crumbNow}</span>
             </p>
             <form className="dash__scan" onSubmit={runScan} role="search" aria-busy={scanLoading}>
               <SearchIcon />
