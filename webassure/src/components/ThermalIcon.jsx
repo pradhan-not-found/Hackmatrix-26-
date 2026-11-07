@@ -181,7 +181,7 @@ export default function ThermalIcon({ shape, size = 96, label }) {
     >
       <defs>
         {stripe(ids.s, '#6a6a6a')}
-        {stripe(ids.sd, '#5a5a5a')}
+        {stripe(ids.sd, '#3a3a3a')}
         <filter id={ids.m} x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
           <feGaussianBlur in="SourceAlpha" stdDeviation="4" />
           <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" />

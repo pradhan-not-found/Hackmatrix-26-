@@ -10,9 +10,9 @@ const B = '0 .4275 1 .3608 0 1'
 
 // Dark mode: electric glow — white core → cyan → blue → violet rim → page.
 export const DARK = {
-  R: '1 .78 .3 .23 .42 .1',
-  G: '1 .94 .79 .42 .24 .07',
-  B: '1 1 1 1 1 .25',
+  R: '.93 .62 .31 .18 .12 .08',
+  G: '.95 .76 .49 .3 .17 .09',
+  B: '1 1 1 .78 .42 .2',
 }
 
 // Light mode: the same blue glow, inverted for a white page.
@@ -83,9 +83,9 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
         {/* Dark mode: a shallower stripe keeps every letter in the blue/orange core
             instead of drifting into pink haze against the dark page. */}
         <linearGradient id={`${stripe}-dark`} gradientUnits="userSpaceOnUse" x2="486" spreadMethod="repeat" gradientTransform="rotate(-35)">
-          <stop stopColor="#5a5a5a" />
+          <stop stopColor="#3a3a3a" />
           <stop offset=".5" stopColor="#000" />
-          <stop offset="1" stopColor="#5a5a5a" />
+          <stop offset="1" stopColor="#3a3a3a" />
           <animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="486 0" dur="4.4s" repeatCount="indefinite" additive="sum" />
         </linearGradient>
         <filter id={material} x="-3%" y="-15%" width="106%" height="130%" colorInterpolationFilters="sRGB">
