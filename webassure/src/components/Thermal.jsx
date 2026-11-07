@@ -9,6 +9,13 @@ const G = '0 .0863 .6667 .7961 .2667 .5176'
 const B = '0 .4275 1 .3608 0 1'
 
 // Dark mode: electric glow — white core → cyan → blue → violet rim → page.
+// Dark-mode hero wordmark only: crisp luminous blue outline, deep blue body.
+const HERO_DARK = {
+  R: '.05 .1 .2 .55 .3 .1',
+  G: '.1 .25 .55 .8 .45 .12',
+  B: '.4 .85 1 1 .95 .3',
+}
+
 export const DARK = {
   R: '.93 .62 .31 .18 .12 .08',
   G: '.95 .76 .49 .3 .17 .09',
@@ -82,11 +89,11 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
         </linearGradient>
         {/* Dark mode: a shallower stripe keeps every letter in the blue/orange core
             instead of drifting into pink haze against the dark page. */}
-        <linearGradient id={`${stripe}-dark`} gradientUnits="userSpaceOnUse" x2="486" spreadMethod="repeat" gradientTransform="rotate(-35)">
-          <stop stopColor="#3a3a3a" />
-          <stop offset=".5" stopColor="#000" />
-          <stop offset="1" stopColor="#3a3a3a" />
-          <animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="486 0" dur="4.4s" repeatCount="indefinite" additive="sum" />
+        <linearGradient id={`${stripe}-dark`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="900" y2="0">
+          <stop stopColor="#1c1c1c" />
+          <stop offset=".35" stopColor="#505050" />
+          <stop offset=".65" stopColor="#505050" />
+          <stop offset="1" stopColor="#1c1c1c" />
         </linearGradient>
         <filter id={material} x="-3%" y="-15%" width="106%" height="130%" colorInterpolationFilters="sRGB">
           <feGaussianBlur in="SourceAlpha" stdDeviation="4.5" />
@@ -94,7 +101,7 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
           <feBlend in="SourceGraphic" mode="overlay" />
         </filter>
         <ColorFilter id={color} paper="1" table={LIGHT_BLUE} />
-        <ColorFilter id={colorDark} paper="0.0706" table={tone === 'white' ? WHITE : DARK} />
+        <ColorFilter id={colorDark} paper="0.0706" table={tone === 'white' ? WHITE : HERO_DARK} />
       </defs>
       <g className="thermal__color">
         <text

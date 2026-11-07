@@ -1074,3 +1074,34 @@
 /* team photo: cover the 4:5 frame, keep the face in view */
 .member__photo { position: relative; }
 .member__img { object-fit: cover; object-position: center 22%; }
+
+/* ===== Pro trial button: stays a pill; square-grid texture on hover ===== */
+.plan[data-featured] .btn--ink { position: relative; overflow: hidden; isolation: isolate; border-radius: 999px; }
+.plan[data-featured] .btn--ink:hover { border-radius: 999px; }
+.plan[data-featured] .btn--ink::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+  background-size: 9px 9px;
+  -webkit-mask-image: radial-gradient(60% 140% at 50% 50%, #000 0%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+  mask-image: radial-gradient(60% 140% at 50% 50%, #000 0%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+  transition: opacity 0.4s var(--ease);
+}
+.plan[data-featured] .btn--ink:hover::before { opacity: 1; animation: grid-drift 6s linear infinite; }
+@keyframes grid-drift { to { background-position: 9px 9px, 9px 9px; } }
+@media (prefers-reduced-motion: reduce) { .plan[data-featured] .btn--ink:hover::before { animation: none; } }
+
+/* ===== Certificate card: tighter, aligned ===== */
+.cv { width: 62cqw; }
+.cv__body { padding: 1.5cqw 1.8cqw 1.2cqw; gap: 0.8cqw; }
+.cv__chain { margin-bottom: 0.6cqw; }
+.cv__node { display: flex; flex-direction: column; align-items: flex-start; gap: 0.35cqw; padding: 0.9cqw 1cqw; }
+.cv__name { display: flex; align-items: center; gap: 0.6cqw; max-width: 100%; }
+.cv__dot { grid-row: auto; flex: none; width: 0.7cqw; height: 0.7cqw; }
+.cv__grid { grid-template-columns: 1fr 1fr; gap: 0; background: #f6f6f8; border-radius: 1cqw; padding: 0.3cqw 1.2cqw; }
+.cv__cell { background: none; border-radius: 0; padding: 0.75cqw 0; flex-direction: row; justify-content: space-between; align-items: baseline; }
+.cv__cell:nth-child(odd) { padding-right: 1.4cqw; }
+.cv__cell:nth-child(even) { padding-left: 1.4cqw; }
+.cv__cell dd { font-size: 1.15cqw; }
+.cv__ct { margin: 0 1.8cqw 1.5cqw; padding: 0.85cqw 1.2cqw; }

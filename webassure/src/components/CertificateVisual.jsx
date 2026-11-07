@@ -38,9 +38,8 @@ export default function CertificateVisual() {
             {CHAIN.map((c, i) => (
               <div key={c.role} className="cv__chainwrap">
                 <div className="cv__node va" style={{ '--d': `${120 + i * 90}ms` }}>
-                  <span className={`cv__dot cv__dot--${c.tone}`} />
                   <span className="cv__role">{c.role}</span>
-                  <span className="cv__name">{c.name}</span>
+                  <span className="cv__name"><span className={`cv__dot cv__dot--${c.tone}`} />{c.name}</span>
                 </div>
                 {i < CHAIN.length - 1 && <span className="cv__chev"><Chevron /></span>}
               </div>
