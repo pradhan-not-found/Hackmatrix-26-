@@ -256,3 +256,16 @@
   .stw__aside { position: static; }
   .stw__aside .stw__nav { position: sticky; top: 0; }
 }
+
+/* scrollbars: slim pill thumb, no arrow buttons.
+   Chrome drops ::-webkit-scrollbar styling (and shows arrows) when scrollbar-color/width
+   are set, so those standard properties are kept for Firefox only. */
+html, * { scrollbar-width: auto; scrollbar-color: auto; }
+@supports (-moz-appearance: none) {
+  html, * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--grey) 40%, transparent) transparent; }
+}
+::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+::-webkit-scrollbar-button, ::-webkit-scrollbar-button:single-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { border-radius: 99px; border: 3px solid transparent; background-clip: padding-box; background-color: color-mix(in srgb, var(--grey) 35%, transparent); }
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--grey) 60%, transparent); }
