@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 const COLUMNS = [
   {
     title: 'Product',
@@ -15,7 +17,6 @@ const COLUMNS = [
     links: [
       ['FAQ', '/#faq'],
       ['Log in', '/login'],
-      ['Contact', 'mailto:hello@webassure.dev'],
     ],
   },
   {
@@ -47,7 +48,9 @@ export default function Footer() {
           <p className="grey">
             AI threat detection for links, sites and certificates. Know before you click.
           </p>
-          <a className="footer__mail" href="mailto:hello@webassure.dev">hello@webassure.dev</a>
+          <p className="footer__made">
+            Made by <Link href="/team" className="footer__team">Fantastic <span>4</span></Link>
+          </p>
         </div>
         <nav className="footer__cols" aria-label="Footer">
           {COLUMNS.map((col) => (

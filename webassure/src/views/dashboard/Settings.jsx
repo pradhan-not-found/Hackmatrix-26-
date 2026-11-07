@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDash } from './context.js'
-import { signIn, signOut } from '../../lib/auth.js'
+import { signOut, updateUser } from '../../lib/auth.js'
+import { PersonPlaceholder } from '../../components/Icons.jsx'
 import { PageHead, Toggle } from './ui.jsx'
 
 function newKey() {
@@ -20,10 +21,42 @@ export default function Settings() {
   const [notif, setNotif] = useState({ high: true, certs: true, weekly: false })
   const [key, setKey] = useState(newKey)
   const [copied, setCopied] = useState(false)
+  const [photoErr, setPhotoErr] = useState('')
+  const fileRef = useRef(null)
+
+  // Resize to a 256px square before storing, so the photo stays small.
+  const onPhoto = (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) return setPhotoErr('Use a JPG, PNG or WebP image.')
+    if (file.size > 2 * 1024 * 1024) return setPhotoErr('Images must be 2 MB or smaller.')
+    setPhotoErr('')
+    const img = new Image()
+    img.onload = () => {
+      const size = 256
+      const c = document.createElement('canvas')
+      c.width = c.height = size
+      const s = Math.min(img.width, img.height)
+      c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size)
+      const next = updateUser({ avatar: c.toDataURL('image/jpeg', 0.86) })
+      if (next) setUser(next)
+      else setPhotoErr('Could not save the image. Try a smaller one.')
+      URL.revokeObjectURL(img.src)
+    }
+    img.onerror = () => setPhotoErr('That file could not be read.')
+    img.src = URL.createObjectURL(file)
+  }
+
+  const removePhoto = () => {
+    const next = updateUser({ avatar: null })
+    if (next) setUser(next)
+  }
 
   const save = (e) => {
     e.preventDefault()
-    setUser(signIn(user.email, name.trim() || user.name))
+    const next = updateUser({ name: name.trim() || user.name })
+    if (next) setUser(next)
     setSaved(true)
     setTimeout(() => setSaved(false), 1800)
   }
@@ -47,6 +80,23 @@ export default function Settings() {
             <p className="caption grey">How you appear in this workspace.</p>
           </div>
           <form className="set__body" onSubmit={save}>
+            <div className="photo">
+              <span className="photo__img">
+                {user.avatar ? <img src={user.avatar} alt="" /> : <PersonPlaceholder />}
+              </span>
+              <div className="photo__meta">
+                <p className="set__t">Profile photo</p>
+                <p className="caption grey">JPG, PNG or WebP, up to 2 MB.</p>
+                <div className="photo__btns">
+                  <button type="button" className="btn btn--ink" onClick={() => fileRef.current?.click()}>
+                    {user.avatar ? 'Change photo' : 'Upload photo'}
+                  </button>
+                  {user.avatar && <button type="button" className="btn btn--ghost" onClick={removePhoto}>Remove</button>}
+                </div>
+                {photoErr && <p className="photo__err" role="alert">{photoErr}</p>}
+              </div>
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onPhoto} />
+            </div>
             <label className="field">
               <span>Name</span>
               <input value={name} onChange={(e) => setName(e.target.value)} />

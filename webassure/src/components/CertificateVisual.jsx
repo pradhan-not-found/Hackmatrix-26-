@@ -1,50 +1,56 @@
-// Trust-chain inspector: chain on the left, selected certificate on the right,
-// Certificate Transparency lookup underneath.
+// Certificate inspector: one clean window — header, trust chain, details, CT result.
 
 const CHAIN = [
-  { role: 'Root CA', name: 'ISRG Root X1', state: 'ok', note: 'Trusted' },
-  { role: 'Intermediate', name: 'Unverified CA', state: 'bad', note: 'Unknown issuer' },
-  { role: 'Site certificate', name: '*.portal-login.in', state: 'bad', note: '3 issues', active: true },
+  { role: 'Root CA', name: 'ISRG Root X1', tone: 'ok' },
+  { role: 'Intermediate', name: 'Unverified CA', tone: 'bad' },
+  { role: 'Site', name: '*.portal-login.in', tone: 'bad' },
 ]
 
 const DETAILS = [
-  ['Subject', '*.portal-login.in', ''],
   ['Issued', '2 days ago', 'warn'],
-  ['Key', 'RSA 1024', 'bad'],
-  ['Signature', 'SHA-256', ''],
   ['Valid until', 'Feb 3, 2027', ''],
+  ['Key', 'RSA 1024 · weak', 'bad'],
+  ['Signature', 'SHA-256', ''],
+  ['Issuer trust', 'Unknown', 'bad'],
+  ['Protocol', 'TLS 1.3', ''],
 ]
+
+const Chevron = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+)
 
 export default function CertificateVisual() {
   return (
     <div className="vis vis--peach">
-      <div className="ci">
-        <ol className="ci__chain">
-          {CHAIN.map((c, i) => (
-            <li key={c.role} className="ci__node va" data-active={c.active || undefined} style={{ '--d': `${i * 110}ms` }}>
-              <span className={`ci__dot ci__dot--${c.state}`} />
-              <span className="ci__txt">
-                <span className="ci__role">{c.role}</span>
-                <span className="ci__name">{c.name}</span>
-              </span>
-              <span className={`ci__note ci__note--${c.state}`}>{c.note}</span>
-            </li>
-          ))}
-        </ol>
+      <div className="cv va" style={{ '--d': '0ms' }}>
+        <div className="cv__bar">
+          <span className="cv__dots"><i /><i /><i /></span>
+          <span className="cv__url">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="9" rx="2" fill="currentColor" /><path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11" fill="none" stroke="currentColor" strokeWidth="2.2" /></svg>
+            *.portal-login.in
+          </span>
+          <span className="cv__issues">3 issues</span>
+        </div>
 
-        <div className="ci__card va" style={{ '--d': '300ms' }}>
-          <div className="ci__head">
-            <span className="ci__lock" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
-            </span>
-            <span>
-              <span className="ci__title">Certificate details</span>
-              <span className="ci__sub">TLS 1.3 · Domain validated</span>
-            </span>
+        <div className="cv__body">
+          <p className="cv__label">Trust chain</p>
+          <div className="cv__chain">
+            {CHAIN.map((c, i) => (
+              <div key={c.role} className="cv__chainwrap">
+                <div className="cv__node va" style={{ '--d': `${120 + i * 90}ms` }}>
+                  <span className={`cv__dot cv__dot--${c.tone}`} />
+                  <span className="cv__role">{c.role}</span>
+                  <span className="cv__name">{c.name}</span>
+                </div>
+                {i < CHAIN.length - 1 && <span className="cv__chev"><Chevron /></span>}
+              </div>
+            ))}
           </div>
-          <dl className="ci__rows">
+
+          <p className="cv__label">Certificate</p>
+          <dl className="cv__grid">
             {DETAILS.map(([k, v, t]) => (
-              <div key={k}>
+              <div key={k} className="cv__cell">
                 <dt>{k}</dt>
                 <dd data-tone={t || undefined}>{v}</dd>
               </div>
@@ -52,14 +58,9 @@ export default function CertificateVisual() {
           </dl>
         </div>
 
-        <div className="ci__ct va" style={{ '--d': '420ms' }}>
-          <span className="ci__ct-k">CT log lookup</span>
-          <span className="ci__ct-logs">
-            <i data-miss />
-            <i data-miss />
-            <i data-miss />
-          </span>
-          <span className="ci__ct-v">Not found in 3 of 3 logs</span>
+        <div className="cv__ct va" style={{ '--d': '420ms' }}>
+          <span className="cv__ctl"><span className="cv__dot cv__dot--bad" />Certificate Transparency</span>
+          <span className="cv__ctv">Not found in 3 of 3 public logs</span>
         </div>
       </div>
     </div>

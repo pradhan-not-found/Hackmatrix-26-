@@ -9,7 +9,7 @@ import { takePendingScan } from '../../lib/pending.js'
 import { useTheme } from '../../components/ThemeProvider.jsx'
 import { DashContext } from './context.js'
 import {
-  FileIcon, GridIcon, LedgerIcon, LockIcon, LogoutIcon, ScanIcon, SearchIcon, SettingsIcon, ShieldIcon, ThemeIcon,
+  PersonPlaceholder, FileIcon, GridIcon, LedgerIcon, LockIcon, LogoutIcon, ScanIcon, SearchIcon, SettingsIcon, ShieldIcon, ThemeIcon,
 } from '../../components/Icons.jsx'
 
 const NAV = [
@@ -39,6 +39,13 @@ export default function Shell({ children }) {
   const [error, setError] = useState('')
   const [navOpen, setNavOpen] = useState(false)
   const [focusId, setFocusId] = useState(null)
+  const [introDone, setIntroDone] = useState(false)
+
+  // Hold the loading screen briefly so the logo fill reads as intentional, not a flash.
+  useEffect(() => {
+    const t = setTimeout(() => setIntroDone(true), 1300)
+    return () => clearTimeout(t)
+  }, [])
 
   // Client-side guard (demo auth lives in localStorage). ?demo opens a demo session.
   useEffect(() => {
@@ -106,7 +113,15 @@ export default function Shell({ children }) {
   }, [user, loadHistory, runInvestigation])
 
   const clearFocus = useCallback(() => setFocusId(null), [])
-  if (!user) return <div className="dash-loading" aria-busy="true" />
+  if (!user || !introDone) {
+    return (
+      <div className="dash-loading" role="status" aria-label="Loading your workspace">
+        <span className="dl__mark">webassure</span>
+        <span className="dl__note">Preparing your workspace</span>
+      </div>
+    )
+  }
+
   const seg = pathname.split('/')[2] || ''
   const current = seg === 'settings' ? 'Settings' : (NAV.find(([p]) => p === seg) || NAV[0])[1]
   const href = (p) => `/dashboard${p ? `/${p}` : ''}`
@@ -140,7 +155,9 @@ export default function Shell({ children }) {
               <SettingsIcon />Settings
             </Link>
             <div className="dash__user">
-              <span className="dash__avatar">{user.name.slice(0, 1).toUpperCase()}</span>
+              <span className="dash__avatar">
+                {user.avatar ? <img src={user.avatar} alt="" /> : <PersonPlaceholder />}
+              </span>
               <div className="dash__user-txt">
                 <p>{user.name}</p>
                 <p className="caption grey">{user.email}</p>

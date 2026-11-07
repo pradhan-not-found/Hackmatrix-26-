@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import ScrollText from './ScrollText.jsx'
 import ThermalIcon from './ThermalIcon.jsx'
 
@@ -69,17 +68,15 @@ export default function Audience() {
           <p className="eyebrow">Where we come in</p>
           <p className="moments__lead">Four moments where a few seconds of checking saves the most.</p>
         </div>
-        <div className="moments__grid">
+        <ol className="mrow">
           {MOMENTS.map(([title, text], i) => (
-            <Link key={title} href="/signup" className="moment reveal" style={{ transitionDelay: `${i * 70}ms` }}>
-              <span className="moment__n">{String(i + 1).padStart(2, '0')}</span>
-              <span className="moment__open">Start ↗</span>
-              <p className="moment__p">
-                <b>{title}.</b> {text}
-              </p>
-            </Link>
+            <li key={title} className="mrow__item reveal" style={{ transitionDelay: `${i * 90}ms` }}>
+              <span className="mrow__n">{String(i + 1).padStart(2, '0')}</span>
+              <span className="mrow__t">{title}</span>
+              <span className="mrow__d">{text}</span>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   )

@@ -1,12 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2cc5f9"/>
-      <stop offset=".55" stop-color="#ff38d4"/>
-      <stop offset="1" stop-color="#ff7a1a"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="14" fill="#111"/>
-  <path d="M11 22 L19.5 43 L29 28.5 L38.5 43 L47 22" fill="none" stroke="#fff" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="53.5" cy="41" r="4.4" fill="url(#a)"/>
+  <style>
+    .s { fill: #000; stroke: #000; stroke-width: 3; stroke-linejoin: round; }
+    @media (prefers-color-scheme: dark) { .s { fill: #fff; stroke: #fff; } }
+  </style>
+  <path class="s" d="M8.9 16.2 C15.3 16 21.6 14 27.1 11.1 C28.3 10.5 29.2 11.1 29.2 12.6 V35.8 H12 C10.1 31.2 8.9 26.8 8.9 22 Z"/>
+  <path class="s" d="M55.1 16.2 C48.7 16 42.4 14 36.9 11.1 C35.7 10.5 34.8 11.1 34.8 12.6 V35.8 H52 C53.9 31.2 55.1 26.8 55.1 22 Z"/>
+  <path class="s" d="M16.9 41.6 H29.2 V51.8 C29.2 53.3 28.1 54 26.9 53.2 C22.7 50.3 19.7 47.2 16.9 43.3 Z"/>
+  <path class="s" d="M47.1 41.6 H34.8 V51.8 C34.8 53.3 35.9 54 37.1 53.2 C41.3 50.3 44.3 47.2 47.1 43.3 Z"/>
 </svg>

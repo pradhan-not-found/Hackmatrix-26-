@@ -69,3 +69,11 @@ export const DownloadIcon = () => (
 export const CloseIcon = () => (
   <svg {...base}><path d="m6 6 12 12M18 6 6 18" /></svg>
 )
+
+// Neutral silhouette used until a real photo is added.
+export const PersonPlaceholder = () => (
+  <svg viewBox="0 0 64 64" aria-hidden="true" className="person-ph">
+    <circle cx="32" cy="24" r="11" fill="currentColor" />
+    <path d="M10 60c0-12.2 9.8-20 22-20s22 7.8 22 20z" fill="currentColor" />
+  </svg>
+)
