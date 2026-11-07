@@ -30,32 +30,44 @@ const Row = ({ k, v, tone, d }) => (
 )
 
 /* 01 Phishing detection */
+function MiniSite({ host, fake, d }) {
+  return (
+    <div className={`ms va${fake ? ' ms--fake' : ''}`} style={{ '--d': d }}>
+      <div className="ms__bar">
+        <span className={`ms__url${fake ? ' ms__url--bad' : ''}`}>{fake ? <Warn /> : <Lock />}{host}</span>
+        <span className={`ms__tag chip chip--${fake ? 'bad' : 'ok'}`}>{fake ? 'Look-alike' : 'Original'}</span>
+      </div>
+      <div className="ms__page">
+        <div className="ms__brand"><span className="ms__logo">S</span><span>State Bank</span></div>
+        <p className="ms__h">Log in to Internet Banking</p>
+        <span className="ms__label">Username</span>
+        <span className="ms__input">rahul.k</span>
+        <span className="ms__label">Password</span>
+        <span className="ms__input">••••••••</span>
+        <span className="ms__btn">Log in</span>
+      </div>
+    </div>
+  )
+}
+
 export function PhishingVisual() {
   return (
     <Window url="secure-sbi-kyc-update.xyz/login" chip="Phishing" tone="bad" bg="blue">
-      <div className="cmp">
-        {[['Original', 'onlinesbi.sbi', 'ok'], ['Clone', 'secure-sbi-kyc-update.xyz', 'bad']].map(([label, host, t], i) => (
-          <div key={label} className="cmp__site va" style={{ '--d': `${120 + i * 90}ms` }}>
-            <div className="cmp__page">
-              <span className="cmp__logo" />
-              <span className="cmp__line" />
-              <span className="cmp__field" />
-              <span className="cmp__field" />
-              <span className="cmp__btn" />
-            </div>
-            <div className="cmp__meta">
-              <span className={`sd sd--${t}`} />
-              <span className="cmp__label">{label}</span>
-              <span className="cmp__host">{host}</span>
-            </div>
-          </div>
-        ))}
-        <span className="cmp__match va" style={{ '--d': '300ms' }}>94% match</span>
+      <div className="cmp2">
+        <MiniSite host="onlinesbi.sbi" d="120ms" />
+        <span className="cmp2__match va" style={{ '--d': '260ms' }}>
+          <b>94%</b>
+          <span>visual match</span>
+        </span>
+        <MiniSite host="sbi-kyc-update.xyz" fake d="200ms" />
       </div>
-      <div className="rs va" style={{ '--d': '380ms' }}>
-        <span className="rs__k">Risk score</span>
-        <span className="rs__track"><span style={{ width: '82%' }} /></span>
-        <span className="rs__n">82</span>
+      <div className="vd va" style={{ '--d': '360ms' }}>
+        <span className="vd__icon"><Warn /></span>
+        <span className="vd__txt">
+          <b>Phishing</b>
+          <span>Copies the bank&apos;s login page on an unrelated domain</span>
+        </span>
+        <span className="vd__score">82<span>/100</span></span>
       </div>
     </Window>
   )

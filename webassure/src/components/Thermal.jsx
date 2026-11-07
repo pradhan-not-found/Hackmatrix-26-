@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef } from 'react'
+import { squishDown, squishUp } from '../lib/squish.js'
 
 // Heat-map wordmark: the text is filled with a moving black/white stripe, blurred,
 // and the resulting luminance is remapped through a thermal colour table.
@@ -139,9 +140,15 @@ export default function Thermal({ text = 'webassure', className = '', tone, view
       down = true
       downAt = performance.now()
       penPressure = e.pointerType !== 'mouse' ? e.pressure || 0 : 0
+      squishDown(penPressure || 0.6)
       onMove(e)
     }
-    const onUp = () => { down = false; penPressure = 0; kick() }
+    const onUp = () => {
+      if (down) squishUp(Math.min(1, 0.4 + depth * 0.6))
+      down = false
+      penPressure = 0
+      kick()
+    }
     const onLeave = () => { hovering = false; down = false; penPressure = 0; kick() }
     host.addEventListener('pointermove', onMove)
     host.addEventListener('pointerdown', onDown)
