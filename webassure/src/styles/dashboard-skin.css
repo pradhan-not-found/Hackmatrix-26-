@@ -1,0 +1,101 @@
+/* =====================================================================
+   Dashboard skin — the original WebAssure look applied to the
+   investigation workspace (features from workspace.css stay intact).
+   Neutral palette, soft borderless tiles, rounded cards, plastic blue.
+   Loaded last.
+   ===================================================================== */
+
+.dash {
+  --workspace-canvas: #f5f6f8; --workspace-nav: #ffffff; --card: #ffffff; --tile: #f4f6fa;
+  --ink: #0f1222; --grey: #636a7e; --line: #e8ebf1; --console: #eceff6;
+  --workspace-accent: #3f6af5;
+  background: var(--workspace-canvas);
+}
+[data-theme='dark'] .dash {
+  --workspace-canvas: #121212; --workspace-nav: #161616; --card: #1c1c1c; --tile: #222;
+  --ink: #f1f1f1; --grey: #8f8f96; --line: #2a2a2a; --console: #262626;
+  --workspace-accent: #7ea0ff;
+}
+
+/* ---- Sidebar ---- */
+.dash .dash__side { background: var(--workspace-nav); border-right: 0; }
+.dash .dash__logo { font-size: 19px; }
+.dash .dash__link { border-radius: 10px; font-size: 14px; color: var(--grey); }
+.dash .dash__link:hover { color: var(--ink); background: var(--console); }
+.dash .dash__link.active { color: var(--ink); background: var(--console); box-shadow: none; font-weight: 600; }
+.dash .dash__user { border-radius: 14px; background: var(--console); border: 0; }
+.dash .dash__menu, .dash .dash__close { border: 0; border-radius: 10px; background: var(--console); }
+.dash .dash__menu:hover, .dash .dash__close:hover { border: 0; color: var(--ink); background: var(--hover, var(--console)); box-shadow: none; }
+
+/* ---- Top bar ---- */
+.dash .dash__top { border-bottom: 0; padding-bottom: 8px; }
+.dash .dash__crumb { font-size: 13px; }
+.dash .dash__scan { border: 0; border-radius: 999px; background: var(--card); box-shadow: 0 0 0 1px var(--line); padding: 4px 4px 4px 16px; }
+.dash .dash__scan:focus-within { box-shadow: 0 0 0 1.5px var(--ink); }
+
+/* ---- Buttons: back to the site's plastic pills ---- */
+.dash .btn { border-radius: 999px; font-size: 13px; }
+.dash .dash__scan .btn--ink, .overview-heading > .btn {
+  background: linear-gradient(180deg, #6b94ff 0%, #4672ff 46%, #2f56e6 100%); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -2px 0 rgba(12, 32, 130, 0.38), 0 8px 18px -8px rgba(36, 72, 220, 0.75);
+}
+.dash .dash__scan .btn--ink:hover, .overview-heading > .btn:hover {
+  background: linear-gradient(180deg, #7aa0ff 0%, #5079ff 46%, #345ced 100%);
+}
+.dash .btn--ghost { box-shadow: 0 0 0 1px var(--line); }
+
+/* ---- Cards and surfaces: soft tiles, no hairlines ---- */
+.dash .card, .overview-metric, .overview-surface {
+  background: var(--card); border: 0; border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(15, 20, 40, 0.04), 0 10px 30px -24px rgba(15, 20, 40, 0.25);
+}
+[data-theme='dark'] .dash .card, [data-theme='dark'] .overview-metric, [data-theme='dark'] .overview-surface { box-shadow: none; }
+
+/* ---- Overview ---- */
+.overview-eyebrow { color: var(--grey); font-size: 12px; letter-spacing: 0.06em; }
+.overview-heading h1 { font-size: 28px; letter-spacing: -0.03em; }
+.overview-metric { padding: 22px 22px 20px; min-height: 0; }
+.overview-metric::before { display: none; }
+.overview-metric-top { color: var(--grey); font-size: 13px; max-width: none; }
+.overview-metric > strong { font-size: 34px; letter-spacing: -0.04em; margin: 10px 0 4px; }
+.overview-metric > p { font-size: 12px; max-width: none; }
+.overview-metric-art, .overview-section-art { display: none; }
+.overview-section-head h2 { font-size: 15px; }
+.overview-section-head p { font-size: 12px; }
+.overview-period { border: 0; border-radius: 999px; background: var(--console); padding: 5px 11px; }
+.overview-activity-bar { fill: var(--workspace-accent); }
+.overview-scope { border-top: 0; }
+.overview-recent .history-status { border-top: 0; background: var(--tile); }
+.overview-site-icon { border: 0; border-radius: 10px; background: var(--console); }
+
+/* ---- Tables: zebra-free, rule-free, like the original ---- */
+.dash .table th { border-top: 0; border-bottom: 0; background: var(--tile); font-size: 12px; }
+.dash .table td { border-bottom: 0; }
+.dash .table tbody tr + tr td { box-shadow: inset 0 1px 0 var(--line); }
+.dash .table tbody tr:hover { background: var(--tile); }
+.dash .table .badge { border: 0; border-radius: 999px; background: var(--console); font-weight: 600; padding: 3px 9px; }
+
+/* ---- Tabs, inputs, status line ---- */
+.dash .tabs { border-radius: 12px; background: var(--console); }
+.dash .tabs button { border-radius: 9px; }
+.dash .input-sm { border: 0; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); background: var(--card); }
+.dash .history-status { font-size: 13px; }
+
+/* ---- Investigation report workspace: soft surfaces instead of outlines ---- */
+.analysis-coverage, .analysis-error, .analysis-facts, .analysis-finding, .analysis-header,
+.analysis-not-assessed, .analysis-tls, .report-item, .report-statement,
+.report-panel section, .report-panel > .report-evidence,
+.report-drawer .report-group, .report-drawer .report-statement, .report-drawer .report-evidence pre {
+  border: 0 !important; border-radius: 14px; background: var(--tile);
+}
+.analysis-domain + .analysis-domain { border-top: 0; box-shadow: inset 0 1px 0 var(--line); }
+.analysis-finding:last-child { border-bottom: 0; }
+.analysis-verdict-icon, .report-header-symbol { border: 0; border-radius: 12px; }
+.report-drawer { border: 0; border-radius: 20px; background: var(--card); box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.45); }
+.report-close { border: 0; border-radius: 50%; background: var(--console); }
+.report-bottom-bar { border-top: 0; background: var(--card); box-shadow: 0 -1px 0 var(--line); }
+.report-tabs { border: 0; border-radius: 12px; background: var(--console); padding: 4px; gap: 2px; }
+.report-tabs [role='tab'] { border: 0; border-radius: 9px; }
+.report-tabs [aria-selected='true'] { border: 0; background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.report-tabs [role='tab'] > span { border: 0; background: var(--tile); border-radius: 999px; }
+.analysis-severity { border: 0; border-radius: 999px; }
