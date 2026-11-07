@@ -1,14 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef } from 'react'
-import { ColorFilter, DARK } from './Thermal.jsx'
-
-// Light-mode blue glow: deep navy core → blue → cyan → soft periwinkle → page.
-const LIGHT_BLUE = {
-  R: '.04 .13 .17 .45 .76 .9',
-  G: '.09 .3 .74 .55 .8 .93',
-  B: '.36 .9 .98 1 1 1',
-}
+import { ColorFilter, DARK, LIGHT_BLUE } from './Thermal.jsx'
 
 // Icons drawn with the same heat-map treatment as the hero wordmark:
 // a moving black/white stripe, blurred and remapped through the thermal palette.

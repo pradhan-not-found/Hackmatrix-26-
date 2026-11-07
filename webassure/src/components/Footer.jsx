@@ -15,7 +15,6 @@ const COLUMNS = [
     links: [
       ['FAQ', '/#faq'],
       ['Log in', '/login'],
-      ['Contact', 'mailto:hello@webassure.dev'],
     ],
   },
   {
@@ -37,17 +36,12 @@ const SOCIAL = [
 export default function Footer() {
   return (
     <footer className="site-footer wrap">
-      <div className="horizon" aria-hidden="true">
-        <span className="horizon__haze" />
-        <span className="horizon__orb" />
-      </div>
       <div className="footer__top">
         <div className="footer__brand">
           <a href="#top" className="footer__mark" aria-label="WebAssure home">webassure</a>
           <p className="grey">
             AI threat detection for links, sites and certificates. Know before you click.
           </p>
-          <a className="footer__mail" href="mailto:hello@webassure.dev">hello@webassure.dev</a>
         </div>
         <nav className="footer__cols" aria-label="Footer">
           {COLUMNS.map((col) => (

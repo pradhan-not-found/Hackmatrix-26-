@@ -40,8 +40,6 @@ export default function Login({ mode }) {
   return (
     <div className="auth">
       <div className="auth__form-side">
-        <Link href="/" className="wordmark auth__logo" aria-label="WebAssure home">webassure</Link>
-
         <div className="auth__box">
           <h1 className="auth__title">{isSignup ? 'Create your account' : 'Welcome back'}</h1>
           <p className="auth__sub grey">
@@ -117,11 +115,7 @@ export default function Login({ mode }) {
           <span className="horizon__haze" />
           <span className="horizon__orb" />
         </div>
-        <p className="auth__quote">
-          Know your website before you trust it.
-          <span> Phishing, fake portals and forged certificates, caught in seconds.</span>
-        </p>
-        <div className="auth__mark">
+        <div className="auth__mark auth__mark--show">
           <Thermal text="webassure" tone="white" />
         </div>
       </aside>

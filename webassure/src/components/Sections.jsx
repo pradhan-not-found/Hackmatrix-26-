@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowIcon } from './Icons.jsx'
 import ScrollText from './ScrollText.jsx'
 import ThermalIcon from './ThermalIcon.jsx'
 
@@ -127,12 +126,11 @@ export function Faq() {
 /* ---------- CTA ---------- */
 export function Cta() {
   return (
-    <section className="section wrap cx" id="contact">
-      <h2 className="cx__t reveal">Know your website before you trust it.</h2>
-      <p className="cx__d reveal">Free to start. No card required.</p>
-      <div className="cx__btns reveal">
-        <Link href="/signup" className="btn btn--ink">Get started <ArrowIcon /></Link>
-        <a href="mailto:hello@webassure.dev" className="btn btn--soft">Talk to sales</a>
+    <section className="section wrap mc" id="contact">
+      <h2 className="mc__t reveal">Know your website before you trust it.</h2>
+      <div className="mc__btns reveal">
+        <Link href="/signup" className="pill-btn">Get started</Link>
+        <a href="#pricing" className="pill-btn">See pricing</a>
       </div>
     </section>
   )

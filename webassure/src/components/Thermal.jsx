@@ -15,6 +15,13 @@ export const DARK = {
   B: '1 1 1 1 1 .25',
 }
 
+// Light mode: the same blue glow, inverted for a white page.
+export const LIGHT_BLUE = {
+  R: '.04 .13 .17 .45 .76 .9',
+  G: '.09 .3 .74 .55 .8 .93',
+  B: '.36 .9 .98 1 1 1',
+}
+
 // White glow: bright core → silver → soft grey → page.
 export const WHITE = {
   R: '1 .97 .88 .66 .38 .16',
@@ -68,9 +75,9 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
     >
       <defs>
         <linearGradient id={stripe} gradientUnits="userSpaceOnUse" x2="486" spreadMethod="repeat" gradientTransform="rotate(-35)">
-          <stop stopColor="#fff" />
+          <stop stopColor="#6a6a6a" />
           <stop offset=".5" stopColor="#000" />
-          <stop offset="1" stopColor="#fff" />
+          <stop offset="1" stopColor="#6a6a6a" />
           <animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="486 0" dur="4.4s" repeatCount="indefinite" additive="sum" />
         </linearGradient>
         {/* Dark mode: a shallower stripe keeps every letter in the blue/orange core
@@ -86,7 +93,7 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
           <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" />
           <feBlend in="SourceGraphic" mode="overlay" />
         </filter>
-        <ColorFilter id={color} paper="1" />
+        <ColorFilter id={color} paper="1" table={LIGHT_BLUE} />
         <ColorFilter id={colorDark} paper="0.0706" table={tone === 'white' ? WHITE : DARK} />
       </defs>
       <g className="thermal__color">
