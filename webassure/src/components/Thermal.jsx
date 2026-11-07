@@ -65,27 +65,44 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
   const svgRef = useRef(null)
   const lightRef = useRef(null)
 
-  // Hover: the specular light follows the cursor and the word tilts slightly.
+  // Hover: the shine follows the cursor and nearby letters lift individually.
   useEffect(() => {
     const svg = svgRef.current
     const light = lightRef.current
     if (!svg || !light) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const host = svg.parentElement
+    const spans = Array.from(svg.querySelectorAll('.thermal__glass tspan'))
+    const lift = spans.map(() => 0)
+    let liftTarget = spans.map(() => 0)
+    let centers = null
     let raf = 0
-    let target = { az: 240, el: 52, rx: 0, ry: 0 }
-    const cur = { ...target }
+    let tgt = { az: 240, el: 52 }
+    const cur = { ...tgt }
+    const measure = () => {
+      centers = spans.map((t) => {
+        const b = t.getBBox()
+        return { x: b.x + b.width / 2, y: b.y + b.height / 2 }
+      })
+    }
     const tick = () => {
       let moving = false
-      for (const k of ['az', 'el', 'rx', 'ry']) {
-        const d = target[k] - cur[k]
+      for (const k of ['az', 'el']) {
+        const d = tgt[k] - cur[k]
         if (Math.abs(d) > 0.05) moving = true
         cur[k] += d * 0.12
       }
       light.setAttribute('azimuth', cur.az.toFixed(1))
       light.setAttribute('elevation', cur.el.toFixed(1))
-      svg.style.setProperty('--rx', `${cur.rx.toFixed(2)}deg`)
-      svg.style.setProperty('--ry', `${cur.ry.toFixed(2)}deg`)
+      // dy is relative to the previous glyph, so set each one to the change in lift.
+      let prev = 0
+      spans.forEach((t, i) => {
+        const d = liftTarget[i] - lift[i]
+        if (Math.abs(d) > 0.05) moving = true
+        lift[i] += d * 0.16
+        t.setAttribute('dy', (-(lift[i] - prev)).toFixed(2))
+        prev = lift[i]
+      })
       raf = moving ? requestAnimationFrame(tick) : 0
     }
     const kick = () => { if (!raf) raf = requestAnimationFrame(tick) }
@@ -93,20 +110,28 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
       const r = svg.getBoundingClientRect()
       const nx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2)
       const ny = (e.clientY - (r.top + r.height / 2)) / (r.height / 2)
-      target = {
-        az: ((Math.atan2(ny, nx) * 180) / Math.PI + 360) % 360,
-        el: 62 - Math.min(1, Math.hypot(nx, ny)) * 26,
-        rx: Math.max(-1, Math.min(1, ny)) * -4,
-        ry: Math.max(-1, Math.min(1, nx)) * 5,
+      tgt = { az: ((Math.atan2(ny, nx) * 180) / Math.PI + 360) % 360, el: 62 - Math.min(1, Math.hypot(nx, ny)) * 26 }
+      if (!centers) measure()
+      const m = svg.getScreenCTM()
+      if (m) {
+        const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse())
+        liftTarget = centers.map((c) => {
+          const dist = Math.hypot(pt.x - c.x, (pt.y - c.y) * 0.6)
+          const k = Math.max(0, 1 - dist / 170)
+          return 14 * k * k * (3 - 2 * k)
+        })
       }
       kick()
     }
-    const onLeave = () => { target = { az: 240, el: 52, rx: 0, ry: 0 }; kick() }
+    const onLeave = () => { tgt = { az: 240, el: 52 }; liftTarget = spans.map(() => 0); kick() }
+    const onResize = () => { centers = null }
     host.addEventListener('pointermove', onMove)
     host.addEventListener('pointerleave', onLeave)
+    window.addEventListener('resize', onResize)
     return () => {
       host.removeEventListener('pointermove', onMove)
       host.removeEventListener('pointerleave', onLeave)
+      window.removeEventListener('resize', onResize)
       cancelAnimationFrame(raf)
     }
   }, [])
@@ -209,7 +234,9 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
           filter={`url(#${uid}-glass)`}
           style={{ fontFamily: 'var(--font-mark)' }}
         >
-          {text}
+          {Array.from(text).map((ch, i) => (
+            <tspan key={i}>{ch}</tspan>
+          ))}
         </text>
       </g>
     </svg>

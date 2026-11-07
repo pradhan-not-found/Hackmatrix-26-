@@ -9,8 +9,8 @@ import { PersonPlaceholder } from '../components/Icons.jsx'
 const TEAM = [
   { name: 'Souradeep Pradhan', photo: '/team/souradeep.png', github: '#', website: '#', linkedin: '#' },
   { name: 'Madhushree Dasgupta', github: '#', website: '#', linkedin: '#' },
-  { name: 'Aniruddha Das', org: 'Adamas University', github: '#', website: '#', linkedin: '#' },
-  { name: 'Sattwik Das', github: '#', website: '#', linkedin: '#' },
+  { name: 'Aniruddha Das', org: 'Adamas University', photo: '/team/aniruddha.png', github: '#', website: '#', linkedin: '#' },
+  { name: 'Sattwik Das', photo: '/team/sattwik.png', github: '#', website: '#', linkedin: '#' },
 ]
 
 const Icon = {

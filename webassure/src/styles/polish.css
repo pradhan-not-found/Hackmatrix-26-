@@ -1152,3 +1152,6 @@
 /* ===== Hero wordmark hover (dark): light follows cursor, gentle 3D tilt ===== */
 [data-theme='dark'] .hero__logo { pointer-events: auto; perspective: 1400px; }
 [data-theme='dark'] .hero__logo .thermal { transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transform-style: preserve-3d; will-change: transform; }
+
+/* hover: no whole-word tilt; letters lift individually */
+[data-theme='dark'] .hero__logo .thermal { transform: none; will-change: auto; }
