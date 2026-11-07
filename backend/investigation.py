@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from backend.network import UnsafeURL, fetch, normalize_url, public_addresses
 from backend.threat_intelligence import reputation
+from backend.explanation import explain_locally
 
 
 def now() -> str:
@@ -135,4 +136,5 @@ def investigate(url: str) -> dict:
         "network_complete": "final_url" in report,
         "reputation_available": intelligence["status"] == "completed",
     }
+    report["ai_explanation"] = explain_locally(report)
     return report

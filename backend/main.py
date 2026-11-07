@@ -4,6 +4,7 @@ import sqlite3
 import threading
 from pathlib import Path
 from uuid import UUID
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -13,6 +14,7 @@ from pydantic import BaseModel, Field
 from backend.investigation import investigate
 from backend.network import UnsafeURL
 from backend.gemini import explain
+from backend.explanation import explain_locally
 
 app = FastAPI(title="HackMatrix URL Investigation", version="0.1.0")
 static_directory = Path(__file__).parent / "static"
@@ -96,12 +98,12 @@ def get_investigation(investigation_id: UUID):
 
 
 @app.post("/api/investigations/{investigation_id}/explanation")
-def explain_investigation(investigation_id: UUID):
+def explain_investigation(investigation_id: UUID, provider: Literal["local", "gemini"] = "local"):
     if not slots.acquire(blocking=False):
         raise HTTPException(429, "Investigation capacity reached; retry later")
     try:
         report = get_investigation(investigation_id)
-        report["ai_explanation"] = explain(report)
+        report["ai_explanation"] = explain(report) if provider == "gemini" else explain_locally(report)
         connection = database()
         try:
             with connection:

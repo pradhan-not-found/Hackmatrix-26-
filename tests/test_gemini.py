@@ -86,7 +86,7 @@ class GeminiTests(unittest.TestCase):
                     connection.execute("INSERT INTO investigations VALUES (?, ?)", (REPORT["id"], json.dumps(REPORT)))
                 connection.close()
                 with TestClient(app) as client:
-                    result = client.post(f"/api/investigations/{REPORT['id']}/explanation")
+                    result = client.post(f"/api/investigations/{REPORT['id']}/explanation?provider=gemini")
                     self.assertEqual(result.status_code, 200)
                     self.assertEqual(result.json()["status"], "completed")
                     saved = client.get(f"/api/investigations/{REPORT['id']}").json()
