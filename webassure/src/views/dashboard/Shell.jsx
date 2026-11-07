@@ -231,8 +231,7 @@ export default function Shell({ children }) {
             <div className="dash__user">
               <Avatar src={user.avatar} size={34} className="dash__av" />
               <div className="dash__user-txt">
-                <p>{user.name}</p>
-                <p className="caption grey">{user.email}</p>
+                <p className="dash__user-name" title={user.name}>{user.name}</p>
               </div>
               <button className="icon-btn" onClick={logout} aria-label="Log out"><LogoutIcon /></button>
             </div>

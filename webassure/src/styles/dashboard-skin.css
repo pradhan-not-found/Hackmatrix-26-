@@ -469,3 +469,19 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--grey) 45
   .dash[data-rail] .rail__toggle { width: 36px; height: 36px; margin: 0 auto; }
   .dash[data-rail] .dash__nav, .dash[data-rail] .dash__side-foot { align-items: flex-start; }
 }
+
+/* sidebar user card: full name only, log-out centred */
+.dash .dash__user { display: flex; align-items: center; gap: 12px; padding: 10px 8px 10px 10px; min-height: 56px; }
+.dash .dash__user-txt { flex: 1; min-width: 0; margin: 0; width: auto; padding: 0; }
+.dash .dash__user-name {
+  font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--ink);
+  white-space: normal; overflow: visible; text-overflow: clip;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word;
+}
+.dash .dash__user > .icon-btn {
+  position: static; transform: none; flex: none; width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center; color: var(--grey); transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.dash .dash__user > .icon-btn:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.dash .dash__user > .icon-btn svg { width: 18px; height: 18px; }
+.dash .dash__user .dash__av { position: static; }
