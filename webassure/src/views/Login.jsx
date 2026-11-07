@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Thermal from '../components/Thermal.jsx'
 import { signIn } from '../lib/auth.js'
 
 export default function Login({ mode }) {
@@ -115,8 +114,9 @@ export default function Login({ mode }) {
           <span className="horizon__haze" />
           <span className="horizon__orb" />
         </div>
-        <div className="auth__mark auth__mark--show">
-          <Thermal text="webassure" />
+        <div className="auth__brand">
+          <span className="auth__word">webassure</span>
+          <span className="auth__tag">Know your website before you trust it.</span>
         </div>
       </aside>
     </div>

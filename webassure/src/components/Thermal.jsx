@@ -69,7 +69,7 @@ export function ColorFilter({ id, paper, table = { R, G, B }, x = '-10%', y = '-
   )
 }
 
-export default function Thermal({ text = 'webassure', className = '', tone }) {
+export default function Thermal({ text = 'webassure', className = '', tone, viewBox = '-40 -30 980 230' }) {
   const uid = useId().replace(/:/g, '')
   const svgRef = useRef(null)
   const pressRef = useRef(null)
@@ -163,7 +163,7 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
     <svg
       ref={svgRef}
       className={`thermal ${className}`}
-      viewBox="-40 -30 980 230"
+      viewBox={viewBox}
       overflow="visible"
       aria-hidden="true"
       style={{
@@ -197,10 +197,21 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
         <ColorFilter id={colorDark} paper="0.0706" table={tone === 'white' ? WHITE : HERO_DARK} />
         {/* Dark mode: solid glossy blue with a moving gradient inside and a 3D bevel. */}
         <linearGradient id={`${uid}-gfill`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="900" y2="60" spreadMethod="reflect">
-          <stop offset="0" stopColor="#1b3bd1" />
-          <stop offset=".35" stopColor="#3f6dff" />
-          <stop offset=".6" stopColor="#7ab8ff" />
-          <stop offset="1" stopColor="#2a4fe6" />
+          {tone === 'white' ? (
+            <>
+              <stop offset="0" stopColor="#c9ceda" />
+              <stop offset=".35" stopColor="#f4f6fb" />
+              <stop offset=".6" stopColor="#ffffff" />
+              <stop offset="1" stopColor="#d6dbe6" />
+            </>
+          ) : (
+            <>
+              <stop offset="0" stopColor="#1b3bd1" />
+              <stop offset=".35" stopColor="#3f6dff" />
+              <stop offset=".6" stopColor="#7ab8ff" />
+              <stop offset="1" stopColor="#2a4fe6" />
+            </>
+          )}
           <animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="1800 0" dur="9s" repeatCount="indefinite" />
         </linearGradient>
         <filter id={`${uid}-glass`} x="-10%" y="-40%" width="120%" height="190%" colorInterpolationFilters="sRGB">
@@ -218,7 +229,7 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
           <feComponentTransfer in="pressRaw" result="press">
             <feFuncA ref={depthRef} type="linear" slope="0" />
           </feComponentTransfer>
-          <feComposite in="b" in2="press" operator="arithmetic" k1="0" k2="1" k3="-0.85" k4="0" result="h" />
+          <feComposite in="b" in2="press" operator="arithmetic" k1="0" k2="1" k3="0.75" k4="0" result="h" />
           <feSpecularLighting in="h" surfaceScale="5.5" specularConstant="1.1" specularExponent="24" lightingColor="#ffffff" result="spec">
             <feDistantLight azimuth="240" elevation="52" />
           </feSpecularLighting>
@@ -227,20 +238,20 @@ export default function Thermal({ text = 'webassure', className = '', tone }) {
           <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="ib" />
           <feOffset in="ib" dy="-3" result="io" />
           <feComposite in="SourceAlpha" in2="io" operator="out" result="inner" />
-          <feFlood floodColor="#0b1a6b" floodOpacity=".55" />
+          <feFlood floodColor={tone === 'white' ? '#5b6275' : '#0b1a6b'} floodOpacity={tone === 'white' ? '.45' : '.55'} />
           <feComposite in2="inner" operator="in" result="innerShade" />
           <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="sb" />
           <feOffset in="sb" dy="6" result="so" />
           <feFlood floodColor="#000" floodOpacity=".55" />
           <feComposite in2="so" operator="in" result="shadow" />
           <feComposite in="press" in2="SourceAlpha" operator="in" result="pressIn" />
-          <feFlood floodColor="#0a1660" floodOpacity=".38" />
-          <feComposite in2="pressIn" operator="in" result="pressShade" />
+          <feFlood floodColor="#ffffff" floodOpacity=".22" />
+          <feComposite in2="pressIn" operator="in" result="pressLight" />
           <feMerge>
             <feMergeNode in="shadow" />
             <feMergeNode in="lit" />
             <feMergeNode in="innerShade" />
-            <feMergeNode in="pressShade" />
+            <feMergeNode in="pressLight" />
           </feMerge>
         </filter>
       </defs>

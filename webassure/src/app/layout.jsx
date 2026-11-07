@@ -1,5 +1,6 @@
 import { Archivo, Hanken_Grotesk, Inter, Outfit } from 'next/font/google'
 import ThemeProvider, { themeScript } from '../components/ThemeProvider.jsx'
+import CookieNotice from '../components/CookieNotice.jsx'
 import '../styles/styles.css'
 import '../styles/app.css'
 import '../styles/pages.css'
@@ -78,13 +79,16 @@ const jsonLd = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${hanken.variable} ${outfit.variable} ${archivo.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html lang="en" data-theme="dark" className={`${hanken.variable} ${outfit.variable} ${archivo.variable} ${inter.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <CookieNotice />
+        </ThemeProvider>
       </body>
     </html>
   )

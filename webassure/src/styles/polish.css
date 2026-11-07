@@ -1316,3 +1316,52 @@
 
 /* login panel: same glossy plastic wordmark as the hero */
 .auth__art .auth__mark--show { width: 78%; transform: none; user-select: none; -webkit-user-select: none; touch-action: none; }
+
+/* =====================================================================
+   Light mode: cool, blue-tinted neutrals (pairs with the blue plastic)
+   ===================================================================== */
+:root:not([data-theme='dark']) {
+  --page: #ffffff;
+  --ink: #0f1222;
+  --grey: #636a7e;
+  --tile: #f4f6fa;
+  --console: #eceff6;
+  --hover: #e3e8f2;
+  --line: #e3e7ef;
+  --track: #dde2ec;
+}
+:root:not([data-theme='dark']) .hdr__in { background: color-mix(in srgb, #eef1f8 86%, transparent); }
+:root:not([data-theme='dark']) .eyebrow,
+:root:not([data-theme='dark']) .label { color: #4f5a78; }
+:root:not([data-theme='dark']) .scroll-text__w { color: color-mix(in srgb, #8a93ab 75%, transparent); }
+:root:not([data-theme='dark']) .scroll-text__w[data-lit] { color: var(--ink); }
+
+/* ===== Cookie notice ===== */
+.cookie {
+  position: fixed; left: 20px; bottom: 20px; z-index: 400; width: min(380px, calc(100vw - 40px));
+  padding: 18px 18px 16px; border-radius: 18px; background: var(--page); color: var(--ink);
+  box-shadow: 0 0 0 1px var(--line), 0 24px 60px -24px rgba(10, 18, 50, 0.45);
+  animation: cookie-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
+}
+[data-theme='dark'] .cookie { background: #1a1b20; box-shadow: 0 0 0 1px #2a2b33, 0 24px 60px -24px rgba(0, 0, 0, 0.8); }
+.cookie[data-leaving] { opacity: 0; transform: translateY(12px); }
+@keyframes cookie-in { from { opacity: 0; transform: translateY(16px); } }
+.cookie__t { font-weight: 600; font-size: var(--t-body); }
+.cookie__d { margin-top: 6px; font-size: var(--t-small); line-height: 1.5; color: var(--grey); }
+.cookie__d a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.cookie__btns { display: flex; gap: 8px; margin-top: 14px; }
+.cookie__btns .btn { flex: 1; height: 38px; }
+
+/* ===== 404 (plastic) ===== */
+.nf__mark { width: min(420px, 80vw); margin-bottom: 6px; user-select: none; -webkit-user-select: none; touch-action: none; }
+.nf__code { display: none; }
+
+/* ===== Login panel: crisp white wordmark + small tagline ===== */
+.auth__brand { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+.auth__tag { font-size: var(--t-body); color: #9aa0b4; letter-spacing: 0.01em; }
+
+/* ===== Buttons never change shape on hover ===== */
+.btn:hover, .plan .btn--block:hover, .cb .btn:hover, .pill-btn:hover { border-radius: 999px; }
+.auth__sso .btn:hover, .auth__fields .btn:hover { border-radius: 14px; }
+.member__link:hover { border-radius: 50%; }

@@ -5,13 +5,14 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 const ThemeContext = createContext({ theme: 'light', toggle: () => {} })
 
 // Runs before paint (inlined in <head>) so the saved theme never flashes.
-export const themeScript = `try{var t=localStorage.getItem('wa-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}`
+// First visit: dark. After the visitor switches, their choice is remembered.
+export const themeScript = `try{var t=localStorage.getItem('wa-theme');document.documentElement.dataset.theme=t||'dark'}catch(e){document.documentElement.dataset.theme='dark'}`
 
 export default function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('light')
+  const [theme, setTheme] = useState('dark')
 
   useEffect(() => {
-    setTheme(document.documentElement.dataset.theme || 'light')
+    setTheme(document.documentElement.dataset.theme || 'dark')
   }, [])
 
   const toggle = useCallback(() => {
