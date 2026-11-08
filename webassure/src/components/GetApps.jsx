@@ -42,7 +42,7 @@ function Ticker({ items, n, prefix, mono }) {
     <span className="tick" aria-live="off">
       <span
         className="tick__rail"
-        style={{ transform: `translateY(${-idx * 24}px)`, transition: atCopy && snapped ? 'none' : undefined }}
+        style={{ transform: `translateY(${-idx * 28}px)`, transition: atCopy && snapped ? 'none' : undefined }}
         onTransitionEnd={() => { if (atCopy) setSnapped(true) }}
       >
         {[...items, items[0]].map(([label, logo], i) => (
