@@ -4,6 +4,28 @@ The Threat ledger now registers real report commitments on an EVM chain. The
 repository supplies a reproducible local chain; no paid network or private service
 key is required. The sample ledger entries have been removed.
 
+## Sepolia integration status
+
+Sepolia network metadata, wallet network-switching helpers, reproducible deployment
+artifacts and runtime-bytecode validation are implemented. Registry interactions
+accept only Sepolia (11155111) and the local demo (31337). No public deployment
+address is supplied yet; deploying requires a funded testnet wallet and approval.
+The browser-wallet deployment and public-network selection UI are still pending.
+
+`npm.cmd run ledger:compile` regenerates the checked-in artifact from the contract.
+`npm.cmd run ledger:deploy -- --help` describes deployment options for a local
+signing node. No private-key arguments or app-stored signing credentials are used.
+An already-deployed Sepolia registry can be published to the dashboard using:
+
+```powershell
+npm.cmd run ledger:publish -- path/to/deployment.json
+```
+
+The deployment JSON must contain `chainId`, `address` and `deploymentTransaction`.
+The command verifies the runtime bytecode and successful contract-creation receipt
+before writing `public/registry-sepolia.json`. This is public deployment metadata,
+not a secret. The current dashboard still uses the local configuration below.
+
 ## Run locally
 
 From `webassure`, install dependencies with `npm.cmd ci`, then in one terminal:

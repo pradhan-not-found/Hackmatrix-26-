@@ -14,6 +14,8 @@
     "lint": "next lint",
     "ledger:chain": "node scripts/registry-chain.mjs",
     "ledger:deploy": "node scripts/registry-deploy.mjs",
+    "ledger:compile": "node scripts/registry-artifact.mjs",
+    "ledger:publish": "node scripts/registry-publish.mjs",
     "ledger:verify": "node scripts/registry-verify.mjs",
     "ledger:demo": "node scripts/registry-demo.mjs"
   },

@@ -6,5 +6,6 @@ out
 dist
 .npm-cache/
 /public/ledger-config.json
+/public/*.pending.json
 .env.local
 .env.*.local
