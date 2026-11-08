@@ -245,7 +245,7 @@ export function buildSlides(mode) {
         text(98, 350, 300, 62, '5', { size: 46, lh: 1.15, weight: 600, ls: -0.03 }),
         text(98, 412, 300, 28, 'evidence-based risk classes', { size: 18, lh: 1.3, color: C.grey }),
         box(M, 468, 340, 128),
-        text(98, 490, 300, 62, '115', { size: 46, lh: 1.15, weight: 600, ls: -0.03 }),
+        text(98, 490, 300, 62, '175', { size: 46, lh: 1.15, weight: 600, ls: -0.03 }),
         text(98, 552, 300, 28, 'automated tests passing', { size: 18, lh: 1.3, color: C.grey }),
         ...gridCard(440, 120, 'file-search', 'Evidence, not verdicts', 'Every finding shows its evidence and source, not a bare “safe” or “malicious”.'),
         ...gridCard(832, 120, 'lock-keyhole', 'A padlock is not proof', 'TLS is checked, and never treated as proof that a site is honest.'),

@@ -473,7 +473,7 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--grey) 45
   .dash__grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 900px) {
-  .stw { grid-template-columns: 1fr; gap: 20px; }
+  .stw { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .stw__nav { position: sticky; top: 72px; z-index: 5; flex-direction: row; overflow-x: auto; padding: 4px; border-radius: 14px; background: var(--card); }
   .stw__link { white-space: nowrap; }
 }
