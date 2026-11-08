@@ -1,5 +1,7 @@
 'use client'
 
+import { FAQS } from '../lib/content.js'
+
 import { useState } from 'react'
 import Link from 'next/link'
 import ScrollText from './ScrollText.jsx'
@@ -90,13 +92,6 @@ export function Report() {
 }
 
 /* ---------- FAQ ---------- */
-const FAQS = [
-  ['What can I submit?', 'Any URL, domain, email or message. WebAssure extracts the links and checks each one.'],
-  ['Do I have to open the suspicious site?', 'No. Pages are fetched in an isolated sandbox on our side, so nothing runs on your device.'],
-  ['How is the risk score calculated?', 'Four engines (AI content analysis, certificate validation, site-security scanning and reputation data) each contribute weighted indicators. The report shows every one.'],
-  ['What does the blockchain part do?', 'Confirmed threats are anchored on-chain so reports cannot be quietly altered or removed, and anyone can verify them.'],
-  ['Is there an API?', 'Yes. Security teams can submit URLs and pull reports programmatically from the dashboard.'],
-]
 
 export function Faq() {
   const [open, setOpen] = useState(0)

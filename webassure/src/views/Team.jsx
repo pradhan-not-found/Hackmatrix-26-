@@ -4,14 +4,9 @@ import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
 import { PersonPlaceholder } from '../components/Icons.jsx'
 import PrintPortrait from '../components/PrintPortrait.jsx'
+import { TEAM } from '../lib/content.js'
 
 // Replace the `#` links and add `photo: '/team/<file>.jpg'` when ready.
-const TEAM = [
-  { name: 'Souradeep Pradhan', photo: '/team/souradeep.png', bright: 1.12, github: '#', website: '#', linkedin: '#' },
-  { name: 'Madhushree Dasgupta', photo: '/team/madhushree.png', zoom: 1.06, pos: 'center 28%', github: 'https://github.com/madhushree-cyber', website: '#', linkedin: 'https://www.linkedin.com/in/madhushree-dasgupta-4b8a79389' },
-  { name: 'Aniruddha Das', org: 'Adamas University', photo: '/team/aniruddha.png', zoom: 1.08, pos: 'center 22%', github: '#', website: '#', linkedin: '#' },
-  { name: 'Sattwik Das', photo: '/team/sattwik.png', github: 'https://github.com/Sattwik-Das', website: 'https://sattwik-das.vercel.app/', linkedin: 'https://www.linkedin.com/in/sattwik-das-in' },
-]
 
 const Icon = {
   github: (

@@ -1,10 +1,11 @@
 import Legal from '../../views/Legal.jsx'
+import { JsonLd, breadcrumbs, pageMeta } from '../../lib/seo.jsx'
 
-export const metadata = {
+export const metadata = pageMeta({
   title: 'Privacy Policy',
-  description: 'How WebAssure collects, uses and protects your information.',
-  alternates: { canonical: '/privacy' },
-}
+  description: 'How WebAssure collects, uses and protects your information, which services process it, and the choices you have.',
+  path: '/privacy',
+})
 
 const SECTIONS = [
   {
@@ -88,12 +89,15 @@ const SECTIONS = [
 
 export default function Page() {
   return (
-    <Legal
+    <>
+      <JsonLd data={breadcrumbs([['Privacy Policy', '/privacy']])} />
+      <Legal
       eyebrow="Legal"
       title="Privacy Policy"
       intro="Your trust is the product. Here is exactly what we collect, why, and how you stay in control."
       updated="November 8, 2026"
       sections={SECTIONS}
     />
+    </>
   )
 }
