@@ -563,3 +563,9 @@ html, body { overflow-x: clip; }
 /* team portraits: canvas overlaps the frame by 1px so no light edge shows at the rounded corners */
 .pp { inset: -1px; }
 .pp__canvas { inset: 0; width: 100%; height: 100%; }
+
+/* no scrollbar while a preloader / loading screen is showing (works from first paint) */
+html:has(.preloader), html:has(.dash-loading) { overflow: hidden; scrollbar-width: none; }
+html:has(.preloader) body, html:has(.dash-loading) body { overflow: hidden; }
+html:has(.preloader)::-webkit-scrollbar, html:has(.dash-loading)::-webkit-scrollbar,
+html:has(.preloader) body::-webkit-scrollbar, html:has(.dash-loading) body::-webkit-scrollbar { display: none; width: 0; height: 0; }
