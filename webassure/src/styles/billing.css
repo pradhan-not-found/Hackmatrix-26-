@@ -1000,3 +1000,10 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 .report-panels::-webkit-scrollbar-track { margin-block: 14px; }
 .dash__side::-webkit-scrollbar-track, .dash__nav::-webkit-scrollbar-track { margin-block: 16px; }
 .dash__content::-webkit-scrollbar-track { margin-block: 12px; }
+/* connected accounts: tick marks instead of dots */
+.ca__facts li { padding-left: 24px; }
+.ca__facts li::before {
+  left: 0; top: 2px; width: 16px; height: 16px; border-radius: 0; background: var(--st-ok);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
