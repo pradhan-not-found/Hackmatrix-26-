@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react'
 
-// Pump tubes for the inflated hero wordmark: a glossy plastic tube runs in
+// Pump tubes for the inflated hero wordmark: three glossy plastic tubes run in
 // from each screen edge and plugs into the first letter (w) and the last
-// letter (e) through a cone-shaped nozzle. Bubbles of air travel along the
+// letter (e) through a triangular plastic connector. Bubbles of air travel along the
 // tubes into the letters. Same blue plastic as the wordmark, drawn on a
 // full-width canvas behind it.
 
@@ -43,62 +43,83 @@ export default function HeroWires() {
       const midY = 150 - 40
       const [lx, ly] = toCanvas(first.x + 10, midY)
       const [rx, ry] = toCanvas(lastC.x + lastC.width - 16, midY)
-      R = Math.max(4, Math.min(11, 86 * m.a * 0.075))
+      R = Math.max(5, Math.min(12, 86 * m.a * 0.085))
       ends = [
         { side: -1, sx: -R * 2, sy: ly + H * 0.1, ex: lx, ey: ly },
         { side: 1, sx: W + R * 2, sy: ry + H * 0.1, ex: rx, ey: ry },
       ]
     }
 
-    // Point on the tube at s (0 = screen edge, 1 = nozzle base), with a slow sway.
-    const nozzleLen = () => R * 4.2
-    const at = (e, s, t) => {
-      const ex = e.ex - e.side * nozzleLen()
+    // Three tubes per side, side by side, running into a triangular connector.
+    const LANES = [-1, 0, 1]
+    const r = () => R * 0.6 // radius of each tube
+    const gap = () => r() * 2.25 // centre-to-centre spacing
+    const connLen = () => R * 5
+
+    // Point on lane `lane` at s (0 = screen edge, 1 = connector base), with a slow sway.
+    const at = (e, s, t, lane = 0) => {
+      const ex = e.ex - e.side * connLen()
       const x = e.sx + (ex - e.sx) * s
-      const sag = Math.sin(s * Math.PI) * (R * 2.4 + Math.sin(t * 0.0007 + e.side) * R * 0.8)
-      return [x, e.sy + (e.ey - e.sy) * s + sag]
+      const sway = Math.sin(t * 0.0007 + e.side + lane * 0.6) * R * 0.5
+      const sag = Math.sin(s * Math.PI) * (R * 2.6 + sway)
+      return [x, e.sy + (e.ey - e.sy) * s + sag + lane * gap()]
     }
 
-    const path = (e, t, from = 0, to = 1) => {
+    const path = (e, t, lane) => {
       ctx.beginPath()
-      for (let s = from; s <= to + 1e-4; s += 0.01) {
-        const [x, y] = at(e, s, t)
-        s === from ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+      for (let s = 0; s <= 1.0001; s += 0.01) {
+        const [x, y] = at(e, s, t, lane)
+        s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
       }
     }
 
-    // A plastic tube: dark rim, body colour, then a soft highlight and a sharp
-    // specular line offset toward the top, like the lit letters.
-    const tube = (e, t, pal) => {
-      ctx.lineCap = 'round'; ctx.lineJoin = 'round'
-      ctx.save(); ctx.shadowColor = 'rgba(0, 0, 0, 0.35)'; ctx.shadowBlur = R * 1.6; ctx.shadowOffsetY = R * 0.6
-      path(e, t); ctx.strokeStyle = pal.rim; ctx.lineWidth = R * 2; ctx.stroke(); ctx.restore()
-      path(e, t); ctx.strokeStyle = pal.body; ctx.lineWidth = R * 1.55; ctx.stroke()
-      ctx.save(); ctx.translate(0, -R * 0.28)
-      path(e, t); ctx.strokeStyle = pal.light; ctx.lineWidth = R * 0.9; ctx.stroke()
-      ctx.translate(0, -R * 0.22)
-      path(e, t); ctx.strokeStyle = pal.spec; ctx.lineWidth = Math.max(1, R * 0.22); ctx.stroke()
+    // A glossy plastic tube: dark rim, body colour, soft highlight, sharp specular line.
+    const tube = (e, t, lane, pal) => {
+      const rr = r()
+      ctx.lineCap = 'butt'; ctx.lineJoin = 'round'
+      ctx.save(); ctx.shadowColor = 'rgba(0, 0, 0, 0.35)'; ctx.shadowBlur = rr * 2; ctx.shadowOffsetY = rr * 0.7
+      path(e, t, lane); ctx.strokeStyle = pal.rim; ctx.lineWidth = rr * 2; ctx.stroke(); ctx.restore()
+      path(e, t, lane); ctx.strokeStyle = pal.body; ctx.lineWidth = rr * 1.5; ctx.stroke()
+      ctx.save(); ctx.translate(0, -rr * 0.3)
+      path(e, t, lane); ctx.strokeStyle = pal.light; ctx.lineWidth = rr * 0.85; ctx.stroke()
+      ctx.translate(0, -rr * 0.25)
+      path(e, t, lane); ctx.strokeStyle = pal.spec; ctx.lineWidth = Math.max(0.8, rr * 0.24); ctx.stroke()
       ctx.restore()
     }
 
-    // Collar where the tube meets the nozzle.
-    const collar = (x, y, pal) => {
-      const g = ctx.createLinearGradient(x, y - R * 1.3, x, y + R * 1.3)
-      g.addColorStop(0, pal.spec); g.addColorStop(0.35, pal.light); g.addColorStop(0.7, pal.body); g.addColorStop(1, pal.rim)
-      ctx.fillStyle = g
-      ctx.beginPath(); ctx.roundRect(x - R * 0.7, y - R * 1.3, R * 1.4, R * 2.6, R * 0.5); ctx.fill()
+    // Plastic gradient running top (lit) to bottom (shadow) across a shape.
+    const shade = (y0, y1, pal) => {
+      const g = ctx.createLinearGradient(0, y0, 0, y1)
+      g.addColorStop(0, pal.spec); g.addColorStop(0.22, pal.light); g.addColorStop(0.6, pal.body); g.addColorStop(1, pal.rim)
+      return g
     }
 
-    // Cone nozzle pointing into the letter.
-    const nozzle = (e, t, pal) => {
-      const [bx, by] = at(e, 1, t)
-      const g = ctx.createLinearGradient(bx, by - R * 1.2, bx, by + R * 1.2)
-      g.addColorStop(0, pal.spec); g.addColorStop(0.3, pal.light); g.addColorStop(0.65, pal.body); g.addColorStop(1, pal.rim)
-      ctx.fillStyle = g
+    // Triangular connector: wide base takes the three tubes, the tip plugs into the letter.
+    const connector = (e, t, pal) => {
+      const [bx, by] = at(e, 1, t, 0)
+      const half = gap() + r() * 1.5
+      const tipX = e.ex, tipY = e.ey
+      const back = bx - e.side * r() * 0.8 // base sits a little over the tube ends
+      ctx.save()
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)'; ctx.shadowBlur = R * 1.4; ctx.shadowOffsetY = R * 0.5
       ctx.beginPath()
-      ctx.moveTo(bx, by - R * 1.1); ctx.lineTo(e.ex, e.ey - R * 0.35); ctx.lineTo(e.ex, e.ey + R * 0.35); ctx.lineTo(bx, by + R * 1.1)
-      ctx.closePath(); ctx.fill()
-      collar(bx, by, pal)
+      ctx.moveTo(back, by - half)
+      ctx.lineTo(tipX, tipY - r() * 0.45)
+      ctx.quadraticCurveTo(tipX + e.side * r() * 0.5, tipY, tipX, tipY + r() * 0.45)
+      ctx.lineTo(back, by + half)
+      ctx.closePath()
+      ctx.fillStyle = shade(by - half, by + half, pal); ctx.fill()
+      ctx.restore()
+      // highlight along the upper edge
+      ctx.beginPath(); ctx.moveTo(back, by - half + 1.5); ctx.lineTo(tipX - e.side * 2, tipY - r() * 0.3)
+      ctx.strokeStyle = pal.spec; ctx.lineWidth = 1.2; ctx.stroke()
+      // collar band across the base
+      const cw = r() * 1.3
+      const cx = back - e.side * cw * 0.5
+      ctx.fillStyle = shade(by - half - 2, by + half + 2, pal)
+      ctx.beginPath(); ctx.roundRect(cx - cw / 2, by - half - 2, cw, half * 2 + 4, cw * 0.4); ctx.fill()
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)'; ctx.lineWidth = 1
+      ctx.beginPath(); ctx.moveTo(cx - cw / 2 + 1.5, by - half); ctx.lineTo(cx - cw / 2 + 1.5, by + half); ctx.stroke()
     }
 
     const draw = (t, dt) => {
@@ -106,27 +127,32 @@ export default function HeroWires() {
       if (!ends.length) return
       const dark = document.documentElement.dataset.theme === 'dark'
       const pal = dark
-        ? { rim: '#1c34a8', body: '#3d63f2', light: 'rgba(130, 165, 255, 0.95)', spec: 'rgba(235, 242, 255, 0.9)' }
+        ? { rim: '#1c34a8', body: '#3d63f2', light: 'rgba(130, 165, 255, 0.95)', spec: 'rgba(235, 242, 255, 0.92)' }
         : { rim: '#2441c9', body: '#4672ff', light: 'rgba(150, 182, 255, 0.95)', spec: 'rgba(255, 255, 255, 0.95)' }
 
-      for (const e of ends) { tube(e, t, pal); nozzle(e, t, pal) }
+      for (const e of ends) {
+        for (const lane of LANES) tube(e, t, lane, pal)
+        connector(e, t, pal)
+      }
 
-      // Air bubbles: a brighter bulge moving along the tube toward the letter.
+      // Air bubbles moving along each tube toward the letter, staggered per lane.
       if (!reduce && t > nextBubble) {
-        ends.forEach((_, k) => bubbles.push({ k, s: 0, v: 0.00035 + Math.random() * 0.00015 }))
-        nextBubble = t + 1800 + Math.random() * 1000
+        ends.forEach((_, k) => LANES.forEach((lane, i) => bubbles.push({ k, lane, s: -i * 0.08, v: 0.00034 + Math.random() * 0.0001 })))
+        nextBubble = t + 2000 + Math.random() * 900
       }
       bubbles = bubbles.filter((b) => (b.s += b.v * dt) < 1)
       for (const b of bubbles) {
+        if (b.s <= 0) continue
         const e = ends[b.k]
-        const [x, y] = at(e, b.s, t)
+        const [x, y] = at(e, b.s, t, b.lane)
         const fade = Math.sin(b.s * Math.PI)
-        const g = ctx.createRadialGradient(x, y - R * 0.45, R * 0.1, x, y, R * 1.25)
-        g.addColorStop(0, `rgba(255, 255, 255, ${0.9 * fade})`)
-        g.addColorStop(0.45, `rgba(170, 196, 255, ${0.7 * fade})`)
+        const rr = r()
+        const g = ctx.createRadialGradient(x, y - rr * 0.4, rr * 0.1, x, y, rr * 1.3)
+        g.addColorStop(0, `rgba(255, 255, 255, ${0.95 * fade})`)
+        g.addColorStop(0.5, `rgba(170, 196, 255, ${0.6 * fade})`)
         g.addColorStop(1, 'rgba(70, 114, 255, 0)')
         ctx.fillStyle = g
-        ctx.beginPath(); ctx.ellipse(x, y, R * 1.6, R * 1.2, 0, 0, Math.PI * 2); ctx.fill()
+        ctx.beginPath(); ctx.ellipse(x, y, rr * 1.7, rr * 1.15, 0, 0, Math.PI * 2); ctx.fill()
       }
     }
 

@@ -1,29 +1,4 @@
-/* ---------- Fonts ---------- */
-@font-face {
-  font-family: 'PP Mori';
-  src: url('/fonts/PPMori-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'PP Mori';
-  src: url('/fonts/PPMori-SemiBold.woff2') format('woff2');
-  font-weight: 600;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Soehne Breit';
-  src: url('/fonts/SoehneBreit-Halbfett.woff2') format('woff2');
-  font-weight: 600;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Soehne Breit';
-  src: url('/fonts/SoehneBreit-Fett.woff2') format('woff2');
-  font-weight: 700 800;
-  font-display: swap;
-}
+/* Fonts are loaded with next/font in app/layout.jsx (no files in public/fonts). */
 
 /* ---------- Design tokens ---------- */
 :root {
@@ -38,9 +13,9 @@
   --heat-blue: #2cc5f9;
   --heat-green: #44f33e;
 
-  --font-nav: 'Soehne Breit', var(--font-archivo), system-ui, sans-serif;
+  --font-nav: var(--font-archivo), system-ui, sans-serif;
   --font-mark: var(--font-outfit), var(--font-hanken), system-ui, sans-serif;
-  --font: 'PP Mori', var(--font-hanken), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font: var(--font-hanken), system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --accent: var(--heat-blue);
   --t-control: 10px;

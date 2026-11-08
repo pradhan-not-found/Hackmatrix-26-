@@ -283,3 +283,8 @@ html, * { scrollbar-width: auto; scrollbar-color: auto; }
   position: absolute; z-index: 0; pointer-events: none;
   left: 50%; width: 100vw; transform: translateX(-50%); top: -40%; height: 180%;
 }
+
+/* team: uniform greyscale portraits on one neutral backdrop */
+.member__photo { background: #ececee; overflow: hidden; }
+.member__img { filter: grayscale(1) contrast(1.06) brightness(1.04); transform-origin: center 30%; }
+[data-theme='dark'] .member__photo { background: #e6e6e8; }

@@ -1,4 +1,5 @@
-import { Archivo, Hanken_Grotesk, Inter, Outfit } from 'next/font/google'
+import { Archivo, Hanken_Grotesk, Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 import ThemeProvider, { themeScript } from '../components/ThemeProvider.jsx'
 import CookieNotice from '../components/CookieNotice.jsx'
 import '../styles/styles.css'
@@ -12,7 +13,8 @@ import '../styles/dashboard-skin.css'
 import '../styles/billing.css'
 
 const hanken = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '600'], variable: '--font-hanken', display: 'swap' })
-const outfit = Outfit({ subsets: ['latin'], weight: ['700', '800'], variable: '--font-outfit', display: 'swap' })
+// The wordmark font ships with the app so it never falls back to Arial.
+const outfit = localFont({ src: '../fonts/outfit-latin.woff2', weight: '100 900', variable: '--font-outfit', display: 'block', preload: true })
 const inter = Inter({ subsets: ['latin'], weight: ['500', '600'], variable: '--font-inter', display: 'swap' })
 const archivo = Archivo({ subsets: ['latin'], axes: ['wdth'], variable: '--font-archivo', display: 'swap' })
 
