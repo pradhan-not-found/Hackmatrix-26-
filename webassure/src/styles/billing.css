@@ -853,3 +853,29 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 @media (min-width: 2200px) {
   .dash .dash__content > * { max-width: 1720px; }
 }
+
+/* report window: decluttered */
+.report-header-symbol,
+.analysis-header .analysis-eyebrow,
+.analysis-verdict .analysis-eyebrow,
+.analysis-verdict .caption,
+.report-tabs-note,
+.report-bottom-bar > span:last-child { display: none !important; }
+.analysis-header { padding: 18px 32px; border-bottom: 0; }
+.report-drawer .drawer__title { font-size: 18px; }
+.analysis-target .caption:last-child { opacity: 0.6; }
+.report-summary { padding-top: 8px; padding-bottom: 20px; align-items: center; }
+.analysis-verdict .badge { font-size: 26px; margin: 0; }
+.analysis-facts { gap: 28px; padding: 0; background: none; }
+.analysis-facts > div { padding: 0; background: none; border: 0; box-shadow: none; }
+.analysis-facts > div + div { padding-left: 28px; box-shadow: inset 1px 0 0 var(--report-line); }
+.analysis-facts span, .analysis-facts dt { font-size: 12px; }
+.report-tabs { background: none; padding: 0 32px 12px; border-bottom: 1px solid var(--report-line); }
+.report-bottom-bar { justify-content: center; border-top: 0; background: transparent; }
+.report-drawer .analysis-header { background: transparent; border-radius: 0; }
+.report-drawer .analysis-facts { padding: 0; gap: 0; background: none; border-radius: 0; }
+.report-drawer .analysis-facts > div { padding: 0 24px; background: none; }
+.report-drawer .analysis-facts > div:first-child { padding-left: 0; }
+.report-drawer .analysis-facts > div + div { border-left: 1px solid var(--report-line); box-shadow: none; }
+.report-drawer .report-tabs { background: none; border-radius: 0; }
+.report-drawer .analysis-facts > div { border-radius: 0; }
