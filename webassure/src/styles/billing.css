@@ -742,9 +742,3 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 ::-webkit-scrollbar-thumb { border-width: 1.5px; }
 ::-webkit-scrollbar-thumb { min-height: 28px; }
 
-/* FAQ: two columns on the shared grid (heading left, questions right) so it aligns with every other section */
-@media (min-width: 900px) {
-  #faq.section { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.75fr); column-gap: clamp(40px, 6vw, 96px); align-items: start; }
-  #faq .head { position: sticky; top: 120px; margin: 0; align-items: flex-start; text-align: left; max-width: none; }
-  #faq .faq__list { margin: 0; max-width: none; width: 100%; }
-}
