@@ -1,7 +1,7 @@
-'use client'
-
 import EmailAnalysis from '../../../views/dashboard/EmailAnalysis.jsx'
 
-export default function EmailAnalysisPage() {
+export const metadata = { title: 'Email analysis' }
+
+export default function Page() {
   return <EmailAnalysis />
 }

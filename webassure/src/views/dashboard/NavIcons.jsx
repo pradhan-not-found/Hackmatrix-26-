@@ -32,3 +32,7 @@ export const LogoutIcon = () => (
 export const MessagesIcon = () => (
   <I><path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4 3.5v-3.5H6.5a2 2 0 0 1-2-2Z" /><path d="M8.5 9h7M8.5 12h4.5" /></I>
 )
+
+export const EmailIcon = () => (
+  <I><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" /></I>
+)

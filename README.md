@@ -51,6 +51,7 @@ WebAssure checks a link, message or certificate the way a security analyst would
 - **Private history.** Supabase stores paginated reports with owner-only RLS and JSON export. API requests verify the user's Supabase session.
 - **Account management.** Google/email sign-in, password recovery, persistent profile/preferences, and avatar uploads through Supabase Storage.
 - **Message spam/scam analysis.** A separate endpoint combines a trained text classifier with explainable indicators and does not open extracted links.
+- **Email analysis.** Paste emails or raw headers, upload `.eml` files, inspect findings and reported authentication, and reopen owner-scoped saved reports from the dashboard. [Usage and limits](docs/email-analysis.md).
 
 ### Web app
 

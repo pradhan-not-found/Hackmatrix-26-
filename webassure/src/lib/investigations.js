@@ -32,7 +32,7 @@ export function downloadReport(report) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }))
   const link = document.createElement('a')
   link.href = url
-  link.download = report.snapshot ? `report-receipt-${report.snapshot.report.id || 'import'}.json` : `investigation-${report.id}.json`
+  link.download = report.snapshot ? `report-receipt-${report.snapshot.report.id || 'import'}.json` : report.analyzed_at ? `email-analysis-${report.id}.json` : `investigation-${report.id}.json`
   document.body.append(link)
   link.click()
   link.remove()

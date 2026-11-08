@@ -18,7 +18,7 @@ export function Tabs({ value, onChange, options }) {
   return (
     <div className="tabs" role="tablist">
       {options.map(([key, label, count]) => (
-        <button key={key} role="tab" aria-selected={value === key} onClick={() => onChange(key)}>
+        <button key={key} type="button" role="tab" aria-selected={value === key} onClick={() => onChange(key)}>
           {label}
           {count !== undefined && <span className="tabs__n">{count}</span>}
         </button>

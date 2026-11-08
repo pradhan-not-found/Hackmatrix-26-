@@ -9,6 +9,7 @@ from typing import Literal, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, File, Form
 from fastapi.responses import RedirectResponse
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field, model_validator
 
 from backend.investigation import investigate
@@ -16,7 +17,7 @@ from backend.network import UnsafeURL
 from backend.gemini import explain, explain_message_analysis, saved_insights_match
 from backend.explanation import explain_locally
 from backend.message_analysis import MAX_MESSAGE_LENGTH, analyze_message
-from backend.supabase import investigation_store
+from backend.supabase import investigation_store, authenticated_user, Principal
 from backend.email_analysis import analyze_email, MAX_EMAIL_SIZE
 from backend.gmail_api import (
     generate_auth_url, exchange_code_for_tokens, get_valid_access_token,
@@ -166,6 +167,12 @@ def email_database():
             created_at TEXT NOT NULL
         )
     """)
+    # Legacy rows have no owner and must never be assigned to whoever signs in
+    # first. Keep them intact, and store dashboard reports in an owner-scoped table.
+    connection.execute("""CREATE TABLE IF NOT EXISTS user_email_analyses (
+        id TEXT PRIMARY KEY, user_id TEXT NOT NULL, report TEXT NOT NULL, created_at TEXT NOT NULL
+    )""")
+    connection.execute("CREATE INDEX IF NOT EXISTS user_email_history ON user_email_analyses(user_id, created_at DESC)")
     return connection
 
 
@@ -174,7 +181,7 @@ def email_database():
 @app.post("/api/email/analyze", response_model=EmailAnalysisResponse,
           summary="Analyze pasted email text or raw headers",
           description="Provide exactly one of email_content (complete raw message) or raw_headers (header block only). Authentication evidence is reported separately from missing evidence.")
-def analyze_email_text(body: EmailAnalysisRequest):
+def analyze_email_text(body: EmailAnalysisRequest, principal: Principal = Depends(authenticated_user)):
     """Analyze a complete pasted message or a header-only sample."""
     if not slots.acquire(blocking=False):
         raise HTTPException(429, "Analysis capacity reached; retry later")
@@ -190,8 +197,8 @@ def analyze_email_text(body: EmailAnalysisRequest):
         try:
             with connection:
                 connection.execute(
-                    "INSERT INTO email_analyses VALUES (?, ?, ?)",
-                    (report["id"], json.dumps(report), report["analyzed_at"])
+                    "INSERT INTO user_email_analyses (id, user_id, report, created_at) VALUES (?, ?, ?, ?)",
+                    (report["id"], principal.id, json.dumps(report), report["analyzed_at"])
                 )
         finally:
             connection.close()
@@ -205,7 +212,8 @@ def analyze_email_text(body: EmailAnalysisRequest):
           summary="Analyze a raw .eml file")
 async def analyze_email_upload(
     file: UploadFile = File(...),
-    use_gemini: bool = Form(False)
+    use_gemini: bool = Form(False),
+    principal: Principal = Depends(authenticated_user)
 ):
     """Analyze uploaded .eml file."""
     if not slots.acquire(blocking=False):
@@ -218,7 +226,7 @@ async def analyze_email_upload(
         if len(content) > MAX_EMAIL_SIZE:
             raise HTTPException(422, f"File exceeds maximum size of {MAX_EMAIL_SIZE} bytes")
         try:
-            report = analyze_email(content, "eml", use_gemini)
+            report = await run_in_threadpool(analyze_email, content, "eml", use_gemini)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
@@ -227,8 +235,8 @@ async def analyze_email_upload(
         try:
             with connection:
                 connection.execute(
-                    "INSERT INTO email_analyses VALUES (?, ?, ?)",
-                    (report["id"], json.dumps(report), report["analyzed_at"])
+                    "INSERT INTO user_email_analyses (id, user_id, report, created_at) VALUES (?, ?, ?, ?)",
+                    (report["id"], principal.id, json.dumps(report), report["analyzed_at"])
                 )
         finally:
             connection.close()
@@ -239,13 +247,13 @@ async def analyze_email_upload(
 
 
 @app.get("/api/email/results/{analysis_id}")
-def get_email_analysis(analysis_id: UUID):
+def get_email_analysis(analysis_id: UUID, principal: Principal = Depends(authenticated_user)):
     """Retrieve a stored email analysis report."""
     connection = email_database()
     try:
         row = connection.execute(
-            "SELECT report FROM email_analyses WHERE id = ?",
-            (str(analysis_id),)
+            "SELECT report FROM user_email_analyses WHERE id = ? AND user_id = ?",
+            (str(analysis_id), principal.id)
         ).fetchone()
     finally:
         connection.close()
@@ -258,16 +266,17 @@ def get_email_analysis(analysis_id: UUID):
 @app.get("/api/email/results")
 def list_email_analyses(
     limit: int = Query(default=30, ge=1, le=100),
-    offset: int = Query(default=0, ge=0)
+    offset: int = Query(default=0, ge=0),
+    principal: Principal = Depends(authenticated_user)
 ):
     """List stored email analyses."""
     connection = email_database()
     try:
         rows = connection.execute(
-            "SELECT report FROM email_analyses ORDER BY rowid DESC LIMIT ? OFFSET ?",
-            (limit, offset)
+            "SELECT report FROM user_email_analyses WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+            (principal.id, limit, offset)
         ).fetchall()
-        total = connection.execute("SELECT COUNT(*) FROM email_analyses").fetchone()[0]
+        total = connection.execute("SELECT COUNT(*) FROM user_email_analyses WHERE user_id = ?", (principal.id,)).fetchone()[0]
     finally:
         connection.close()
 

@@ -143,6 +143,41 @@
 .ledger-existing[open] > summary { margin-bottom: 14px; }
 .ledger-existing input { min-width: 0; flex: 1 1 260px; }
 .ledger-existing > p { margin-top: 10px; }
+.email-input, .email-result .panel, .email-history { display: flex; flex-direction: column; gap: 18px; }
+.email-input > .tabs { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.email-text-label { font-size: 13px; font-weight: 600; margin-bottom: -10px; }
+.email-file { display: flex; flex-direction: column; gap: 16px; padding: 28px; border: 1px dashed var(--grey); border-radius: 12px; background: var(--tile); font-size: 14px; }
+.email-file input { max-width: 100%; }
+.email-input-actions, .email-ai-option { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.email-ai-option { margin-left: auto; font-size: 13px; cursor: pointer; }
+.email-ai-option input { accent-color: var(--workspace-accent); }
+.email-result { display: grid; gap: 20px; margin-block: 24px; }
+.email-result .email-verdict { flex-direction: row; justify-content: space-between; flex-wrap: wrap; align-items: center; gap: 24px; }
+.email-verdict > div:first-child { min-width: 0; flex: 1 1 260px; overflow-wrap: anywhere; }
+.email-verdict h2 { font-size: 25px; letter-spacing: -.025em; margin: 6px 0 12px; }
+.email-subject { font-size: 14px; font-weight: 500; margin-bottom: 5px; }
+.email-score { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: 220px; }
+.email-score > strong { font-size: 32px; line-height: 1.2; letter-spacing: -.03em; }
+.email-score small { font-size: 14px; color: var(--grey); font-weight: 400; margin-left: 3px; }
+.email-result-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.email-result-grid > section { min-width: 0; }
+.email-findings, .email-links { list-style: none; padding: 0; display: grid; gap: 16px; }
+.email-findings li, .email-links li { padding: 16px; border-radius: 10px; background: var(--tile); min-width: 0; }
+.email-findings li > div, .email-links li > div { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+.email-findings strong { font-size: 12px; text-transform: capitalize; }
+.email-findings p { font-size: 13px; margin-top: 9px; line-height: 1.7; overflow-wrap: anywhere; }
+.email-actions { padding-left: 18px; font-size: 13px; line-height: 1.8; display: grid; gap: 10px; }
+.email-auth { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.email-auth > div { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 16px; background: var(--tile); border-radius: 10px; font-size: 12px; }
+.email-links code { min-width: 0; flex: 1 1 240px; overflow-wrap: anywhere; font-size: 12px; }
+.email-result summary { cursor: pointer; font-size: 13px; color: var(--grey); }
+.email-result details[open] > summary { margin-bottom: 14px; }
+.email-explanation { font-size: 13px; margin-top: 12px; line-height: 1.8; }
+.email-evidence pre { overflow: auto; max-height: 300px; font-size: 12px; padding: 16px; background: var(--tile); border-radius: 10px; }
+.email-export { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+.email-export p { flex: 1 1 240px; }
+.email-history td { max-width: 360px; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .email-result-grid, .email-auth { grid-template-columns: 1fr; } .email-ai-option { margin-left: 0; } }
 .cert-records { display: grid; gap: 18px; }
 .cert-record { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .cert-record-head, .cert-record-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }

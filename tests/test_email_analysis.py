@@ -28,6 +28,7 @@ from backend.email_analysis import (
     MAX_EMAIL_SIZE
 )
 from backend.main import app
+from backend.supabase import authenticated_user, Principal
 
 
 class EmailParsingTests(unittest.TestCase):
@@ -456,6 +457,32 @@ This is a test EML file.
 
 
 class EmailApiTests(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        environment = patch.dict(os.environ, {'EMAIL_ANALYSIS_DB': str(Path(directory.name) / 'email.sqlite3')})
+        environment.start(); self.addCleanup(environment.stop)
+        original = app.dependency_overrides.copy()
+        self.addCleanup(lambda: (app.dependency_overrides.clear(), app.dependency_overrides.update(original)))
+        self.owner = ['00000000-0000-0000-0000-000000000001']
+        app.dependency_overrides[authenticated_user] = lambda: Principal(self.owner[0], 'test-token')
+
+    def test_email_routes_require_sign_in(self):
+        del app.dependency_overrides[authenticated_user]
+        with TestClient(app) as client:
+            for method, path in [('POST', '/api/email/analyze'), ('POST', '/api/email/upload'), ('GET', '/api/email/results'), ('GET', '/api/email/results/00000000-0000-0000-0000-000000000001')]:
+                self.assertEqual(client.request(method, path).status_code, 401)
+
+    def test_saved_reports_are_owner_scoped(self):
+        with TestClient(app) as client:
+            created = client.post('/api/email/analyze', json={'email_content': 'From: sender@example.com\nSubject: Private report\n\nHello'}).json()
+            self.assertEqual(client.get('/api/email/results').json()['total'], 1)
+            self.owner[0] = '00000000-0000-0000-0000-000000000002'
+            self.assertEqual(client.get('/api/email/results').json()['total'], 0)
+            self.assertEqual(client.get('/api/email/results/' + created['id']).status_code, 404)
+            self.owner[0] = '00000000-0000-0000-0000-000000000001'
+            self.assertEqual(client.get('/api/email/results/' + created['id']).json()['subject'], 'Private report')
+
     def test_email_openapi_documents_request_and_response(self):
         schema = app.openapi()
         operation = schema["paths"]["/api/email/analyze"]["post"]

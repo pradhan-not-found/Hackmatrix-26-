@@ -325,6 +325,10 @@ and its `provider` identifies local versus Gemini output.
 
 ## Message spam/scam analysis
 
+Dedicated email/header and `.eml` analysis is now available in the dashboard.
+See [email analysis](email-analysis.md) for its UI, authenticated endpoints,
+private backend history and interpretation limits.
+
 `POST /api/analyze-message` runs an independent text-analysis path; it does not
 change or call the URL investigation pipeline. It normalizes whitespace, extracts
 URLs, phone numbers and email addresses, applies transparent indicators for
