@@ -4,7 +4,6 @@ import Image from 'next/image'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
 import { PersonPlaceholder } from '../components/Icons.jsx'
-import DotPortrait from '../components/DotPortrait.jsx'
 
 // Replace the `#` links and add `photo: '/team/<file>.jpg'` when ready.
 const TEAM = [
@@ -50,10 +49,9 @@ export default function Team() {
           {TEAM.map((m) => (
             <li key={m.name} className="member">
               <span className="member__photo">
-                {m.photo ? (<>
-                  <DotPortrait src={m.photo} zoom={m.zoom} pos={m.pos} />
+                {m.photo ? (
                   <Image src={m.photo} alt={m.name} fill sizes="(max-width: 520px) 92vw, (max-width: 1023px) 46vw, 300px" className="member__img" style={{ ...(m.zoom && { transform: `scale(${m.zoom})`, objectPosition: m.pos }), ...(m.bright && { filter: `grayscale(1) contrast(1.06) brightness(${m.bright})` }) }} />
-                </>) : (
+                ) : (
                   <PersonPlaceholder />
                 )}
               </span>
