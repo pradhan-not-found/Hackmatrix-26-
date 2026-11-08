@@ -1,30 +1,36 @@
 'use client'
 
 import Link from 'next/link'
-import { useRef, useState } from 'react'
-import { H, SLIDES, W } from '../lib/deck.mjs'
-import { SHIELD, downloadPdf, downloadPptx } from '../lib/deck-export.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { H, THEMES, W, buildSlides } from '../lib/deck.mjs'
+import { SHIELD, downloadPdf, downloadPptx, wrapText } from '../lib/deck-export.js'
 import '../styles/download.css'
 
 const pct = (value, total) => `${(value / total) * 100}%`
 const cq = (px) => `${px / 12.8}cqw`
 const color = (hex) => `#${hex}`
 
-function Text({ item }) {
-  const parts = typeof item.value === 'string' ? [{ t: item.value }] : item.value
+function Text({ item, measured }) {
+  const fallback = [(typeof item.value === 'string' ? [{ t: item.value }] : item.value).map((part) => ({
+    text: part.t, bold: part.b || item.weight === 600, color: part.c || item.color,
+  }))]
+  const lines = measured ? wrapText(item) : fallback
   return (
-    <p
+    <div
       className={`dl-el${item.font === 'brand' ? ' dl-el--brand' : ''}`}
       style={{
-        left: pct(item.x, W), top: pct(item.y, H), width: pct(item.w, W), minHeight: pct(item.h, H),
-        fontSize: cq(item.size), lineHeight: item.lh, color: color(item.color), textAlign: item.align || 'left',
-        fontWeight: item.weight || 400, letterSpacing: `${item.ls || 0}em`,
+        left: pct(item.x, W), top: pct(item.y, H), width: pct(item.w, W),
+        fontSize: cq(item.size), lineHeight: item.lh, textAlign: item.align || 'left', letterSpacing: `${item.ls || 0}em`,
       }}
     >
-      {parts.map((part, index) => (
-        <span key={index} style={{ fontWeight: part.b ? 600 : undefined, color: part.c ? color(part.c) : undefined }}>{part.t}</span>
+      {lines.map((line, lineIndex) => (
+        <span key={lineIndex} className={measured ? 'dl-line' : 'dl-line dl-line--wrap'}>
+          {line.map((run, runIndex) => (
+            <span key={runIndex} style={{ fontWeight: run.bold ? 600 : 400, color: color(run.color) }}>{run.text}</span>
+          ))}
+        </span>
       ))}
-    </p>
+    </div>
   )
 }
 
@@ -35,11 +41,10 @@ function Lines({ items }) {
       {items.map((line, index) => {
         const angle = Math.atan2(line.y2 - line.y1, line.x2 - line.x1)
         const corner = (offset) => `${line.x2 - 9 * Math.cos(angle) + offset * Math.sin(angle)},${line.y2 - 9 * Math.sin(angle) - offset * Math.cos(angle)}`
-        const head = `${corner(5)} ${corner(-5)} ${line.x2},${line.y2}`
         return (
           <g key={index}>
             <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke={color(line.color)} strokeWidth="1" />
-            {!line.plain && <polygon points={head} fill={color(line.color)} />}
+            <polygon points={`${corner(5)} ${corner(-5)} ${line.x2},${line.y2}`} fill={color(line.color)} />
           </g>
         )
       })}
@@ -47,8 +52,8 @@ function Lines({ items }) {
   )
 }
 
-function Item({ item }) {
-  if (item.type === 'text') return <Text item={item} />
+function Item({ item, measured }) {
+  if (item.type === 'text') return <Text item={item} measured={measured} />
   if (item.type === 'rect') {
     return (
       <span
@@ -64,16 +69,13 @@ function Item({ item }) {
   if (item.type === 'image') {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img
-        className="dl-el dl-el--logo" src={item.src} alt={item.alt}
-        style={{ left: pct(item.x, W), top: pct(item.y, H), width: pct(item.w, W), height: pct(item.h, H) }}
-      />
+      <img className="dl-el dl-el--logo" src={item.src} alt={item.alt} style={{ left: pct(item.x, W), top: pct(item.y, H), width: pct(item.w, W), height: pct(item.h, H) }} />
     )
   }
   if (item.type === 'shield') {
     return (
       <svg className="dl-el" viewBox="6 8 52 48" style={{ left: pct(item.x, W), top: pct(item.y, H), width: pct(item.size, W) }} aria-hidden="true">
-        <g fill="#f1f1f1" stroke="#f1f1f1" strokeWidth="3" strokeLinejoin="round">
+        <g fill={color(item.color)} stroke={color(item.color)} strokeWidth="3" strokeLinejoin="round">
           {SHIELD.map((d) => <path key={d} d={d} />)}
         </g>
       </svg>
@@ -81,33 +83,43 @@ function Item({ item }) {
   }
   if (item.type === 'wordmark') {
     return (
-      <p className="dl-el dl-el--brand dl-el--mark" style={{ left: pct(item.x, W), top: pct(item.y, H), fontSize: cq(item.size) }}>webassure</p>
+      <p className="dl-el dl-el--brand dl-el--mark" style={{ left: pct(item.x, W), top: pct(item.y, H), fontSize: cq(item.size), color: color(item.color) }}>webassure</p>
     )
   }
   return null
 }
 
-function Slide({ page, innerRef }) {
+function Slide({ page, background, innerRef, measured }) {
+  const of = (test) => page.items.filter(test)
   return (
-    <div className="dl-slide" ref={innerRef}>
-      {page.items.filter((item) => item.type === 'rect').map((item, index) => <Item key={index} item={item} />)}
-      <Lines items={page.items.filter((item) => item.type === 'arrow')} />
-      {page.items.filter((item) => item.type !== 'rect' && item.type !== 'arrow').map((item, index) => <Item key={index} item={item} />)}
+    <div className="dl-slide" ref={innerRef} style={{ background: color(background) }}>
+      {of((item) => item.type === 'rect').map((item, index) => <Item key={index} item={item} />)}
+      <Lines items={of((item) => item.type === 'arrow')} />
+      {of((item) => item.type !== 'rect' && item.type !== 'arrow').map((item, index) => <Item key={index} item={item} measured={measured} />)}
     </div>
   )
 }
 
 export default function Download() {
-  const slides = useRef([])
+  const nodes = useRef([])
+  const [mode, setMode] = useState('dark')
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState('')
+  const [measured, setMeasured] = useState(false)
+  const slides = useMemo(() => buildSlides(mode), [mode])
+
+  useEffect(() => {
+    let active = true
+    document.fonts.ready.then(() => { if (active) setMeasured(true) })
+    return () => { active = false }
+  }, [])
 
   const run = async (kind) => {
     setBusy(kind)
     setError('')
     try {
-      if (kind === 'pptx') await downloadPptx()
-      else await downloadPdf(slides.current.filter(Boolean))
+      if (kind === 'pptx') await downloadPptx(mode)
+      else await downloadPdf(nodes.current.slice(0, slides.length).filter(Boolean), mode)
     } catch {
       setError('The download could not be created. Please try again.')
     } finally {
@@ -120,6 +132,14 @@ export default function Download() {
       <header className="dl__bar">
         <Link href="/" className="wordmark" aria-label="WebAssure home">webassure</Link>
         <div className="dl__actions">
+          <div className="dl__theme" role="group" aria-label="Slide background">
+            {Object.entries(THEMES).map(([key, theme]) => (
+              <button key={key} type="button" aria-pressed={mode === key} disabled={!!busy} onClick={() => setMode(key)}>
+                <span className="dl__swatch" style={{ background: color(theme.bg) }} />
+                {theme.label}
+              </button>
+            ))}
+          </div>
           <button type="button" className="btn btn--ghost" disabled={!!busy} onClick={() => run('pdf')}>
             {busy === 'pdf' ? 'Preparing PDF…' : 'Download PDF'}
           </button>
@@ -133,15 +153,15 @@ export default function Download() {
         <div className="dl__head">
           <p className="eyebrow">HackMatrix 2026</p>
           <h1 className="dl__title">Pitch deck</h1>
-          <p className="dl__sub">{SLIDES.length} slides. Review them here, then download.</p>
+          <p className="dl__sub">{slides.length} slides. Choose a background, review them here, then download.</p>
           {error && <p className="dl__error" role="alert">{error}</p>}
         </div>
 
         <ol className="dl__list">
-          {SLIDES.map((page, index) => (
+          {slides.map((page, index) => (
             <li key={page.name} className="dl__item">
               <p className="dl__label"><span>{String(index + 1).padStart(2, '0')}</span>{page.name}</p>
-              <Slide page={page} innerRef={(node) => { slides.current[index] = node }} />
+              <Slide page={page} background={THEMES[mode].bg} measured={measured} innerRef={(node) => { nodes.current[index] = node }} />
             </li>
           ))}
         </ol>

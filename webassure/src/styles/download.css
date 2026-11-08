@@ -4,8 +4,17 @@
   position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 14px var(--margin); background: var(--page); border-bottom: 1px solid var(--track);
 }
-.dl__actions { display: flex; gap: 8px; }
+.dl__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .dl__actions .btn:disabled { opacity: 0.5; cursor: progress; }
+
+.dl__theme { display: inline-flex; gap: 2px; height: 36px; padding: 3px; border-radius: 999px; background: var(--console); }
+.dl__theme button {
+  display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; border-radius: 999px;
+  color: var(--grey); font-size: var(--t-caption); font-weight: 600;
+}
+.dl__theme button[aria-pressed='true'] { background: var(--page); color: var(--ink); }
+.dl__theme button:disabled { cursor: progress; }
+.dl__swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--grey); }
 
 .dl__main { max-width: 1112px; margin: 0 auto; padding: 56px 16px 96px; }
 .dl__head { margin-bottom: 40px; }
@@ -19,16 +28,20 @@
 
 .dl-slide {
   position: relative; aspect-ratio: 16 / 9; overflow: hidden; container-type: inline-size;
-  background: #121212; font-family: var(--font); border-radius: 8px; box-shadow: 0 0 0 1px var(--track);
+  font-family: var(--font); border-radius: 8px; box-shadow: 0 0 0 1px var(--track);
 }
-.dl-el { position: absolute; margin: 0; display: block; white-space: pre-line; }
+.dl-el { position: absolute; margin: 0; display: block; }
+.dl-line { display: block; white-space: nowrap; }
+.dl-line--wrap { white-space: pre-line; }
 .dl-el--brand { font-family: var(--font-archivo), var(--font); font-stretch: 112%; }
-.dl-el--mark { width: auto; color: #f1f1f1; font-weight: 600; line-height: 1.2; letter-spacing: -0.025em; white-space: nowrap; }
+.dl-el--mark { width: auto; font-weight: 600; line-height: 1.2; letter-spacing: -0.025em; white-space: nowrap; }
 .dl-el--logo { object-fit: contain; }
 .dl-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
 
-@media (max-width: 560px) {
+@media (max-width: 760px) {
   .dl__bar { flex-direction: column; align-items: stretch; }
   .dl__actions .btn { flex: 1; }
+  .dl__theme { width: 100%; }
+  .dl__theme button { flex: 1; justify-content: center; }
   .dl__main { padding-top: 36px; }
 }
