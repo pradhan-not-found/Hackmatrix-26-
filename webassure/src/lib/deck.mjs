@@ -15,8 +15,6 @@ export const THEMES = {
   },
 }
 
-// Placeholder on the demo slide. Replace with the deployed address once there is one.
-const SOLUTION_URL = 'Add solution link'
 const M = 72
 
 export function buildSlides(mode) {
@@ -75,13 +73,13 @@ export function buildSlides(mode) {
     text(x + 54, y + 18, 150, 62, value, { size: 15, lh: 1.35 }),
   ]
 
-  // Numbered step tabs; the active first tab carries the Google sign-in.
+  // Numbered demo steps; the sign-in step also shows the Google logo.
   const demoTab = (y, n, value, google) => [
-    box(M, y, 416, 62, google ? { fill: C.pill, stroke: C.pillLine } : {}),
-    box(M + 14, y + 17, 28, 28, { fill: google ? C.pillText : C.console, radius: 14 }),
-    text(M + 14, y + 22, 28, 18, n, { size: 13, lh: 1.3, weight: 600, align: 'center', color: google ? C.pill : C.ink }),
-    ...(google ? [img('/deck/google-color.png', 'Google', M + 56, y + 18, 26, 26)] : []),
-    text(M + (google ? 94 : 56), y + 18, 300, 26, value, { size: 17, lh: 1.3, weight: google ? 600 : 400, color: google ? C.pillText : C.ink }),
+    box(M, y, 416, 62),
+    box(M + 14, y + 17, 28, 28, { fill: C.console, radius: 14 }),
+    text(M + 14, y + 22, 28, 18, n, { size: 13, lh: 1.3, weight: 600, align: 'center' }),
+    ...(google ? [img('/deck/google-color.png', 'Google', M + 56, y + 20, 22, 22)] : []),
+    text(M + (google ? 90 : 56), y + 18, 300, 26, value, { size: 17, lh: 1.3 }),
   ]
 
   // Two-by-two card grid shared by Impact and Next steps.
@@ -232,9 +230,8 @@ export function buildSlides(mode) {
         ...demoTab(266, '2', 'Paste a suspicious link'),
         ...demoTab(336, '3', 'Read the risk, evidence and limits'),
         ...demoTab(406, '4', 'Check a scam message'),
-        box(M, 476, 416, 52, { fill: C.bg, stroke: C.line }),
-        text(92, 491, 110, 22, 'Solution URL', { size: 13, lh: 1.3, color: C.grey }),
-        text(196, 490, 270, 24, SOLUTION_URL, { size: 15, lh: 1.3, color: C.grey }),
+        box(M, 476, 416, 52),
+        text(M + 20, 491, 110, 22, 'Solution URL', { size: 13, lh: 1.3, color: C.grey }),
         box(520, 140, 688, 388, { radius: 36, stroke: C.line }),
         text(520, 544, 688, 24, 'Demo video', { size: 15, lh: 1.3, color: C.grey, align: 'center' }),
         ...footer(),
