@@ -679,3 +679,17 @@ html:has(.preloader[data-leaving]) main { animation: page-unblur 1s cubic-bezier
 .preloader[data-dissolving] .preloader__dissolve { display: block; }
 html:has(.preloader[data-dissolving]) main { animation: page-unblur 1.1s cubic-bezier(0.22, 1, 0.36, 1) both; }
 html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none; }
+
+/* preloader phrases: across the screen (left, centre, right) like the original */
+.preloader__words {
+  position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); align-items: center;
+  padding: 0 var(--margin); gap: 24px;
+}
+.preloader__words .preloader__phrase:nth-child(1) { text-align: left; justify-self: start; }
+.preloader__words .preloader__phrase:nth-child(2) { text-align: center; justify-self: center; }
+.preloader__words .preloader__phrase:nth-child(3) { text-align: right; justify-self: end; }
+.preloader .preloader__phrase { font-size: var(--t-body); }
+@media (max-width: 700px) {
+  .preloader__words { grid-template-columns: 1fr; align-content: center; gap: 12px; }
+  .preloader__words .preloader__phrase:nth-child(n) { text-align: center; justify-self: center; }
+}
