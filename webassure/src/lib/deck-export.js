@@ -139,7 +139,9 @@ export async function downloadPptx() {
       }
       if (item.type === 'arrow') {
         slide.addShape('line', {
-          x: inch(item.x1), y: inch(item.y1), w: inch(item.x2 - item.x1), h: inch(item.y2 - item.y1),
+          x: inch(Math.min(item.x1, item.x2)), y: inch(Math.min(item.y1, item.y2)),
+          w: inch(Math.abs(item.x2 - item.x1)), h: inch(Math.abs(item.y2 - item.y1)),
+          flipH: item.x2 < item.x1, flipV: item.y2 < item.y1,
           line: { color: item.color, width: 1, ...(item.plain ? {} : { endArrowType: 'triangle' }) },
         })
       }

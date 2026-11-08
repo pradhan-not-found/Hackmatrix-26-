@@ -33,10 +33,9 @@ function Lines({ items }) {
   return (
     <svg className="dl-lines" viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
       {items.map((line, index) => {
-        const down = line.x1 === line.x2
-        const head = down
-          ? `${line.x2 - 5},${line.y2 - 9} ${line.x2 + 5},${line.y2 - 9} ${line.x2},${line.y2}`
-          : `${line.x2 - 9},${line.y2 - 5} ${line.x2 - 9},${line.y2 + 5} ${line.x2},${line.y2}`
+        const angle = Math.atan2(line.y2 - line.y1, line.x2 - line.x1)
+        const corner = (offset) => `${line.x2 - 9 * Math.cos(angle) + offset * Math.sin(angle)},${line.y2 - 9 * Math.sin(angle) - offset * Math.cos(angle)}`
+        const head = `${corner(5)} ${corner(-5)} ${line.x2},${line.y2}`
         return (
           <g key={index}>
             <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke={color(line.color)} strokeWidth="1" />
@@ -66,7 +65,7 @@ function Item({ item }) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        className={`dl-el ${item.logo ? 'dl-el--logo' : 'dl-el--image'}`} src={item.src} alt={item.alt}
+        className="dl-el dl-el--logo" src={item.src} alt={item.alt}
         style={{ left: pct(item.x, W), top: pct(item.y, H), width: pct(item.w, W), height: pct(item.h, H) }}
       />
     )

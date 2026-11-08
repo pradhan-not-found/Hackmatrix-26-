@@ -24,7 +24,6 @@
 .dl-el { position: absolute; margin: 0; display: block; white-space: pre-line; }
 .dl-el--brand { font-family: var(--font-archivo), var(--font); font-stretch: 112%; }
 .dl-el--mark { width: auto; color: #f1f1f1; font-weight: 600; line-height: 1.2; letter-spacing: -0.025em; white-space: nowrap; }
-.dl-el--image { object-fit: cover; object-position: top; box-shadow: 0 0 0 1px #333; }
 .dl-el--logo { object-fit: contain; }
 .dl-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
 
