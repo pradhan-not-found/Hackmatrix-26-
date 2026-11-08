@@ -15,8 +15,8 @@ export const THEMES = {
   },
 }
 
-// Shown on the demo slide. Replace with the deployed address once there is one.
-const SOLUTION_URL = 'github.com/pradhan-not-found/Hackmatrix-26-'
+// Placeholder on the demo slide. Replace with the deployed address once there is one.
+const SOLUTION_URL = 'Add solution link'
 const M = 72
 
 export function buildSlides(mode) {
@@ -64,20 +64,24 @@ export function buildSlides(mode) {
 
   const member = (x, file, name) => [
     box(x, 188, 266, 404),
-    img(`/deck/team/${file}.png`, name, x + 20, 208, 226, 282),
+    img(asset(`team/${file}.png`), name, x + 20, 208, 226, 282),
     text(x + 20, 510, 226, 30, name, { size: 20, lh: 1.3, weight: 600, ls: -0.01 }),
     text(x + 20, 542, 226, 24, 'Fantastic 4', { size: 15, lh: 1.3, color: C.grey }),
   ]
 
-  const smallCard = (x, y, value) => [
+  const smallCard = (x, y, name, value) => [
     box(x, y, 214, 96),
-    text(x + 18, y + 22, 180, 56, value, { size: 17, lh: 1.35 }),
+    icon(name, x + 16, y + 20, 26),
+    text(x + 54, y + 18, 150, 62, value, { size: 15, lh: 1.35 }),
   ]
 
-  const demoStep = (y, n, value) => [
-    box(M, y, 416, 58),
-    text(M + 20, y + 18, 30, 24, n, { size: 16, lh: 1.3, weight: 600, color: C.grey }),
-    text(M + 56, y + 17, 340, 26, value, { size: 17, lh: 1.3 }),
+  // Numbered step tabs; the active first tab carries the Google sign-in.
+  const demoTab = (y, n, value, google) => [
+    box(M, y, 416, 62, google ? { fill: C.pill, stroke: C.pillLine } : {}),
+    box(M + 14, y + 17, 28, 28, { fill: google ? C.pillText : C.console, radius: 14 }),
+    text(M + 14, y + 22, 28, 18, n, { size: 13, lh: 1.3, weight: 600, align: 'center', color: google ? C.pill : C.ink }),
+    ...(google ? [img('/deck/google-color.png', 'Google', M + 56, y + 18, 26, 26)] : []),
+    text(M + (google ? 94 : 56), y + 18, 300, 26, value, { size: 17, lh: 1.3, weight: google ? 600 : 400, color: google ? C.pillText : C.ink }),
   ]
 
   // Two-by-two card grid shared by Impact and Next steps.
@@ -120,18 +124,18 @@ export function buildSlides(mode) {
     text(x + 24, 482, 320, 76, body, { size: 17, lh: 1.42, color: C.grey }),
   ]
 
-  const coverLogo = (name, alt, x, h, ratio) => img(asset(`logos/${name}.png`), alt, x, 590 - h / 2, h * ratio, h)
+  const coverLogo = (name, alt, x, h, ratio) => img(asset(`logos/${name}.png`), alt, x, 76 - h / 2, h * ratio, h)
 
   const slides = [
     {
       name: 'Cover',
       cover: true,
       items: [
-        { type: 'shield', x: 148, y: 116, size: 296, color: C.ink },
-        { type: 'wordmark', x: 540, y: 122, size: 104, color: C.ink },
-        text(544, 262, 640, 44, 'Know your website before you trust it.', { size: 30, lh: 1.3, ls: -0.02 }),
-        text(544, 330, 640, 34, 'HackMatrix 2026', { size: 24, lh: 1.3, weight: 600, ls: -0.015 }),
-        text(544, 366, 640, 26, 'AI-Powered Web Threat Detection and Digital Trust Intelligence', { size: 17, lh: 1.3, color: C.grey }),
+        { type: 'shield', x: 148, y: 272, size: 296, color: C.ink },
+        { type: 'wordmark', x: 540, y: 278, size: 104, color: C.ink },
+        text(544, 418, 640, 44, 'Know your website before you trust it.', { size: 30, lh: 1.3, ls: -0.02 }),
+        text(544, 486, 640, 34, 'HackMatrix 2026', { size: 24, lh: 1.3, weight: 600, ls: -0.015 }),
+        text(544, 522, 640, 26, 'AI-Powered Web Threat Detection and Digital Trust Intelligence', { size: 17, lh: 1.3, color: C.grey }),
         coverLogo('hackmatrix', 'HackMatrix', 148, 36, 6.634),
         coverLogo('acm', 'ACM', 477, 64, 1),
         coverLogo('mlh', 'Major League Hacking', 631, 58, 2.372),
@@ -157,7 +161,10 @@ export function buildSlides(mode) {
         eyebrow('A real case, 2024', 138),
         text(M, 166, 540, 112, '₹7.29 lakh', { size: 88, lh: 1.15, weight: 600, ls: -0.04 }),
         text(M, 286, 500, 90, 'lost by an IIT Bombay student to a “digital arrest” scam.', { size: 30, lh: 1.3, ls: -0.02 }),
-        text(M, 404, 490, 90, 'He realised it was a scam only after searching online about digital arrest.', { size: 20, lh: 1.5, color: C.grey }),
+        text(M, 384, 490, 70, 'He realised it was a scam only after searching online about digital arrest.', { size: 20, lh: 1.5, color: C.grey }),
+        box(M, 470, 520, 86),
+        text(92, 482, 480, 18, 'Overview', { size: 13, lh: 1.3, weight: 600, color: C.grey }),
+        text(92, 503, 480, 44, 'Scammers impersonate officials, isolate the victim and pressure them into paying before they can check.', { size: 16, lh: 1.35 }),
         ...storyCard(104, 'phone', 'The call', 'A caller claiming to be from TRAI said 17 complaints were registered against his number.'),
         ...storyCard(220, 'video', 'The pressure', 'On a WhatsApp video call, a man dressed as a police officer accused him of money laundering.'),
         ...storyCard(336, 'user-x', 'The isolation', 'He was told he was under “digital arrest” and could not contact anyone.'),
@@ -204,10 +211,10 @@ export function buildSlides(mode) {
         eyebrow('The solution', 104),
         text(M, 134, 460, 100, 'Verify what you are about to trust.', { size: 38, lh: 1.2, weight: 600, ls: -0.03 }),
         text(M, 240, 450, 90, 'Paste a link or a message. See the risk, the evidence and what to do next.', { size: 19, lh: 1.45, color: C.grey }),
-        ...smallCard(72, 348, 'URL and redirect investigation'),
-        ...smallCard(298, 348, 'TLS certificate analysis'),
-        ...smallCard(72, 456, 'Scam message analysis'),
-        ...smallCard(298, 456, 'Evidence-backed explanations'),
+        ...smallCard(72, 348, 'link', 'URL and redirect investigation'),
+        ...smallCard(298, 348, 'lock-keyhole', 'TLS certificate analysis'),
+        ...smallCard(72, 456, 'message-square-warning', 'Scam message analysis'),
+        ...smallCard(298, 456, 'file-search', 'Evidence-backed explanations'),
         box(594, 130, 580, 372, { fill: C.laptop, radius: 14 }),
         img(asset('dashboard.png'), 'WebAssure dashboard', 606, 142, 556, 348),
         box(564, 502, 640, 14, { fill: C.base, radius: 7 }),
@@ -221,15 +228,13 @@ export function buildSlides(mode) {
       items: [
         eyebrow('See it working', 96),
         text(M, 122, 416, 64, 'Live demo', { size: 52, lh: 1.15, weight: 600, ls: -0.035 }),
-        box(M, 196, 320, 54, { fill: C.pill, radius: 27, stroke: C.pillLine }),
-        img('/deck/google-color.png', 'Google', 94, 208, 30, 30),
-        text(138, 210, 250, 28, 'Sign in with Google', { size: 19, lh: 1.3, weight: 600, color: C.pillText }),
-        ...demoStep(262, '1', 'Paste a suspicious link'),
-        ...demoStep(330, '2', 'Read the risk, evidence and limits'),
-        ...demoStep(398, '3', 'Check a scam message'),
-        box(M, 466, 416, 62),
-        text(92, 475, 380, 18, 'Solution URL', { size: 13, lh: 1.3, color: C.grey }),
-        text(92, 496, 380, 24, SOLUTION_URL, { size: 16, lh: 1.3 }),
+        ...demoTab(196, '1', 'Sign in with Google', true),
+        ...demoTab(266, '2', 'Paste a suspicious link'),
+        ...demoTab(336, '3', 'Read the risk, evidence and limits'),
+        ...demoTab(406, '4', 'Check a scam message'),
+        box(M, 476, 416, 52, { fill: C.bg, stroke: C.line }),
+        text(92, 491, 110, 22, 'Solution URL', { size: 13, lh: 1.3, color: C.grey }),
+        text(196, 490, 270, 24, SOLUTION_URL, { size: 15, lh: 1.3, color: C.grey }),
         box(520, 140, 688, 388, { radius: 36, stroke: C.line }),
         text(520, 544, 688, 24, 'Demo video', { size: 15, lh: 1.3, color: C.grey, align: 'center' }),
         ...footer(),
