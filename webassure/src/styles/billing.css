@@ -742,3 +742,7 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 ::-webkit-scrollbar-thumb { border-width: 1.5px; }
 ::-webkit-scrollbar-thumb { min-height: 28px; }
 
+
+/* threat ledger: full content width like the other dashboard pages */
+.dash .ledger-panel { max-width: none; width: 100%; }
+.dash .ledger-head .caption { max-width: 760px; }
