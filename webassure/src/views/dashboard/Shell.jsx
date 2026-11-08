@@ -49,6 +49,17 @@ export default function Shell({ children }) {
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const [navOpen, setNavOpen] = useState(false)
+  const [userMenu, setUserMenu] = useState(false)
+  const userMenuRef = useRef(null)
+  // Account menu: opens from the avatar, closes on outside click or Escape.
+  useEffect(() => {
+    if (!userMenu) return
+    const onDown = (e) => { if (!userMenuRef.current?.contains(e.target)) setUserMenu(false) }
+    const onKey = (e) => { if (e.key === 'Escape') setUserMenu(false) }
+    document.addEventListener('pointerdown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [userMenu])
   const [collapsed, setCollapsed] = useState(false)
 
   // Desktop sidebar can collapse to an icon rail; the choice is remembered.
@@ -235,12 +246,31 @@ export default function Shell({ children }) {
             <Link href="/dashboard/settings" className={`dash__link${current === 'Settings' ? ' active' : ''}`} data-tip="Settings">
               <SettingsIcon /><span className="rail__label">Settings</span>
             </Link>
-            <div className="dash__user">
-              <Avatar src={user.avatar} size={34} className="dash__av" />
-              <div className="dash__user-txt">
-                <p className="dash__user-name" title={user.name}>{user.name}</p>
-              </div>
-              <button className="icon-btn" onClick={logout} aria-label="Log out"><LogoutIcon /></button>
+            <div className="dash__user" ref={userMenuRef}>
+              <button className="dash__user-btn" onClick={() => setUserMenu((o) => !o)} aria-haspopup="menu" aria-expanded={userMenu} aria-label="Account menu">
+                <Avatar src={user.avatar} size={34} className="dash__av" />
+                <span className="dash__user-txt">
+                  <span className="dash__user-name" title={user.name}>{user.name}</span>
+                </span>
+              </button>
+              <button className="icon-btn dash__user-out" onClick={logout} aria-label="Log out"><LogoutIcon /></button>
+              {userMenu && (
+                <div className="umenu" role="menu">
+                  <div className="umenu__head">
+                    <Avatar src={user.avatar} size={36} />
+                    <div className="umenu__who">
+                      <p className="umenu__name">{user.name}</p>
+                      {user.email && <p className="umenu__mail">{user.email}</p>}
+                    </div>
+                  </div>
+                  <Link href="/dashboard/settings" className="umenu__item" role="menuitem" onClick={() => setUserMenu(false)}>
+                    <SettingsIcon /><span>Settings</span>
+                  </Link>
+                  <button className="umenu__item umenu__item--out" role="menuitem" onClick={() => { setUserMenu(false); logout() }}>
+                    <LogoutIcon /><span>Log out</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </aside>

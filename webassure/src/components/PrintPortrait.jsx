@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-// Print-style team portrait (same treatment as the Studio 1 team page): the
-// exact photo in black and white, printed with a fine 45° dot screen and
+// Print-style team portrait: the exact photo in black and white, printed with a fine 45° dot screen and
 // multiplied onto warm paper, so the white studio backdrop becomes the paper.
 // On hover, small tiles around the cursor shift and jitter, then settle back.
 
 const SCREEN = 3.2 // device px per halftone cell
-const MIX = 0.5 // 0 = plain photo, 1 = pure halftone
+const MIX = 0.32 // 0 = plain photo, 1 = pure halftone
 const TILE = 4 // css px per moving block
 const RADIUS = 70 // css px around the cursor that reacts
 const PUSH = 4 // css px, largest push
@@ -58,7 +57,7 @@ export default function PrintPortrait({ src, alt, zoom = 1, pos = 'center 22%', 
       let dy = (H - img.naturalHeight * base) * oy
       dx = W * 0.5 + (dx - W * 0.5) * zoom
       dy = H * origin + (dy - H * origin) * zoom
-      a.filter = `grayscale(1) contrast(1.12) brightness(${bright})`
+      a.filter = `grayscale(1) contrast(1.04) brightness(${bright * 1.06})`
       a.imageSmoothingQuality = 'high'
       a.drawImage(img, dx * dpr, dy * dpr, dw * dpr, dh * dpr)
       a.filter = 'none'
@@ -70,7 +69,7 @@ export default function PrintPortrait({ src, alt, zoom = 1, pos = 'center 22%', 
       const k = Math.SQRT1_2 / SCREEN
       for (let y = 0, p = 0; y < PH; y++) {
         for (let x = 0; x < PW; x++, p += 4) {
-          const lum = px[p] / 255
+          const lum = Math.pow(px[p] / 255, 0.78) // lift mid-tones
           const u = (x + y) * k, v = (x - y) * k
           const fu = u - Math.floor(u) - 0.5, fv = v - Math.floor(v) - 0.5
           const d = Math.sqrt(fu * fu + fv * fv) / Math.SQRT1_2 // 0 centre … 1 corner
@@ -99,8 +98,6 @@ export default function PrintPortrait({ src, alt, zoom = 1, pos = 'center 22%', 
       const reach = RADIUS + PUSH
       const i0 = Math.max(0, Math.floor((s.px - reach) / TILE)), i1 = Math.min(Math.ceil(w / TILE), Math.ceil((s.px + reach) / TILE))
       const j0 = Math.max(0, Math.floor((s.py - reach) / TILE)), j1 = Math.min(Math.ceil(h / TILE), Math.ceil((s.py + reach) / TILE))
-      ctx.fillStyle = '#fff'
-      ctx.fillRect(i0 * TILE, j0 * TILE, (i1 - i0) * TILE, (j1 - j0) * TILE)
       for (let j = j0; j < j1; j++) {
         for (let i = i0; i < i1; i++) {
           const x = i * TILE, y = j * TILE
@@ -115,7 +112,7 @@ export default function PrintPortrait({ src, alt, zoom = 1, pos = 'center 22%', 
             ddx = cx * kk + (n - 0.5) * 1.2 * f
             ddy = cy * kk + (noise(j, i) - 0.5) * 1.2 * f
           }
-          ctx.drawImage(art, x * dpr, y * dpr, TILE * dpr, TILE * dpr, x + ddx, y + ddy, TILE, TILE)
+          ctx.drawImage(art, x * dpr, y * dpr, TILE * dpr, TILE * dpr, x + ddx - 0.5, y + ddy - 0.5, TILE + 1, TILE + 1) // slight overlap: no gaps
         }
       }
     }
