@@ -277,21 +277,14 @@ html, * { scrollbar-width: auto; scrollbar-color: auto; }
 /* Pro trial button: no texture overlay, plain plastic on hover */
 .plan[data-featured] .btn--ink::before, .plan[data-featured] .btn--ink:hover::before { content: none; display: none; animation: none; }
 
-/* hero: pump lines from the screen edges into the first and last letters */
-.hero__logo .thermal { position: relative; z-index: 1; }
-.hero__wires {
-  position: absolute; z-index: 0; pointer-events: none;
-  left: 50%; width: 100vw; transform: translateX(-50%); top: -40%; height: 180%;
-}
-
-/* team: uniform greyscale portraits on one neutral backdrop */
-.member__photo { background: #ececee; overflow: hidden; }
-.member__img { filter: grayscale(1) contrast(1.06) brightness(1.04); transform-origin: center 30%; }
-[data-theme='dark'] .member__photo { background: #e6e6e8; }
-
 /* 01–04: same inflated plastic as the hero wordmark */
 .mrow__n.mrow__n--plastic, [data-theme='dark'] .mrow__n.mrow__n--plastic {
   display: block; width: clamp(84px, 7.5vw, 112px); margin-bottom: 14px;
   background: none; color: inherit; -webkit-text-stroke: 0; filter: none; line-height: 0;
 }
 .mrow__n--plastic .thermal { width: 100%; height: auto; }
+
+/* team: halftone dot portraits on paper (no photo swap) */
+.member__photo { background: #f4f4f2; }
+.member__photo .dots { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; color: #141416; }
+.member__photo .member__img { opacity: 0; }
