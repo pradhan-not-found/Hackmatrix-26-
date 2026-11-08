@@ -12,8 +12,9 @@ import { useEffect, useRef } from 'react'
 const INK = [20, 20, 22]
 const PAPER = [244, 244, 242]
 const LEVELS = 24
-const RADIUS = 70 // px, pointer influence
-const PUSH = 26 // px, max displacement
+const STRIDE = 11 // hx, hy, x, y, vx, vy, r, level, jx, jy, strength
+const RADIUS = 60 // px, pointer influence
+const PUSH = 18 // px, max displacement
 
 export default function DotPortrait({ src, zoom = 1, pos = 'center 22%', origin = 0.3, cell = 2.6 }) {
   const ref = useRef(null)
@@ -25,7 +26,7 @@ export default function DotPortrait({ src, zoom = 1, pos = 'center 22%', origin 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let img = null, cancelled = false, raf = 0
     let W = 0, H = 0, ctx = null
-    let dots = null // Float32Array: hx, hy, x, y, vx, vy, r, level
+    let dots = null // Float32Array, STRIDE fields per dot
     const pointer = { x: -1e4, y: -1e4, in: false }
 
     const parsePos = () => {
@@ -49,7 +50,9 @@ export default function DotPortrait({ src, zoom = 1, pos = 'center 22%', origin 
       ctx = canvas.getContext('2d')
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
-      const cols = Math.ceil(W / cell), rows = Math.ceil(H / cell)
+      // Snap the dot pitch to whole device pixels so no moiré appears.
+      const pitch = Math.max(2, Math.round(cell * dpr)) / dpr
+      const cols = Math.ceil(W / pitch), rows = Math.ceil(H / pitch)
       const s = document.createElement('canvas')
       s.width = cols; s.height = rows
       const sx = s.getContext('2d', { willReadFrequently: true })
@@ -98,9 +101,10 @@ export default function DotPortrait({ src, zoom = 1, pos = 'center 22%', origin 
           // gentle S-curve: deeper shadows and mid-tones, clean highlights
           const v = Math.pow(t * t * (3 - 2 * t), 1.15)
           if (v > 0.97) continue // paper
-          const hx = x * cell + cell / 2, hy = y * cell + cell / 2
-          const r = cell * 0.5 * (0.62 + 0.38 * (1 - v))
-          list.push(hx, hy, hx, hy, 0, 0, r, Math.round(v * (LEVELS - 1)))
+          const hx = x * pitch + pitch / 2, hy = y * pitch + pitch / 2
+          const r = pitch * 0.5 * (0.62 + 0.38 * (1 - v))
+          const a = Math.random() * Math.PI * 2
+          list.push(hx, hy, hx, hy, 0, 0, r, Math.round(v * (LEVELS - 1)), Math.cos(a), Math.sin(a), 0.35 + Math.random() * 0.65)
         }
       }
       dots = new Float32Array(list)
@@ -111,7 +115,7 @@ export default function DotPortrait({ src, zoom = 1, pos = 'center 22%', origin 
       if (!ctx || !dots) return
       ctx.clearRect(0, 0, W, H)
       const paths = Array.from({ length: LEVELS }, () => new Path2D())
-      for (let i = 0; i < dots.length; i += 8) {
+      for (let i = 0; i < dots.length; i += STRIDE) {
         const x = dots[i + 2], y = dots[i + 3], r = dots[i + 6]
         const p = paths[dots[i + 7]]
         p.moveTo(x + r, y); p.arc(x, y, r, 0, Math.PI * 2)
@@ -119,26 +123,35 @@ export default function DotPortrait({ src, zoom = 1, pos = 'center 22%', origin 
       for (let l = 0; l < LEVELS; l++) { ctx.fillStyle = colors[l]; ctx.fill(paths[l]) }
     }
 
-    // Dispersion: dots near the pointer are pushed outward and spring home.
+    // Dispersion: dots near the pointer drift away like disturbed dust, each in
+    // its own random direction (mixed with a little outward push) so no rays
+    // or patterns form, then ease back and snap exactly home.
     const step = () => {
       let moving = false
-      for (let i = 0; i < dots.length; i += 8) {
+      for (let i = 0; i < dots.length; i += STRIDE) {
         const hx = dots[i], hy = dots[i + 1]
         let tx = hx, ty = hy
         if (pointer.in) {
           const ddx = hx - pointer.x, ddy = hy - pointer.y
           const d = Math.hypot(ddx, ddy)
-          if (d < RADIUS && d > 0.001) {
-            const f = Math.pow(1 - d / RADIUS, 2) * PUSH
-            tx = hx + (ddx / d) * f; ty = hy + (ddy / d) * f
+          if (d < RADIUS) {
+            const f = Math.pow(1 - d / RADIUS, 2) * PUSH * dots[i + 10]
+            const ux = d > 0.001 ? ddx / d : 0, uy = d > 0.001 ? ddy / d : 0
+            tx = hx + (dots[i + 8] * 0.75 + ux * 0.25) * f
+            ty = hy + (dots[i + 9] * 0.75 + uy * 0.25) * f
           }
         }
-        let vx = dots[i + 4], vy = dots[i + 5]
-        vx = (vx + (tx - dots[i + 2]) * 0.14) * 0.72
-        vy = (vy + (ty - dots[i + 3]) * 0.14) * 0.72
-        dots[i + 2] += vx; dots[i + 3] += vy
-        dots[i + 4] = vx; dots[i + 5] = vy
-        if (Math.abs(vx) > 0.02 || Math.abs(vy) > 0.02 || Math.abs(dots[i + 2] - hx) > 0.05 || Math.abs(dots[i + 3] - hy) > 0.05) moving = true
+        const x = dots[i + 2], y = dots[i + 3]
+        const vx = (dots[i + 4] + (tx - x) * 0.12) * 0.7
+        const vy = (dots[i + 5] + (ty - y) * 0.12) * 0.7
+        let nx = x + vx, ny = y + vy
+        if (!pointer.in && Math.abs(nx - hx) < 0.15 && Math.abs(ny - hy) < 0.15 && Math.abs(vx) < 0.1 && Math.abs(vy) < 0.1) {
+          nx = hx; ny = hy; dots[i + 4] = 0; dots[i + 5] = 0
+        } else {
+          dots[i + 4] = vx; dots[i + 5] = vy
+          moving = true
+        }
+        dots[i + 2] = nx; dots[i + 3] = ny
       }
       draw()
       raf = moving || pointer.in ? requestAnimationFrame(step) : 0
