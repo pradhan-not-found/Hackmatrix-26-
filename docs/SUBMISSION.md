@@ -9,7 +9,7 @@ Everything the submission form asks for, in one place. Fields marked **To add** 
 | **Pitch deck link** | _Google Drive, Google Slides or Canva link, viewable by anyone_ | To add |
 | **Live website / demo** | _Deployed URL_. If it is not hosted, the [README](../README.md#setup-and-run) has full run instructions | To add |
 | **Demo video** | _YouTube or Google Drive link, 3 minutes or less_ | To add |
-| **Write-up / documentation** | Draft: [WebAssure: how we built it](https://claude.ai/artifact/QP3bYkyWWQUQUGCHhYQvqh). Export it to Google Docs and paste the public link here | Drafted, needs export |
+| **Write-up / documentation** | [PDF](writeup/WebAssure-Writeup.pdf) and [LaTeX source](writeup/WebAssure-Writeup.tex). Upload the PDF to Google Drive, or paste it into a Google Doc, then share the public link here | Written, needs public link |
 | **Short description** | See below (under 1,000 characters) | Ready |
 
 ---
@@ -50,15 +50,15 @@ If it cannot be hosted, point judges to [Setup and run](../README.md#setup-and-r
 
 ## Write-up or documentation
 
-**Drafted:** [WebAssure: how we built it](https://claude.ai/artifact/QP3bYkyWWQUQUGCHhYQvqh). It covers the overview, the problem, what we built, an architecture diagram with the tech stack, the six main challenges we solved, limitations and what's next.
+**Written:** [PDF](writeup/WebAssure-Writeup.pdf) and [LaTeX source](writeup/WebAssure-Writeup.tex). It covers the problem, what we built, architecture, the analysis pipeline, the AI and blockchain design, security, the challenges we solved, testing and limitations.
 
-To submit it: open the doc, click its name, choose **Export**, then **Google Docs** (or Notion), set sharing to *Anyone with the link can view*, and paste that link into the form and the table above.
+To submit it: the form asks for a Google Doc or Notion page, so open the PDF in Google Docs or paste its text into one, set sharing to *Anyone with the link can view*, and paste that link into the form and the table above.
 
 ## Short description
 
-Up to 1,000 characters (this text is about 940):
+Up to 1,000 characters (this text is 897):
 
-> WebAssure checks a suspicious link, message or certificate the way a security analyst would, and explains why it is safe or not in plain language. Paste a URL and a FastAPI backend inspects it safely, using HEAD-only requests, DNS validation, every redirect re-checked and TLS verified, then combines Google Safe Browsing reputation, look-alike domain detection and certificate analysis into a deterministic verdict with evidence for every finding. A scikit-learn classifier flags scam SMS, Gemini can summarise findings without changing the verdict, and confirmed threats are committed to an on-chain ledger anyone can verify. The Next.js dashboard keeps each user's history private with Supabase row-level security. The hardest problem was trust: a provider timeout must never look like a clean result, so every check reports its own coverage and limits, and the AI explanation is schema-validated so it can never overstate the evidence.
+> WebAssure checks a suspicious link, message or certificate the way a security analyst would and explains the result in plain language. A FastAPI backend inspects each URL safely: public-DNS validation, re-checked redirects, bounded HTML reading and verified TLS. It combines Google Safe Browsing, look-alike domain detection and certificate analysis into a deterministic verdict with evidence for every finding. A scikit-learn classifier analyses scam messages, and Gemini can explain findings without changing the verdict. Users can commit a salted report fingerprint to our Solidity registry on Ethereum Sepolia, and anyone with the receipt can verify its integrity. The Next.js dashboard keeps each user's history private with Supabase row-level security. The hardest problem was trust: a provider timeout must never look like a clean result, so every check reports its own coverage and limits.
 
 ## Before you submit
 

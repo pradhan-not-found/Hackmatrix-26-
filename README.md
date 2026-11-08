@@ -43,7 +43,7 @@ WebAssure checks a link, message or certificate the way a security analyst would
 ### Investigation backend (working)
 
 - **Evidence-based URL investigation.** Every report lists findings with their source, evidence, timestamps and recommendations, plus per-check results, coverage and limitations.
-- **Safe network inspection.** HEAD-only requests on standard ports, public-DNS validation, every redirect revalidated, a request budget and socket timeouts. No cookies, no proxies.
+- **Safe network inspection.** Bounded GET requests on standard ports, public-DNS validation, every redirect revalidated, a request budget and socket timeouts. No cookies, no proxies.
 - **TLS verification.** Certificates are verified against the system trust store for the original hostname.
 - **Reputation lookup.** Optional Google Safe Browsing integration with explicit, distinct error states. A provider failure never counts as a clean result.
 - **Deterministic risk classification:** *Confirmed Malicious*, *Suspicious*, *Low Risk* or *Inconclusive*.
@@ -82,11 +82,11 @@ WebAssure is a hackathon-stage project. To be clear about what is real today:
 | Web app UI: landing, auth, dashboard | Connected to the investigation backend |
 | Web app ↔ backend integration | Authenticated proxy and per-user Supabase report storage |
 | Real authentication and user accounts | Supabase Google/email, recovery, profile and Storage integration; project setup required |
-| Page-content analysis (HEAD-only today) | Planned |
+| Static HTML inspection (bounded, no scripts executed) | Working |
 | Leaf certificate key strength and signature hash checks | Implemented with saved certificate details and on-demand HTTPS inspection |
 | Certificate Transparency, revocation and scheduled monitoring | Planned |
-| Scam-message analysis | Planned |
-| Blockchain threat ledger | Local EVM and MetaMask/Sepolia deployment flow, receipt export/import and independent integrity verification ([setup](docs/ledger.md)); public deployment requires wallet approval |
+| Scam-message analysis | Working |
+| Blockchain threat ledger | Live on Ethereum Sepolia with MetaMask, plus a local EVM for development; receipt export/import and independent integrity verification ([setup](docs/ledger.md)) |
 
 The backend is a local MVP. Run a single worker. Before any public deployment, add per-user rate limits, data retention controls, network egress restrictions and a durable job queue with hard deadlines.
 
