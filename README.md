@@ -259,14 +259,38 @@ WebAssure was built for **[HackMatrix 2026](https://hackmatrix.codes/)**, the AI
 
 ## Team
 
+<div align="center">
+
 WebAssure is built by **Fantastic 4**.
 
-| Member | Links |
-| --- | --- |
-| Souradeep Pradhan | |
-| Madhushree Dasgupta | [GitHub](https://github.com/madhushree-cyber) · [LinkedIn](https://www.linkedin.com/in/madhushree-dasgupta-4b8a79389) |
-| Aniruddha Das | Adamas University |
-| Sattwik Das | [GitHub](https://github.com/Sattwik-Das) · [Website](https://sattwik-das.vercel.app/) · [LinkedIn](https://www.linkedin.com/in/sattwik-das-in) |
+<br />
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <img src="docs/assets/team/souradeep.png" width="120" height="120" alt="Souradeep Pradhan" /><br />
+      <sub><b>Souradeep Pradhan</b></sub><br />
+      <sub>Fantastic 4</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/team/madhushree.png" width="120" height="120" alt="Madhushree Dasgupta" /><br />
+      <sub><b>Madhushree Dasgupta</b></sub><br />
+      <sub>Fantastic 4</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/team/aniruddha.png" width="120" height="120" alt="Aniruddha Das" /><br />
+      <sub><b>Aniruddha Das</b></sub><br />
+      <sub>Fantastic 4</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/team/sattwik.png" width="120" height="120" alt="Sattwik Das" /><br />
+      <sub><b>Sattwik Das</b></sub><br />
+      <sub>Fantastic 4</sub>
+    </td>
+  </tr>
+</table>
+
+</div>
 
 ## License
 
