@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from backend.investigation import investigate, reputation
 from backend.main import app
 from tests.support_store import isolated_storage
-from backend.network import UnsafeURL, fetch, normalize_url, public_addresses
+from backend.network import UnsafeURL, fetch, normalize_url, public_addresses, create_tls_context
 
 
 def result(url="https://example.com/", status=200, headers=None):
@@ -20,6 +20,16 @@ def result(url="https://example.com/", status=200, headers=None):
 
 
 class NetworkTests(unittest.TestCase):
+    def test_tls_context_keeps_verification_and_adds_packaged_public_roots(self):
+        import certifi
+        with patch('backend.network.ssl.create_default_context') as factory:
+            context = create_tls_context()
+            factory.assert_called_once_with()
+            context.load_verify_locations.assert_called_once_with(cafile=certifi.where())
+        context = create_tls_context()
+        self.assertTrue(context.check_hostname)
+        self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+
     def test_backend_is_api_only_without_legacy_dashboard(self):
         with TestClient(app) as client:
             self.assertEqual(client.get("/").status_code, 404)

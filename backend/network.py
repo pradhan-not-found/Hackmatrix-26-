@@ -9,12 +9,22 @@ import time
 import threading
 from email.message import Message
 import idna
+import certifi
 from urllib.parse import quote, urlsplit, urlunsplit
 from backend.certificates import inspect_certificate
 
 
 class UnsafeURL(ValueError):
     pass
+
+
+def create_tls_context():
+    # Windows' OpenSSL view of the OS store can omit public roots that browsers
+    # trust. Add the packaged Mozilla roots; retain system roots, hostname checks
+    # and CERT_REQUIRED. Do not download issuer URLs from untrusted certificates.
+    context = ssl.create_default_context()
+    context.load_verify_locations(cafile=certifi.where())
+    return context
 
 
 MAX_HTML_BYTES = 256 * 1024
@@ -148,7 +158,7 @@ def fetch(url: str, addresses: list[str], timeout: float = 5) -> dict:
         connection.sock.settimeout(max(.001, deadline - time.monotonic()))
         tls = None
         if parts.scheme == "https":
-            connection.sock = ssl.create_default_context().wrap_socket(
+            connection.sock = create_tls_context().wrap_socket(
                 connection.sock, server_hostname=host
             )
             active_socket[0] = connection.sock

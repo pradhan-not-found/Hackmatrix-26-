@@ -224,6 +224,13 @@ the hop budget is not a hard whole-investigation deadline.
 
 ## Leaf certificate inspection
 
+The target HTTPS client augments the system trust store with the pinned `certifi`
+Mozilla CA bundle. This avoids missing-public-root failures in Python/OpenSSL on
+Windows while retaining hostname verification and `CERT_REQUIRED`. Issuer URLs
+are not fetched and TLS verification is never disabled. Update the pinned bundle
+as part of dependency maintenance. Old saved TLS failures remain historical
+snapshots; run a fresh investigation after applying a trust-store fix.
+
 Install the pinned `cryptography` dependency from `requirements.txt`. Following a
 successful hostname- and system-trust-verified TLS handshake, the client parses
 the leaf certificate DER with [cryptography X.509](https://cryptography.io/en/latest/x509/reference/).
