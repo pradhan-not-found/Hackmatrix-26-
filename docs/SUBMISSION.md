@@ -9,7 +9,7 @@ Everything the submission form asks for, in one place. Fields marked **To add** 
 | **Pitch deck link** | _Google Drive, Google Slides or Canva link, viewable by anyone_ | To add |
 | **Live website / demo** | _Deployed URL_. If it is not hosted, the [README](../README.md#setup-and-run) has full run instructions | To add |
 | **Demo video** | _YouTube or Google Drive link, 3 minutes or less_ | To add |
-| **Write-up / documentation** | _Google Doc or Notion page_ | To add |
+| **Write-up / documentation** | Draft: [WebAssure: how we built it](https://claude.ai/artifact/QP3bYkyWWQUQUGCHhYQvqh). Export it to Google Docs and paste the public link here | Drafted, needs export |
 | **Short description** | See below (under 1,000 characters) | Ready |
 
 ---
@@ -50,11 +50,9 @@ If it cannot be hosted, point judges to [Setup and run](../README.md#setup-and-r
 
 ## Write-up or documentation
 
-**To add.** A Google Doc or Notion page on how the project was built and the challenges solved. The README and these docs are a good base:
+**Drafted:** [WebAssure: how we built it](https://claude.ai/artifact/QP3bYkyWWQUQUGCHhYQvqh). It covers the overview, the problem, what we built, an architecture diagram with the tech stack, the six main challenges we solved, limitations and what's next.
 
-- [README](../README.md): problem, solution, architecture, stack, setup and disclosures
-- [Backend guide](backend.md): investigation pipeline, providers, error handling and message analysis
-- [Authentication setup](auth.md) and [Threat ledger](ledger.md)
+To submit it: open the doc, click its name, choose **Export**, then **Google Docs** (or Notion), set sharing to *Anyone with the link can view*, and paste that link into the form and the table above.
 
 ## Short description
 
