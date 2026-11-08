@@ -762,3 +762,27 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--grey) 45
   background: color-mix(in srgb, var(--card) 55%, transparent);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), inset 0 0 0 1px var(--line);
 }
+
+
+/* Certificate host title with favicon */
+.cert-record-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.cert-record-title .site-icon { flex-shrink: 0; }
+.cert-record-title .panel__title { margin: 0; }
+
+/* Global fallback for rt tokens so rt__pill works everywhere */
+:root {
+  --analysis-ok: var(--st-ok, #1f9d55);
+  --analysis-warn: var(--st-warn, #b45309);
+  --analysis-bad: var(--st-bad, #dc2f35);
+  --report-muted: var(--grey, #6b6b73);
+  --report-line: var(--line, rgba(0,0,0,0.08));
+  --report-ink: var(--ink, #16161a);
+}
+[data-theme='dark'] {
+  --analysis-ok: var(--st-ok, #3dd68c);
+  --analysis-warn: var(--st-warn, #f5a524);
+  --analysis-bad: var(--st-bad, #ff6369);
+  --report-muted: var(--grey, #9a9aa2);
+  --report-line: var(--line, rgba(255,255,255,0.08));
+  --report-ink: var(--ink, #f2f2f4);
+}

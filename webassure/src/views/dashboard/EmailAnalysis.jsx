@@ -7,6 +7,7 @@ import { emailApi, emailLabel, emailTone, MAX_EMAIL_BYTES } from '../../lib/emai
 import { PageHead, Tabs, Empty } from './ui.jsx'
 import { useDash } from './context.js'
 import { AlertIcon, CheckIcon, DownloadIcon, FileIcon, GlobeIcon, InfoIcon, MailIcon, ShieldIcon } from '../../components/Icons.jsx'
+import SiteIcon from '../../components/SiteIcon.jsx'
 
 const SAMPLE = 'From: Account Security <security@account-review.example>\nReply-To: claims@unrelated.example\nSubject: Urgent account verification\n\nYour account will be blocked today. Reply with your password and OTP immediately. Pay a verification fee to restore access.'
 
@@ -103,7 +104,7 @@ function EmailReport({ report }) {
                   <tbody>
                     {report.urls.map((item, i) => (
                       <tr key={i}>
-                        <td className="rt__url"><code>{item.url}</code></td>
+                        <td className="rt__url"><span className="url-cell"><SiteIcon url={item.url} size={16} className="site-icon--sm" /><code>{item.url}</code></span></td>
                         <td><span className="rt__pill" data-tone={classificationTone(item.risk_classification)}>{item.risk_classification}</span></td>
                       </tr>
                     ))}

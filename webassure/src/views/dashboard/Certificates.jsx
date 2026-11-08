@@ -7,6 +7,7 @@ import { useDash } from './context.js'
 import { certificateRows } from '../../lib/certificates.mjs'
 import { formatDate } from '../../lib/investigations.js'
 import ReportDetails from './ReportDetails.jsx'
+import SiteIcon from '../../components/SiteIcon.jsx'
 
 const issuerName = (issuer) => typeof issuer === 'string' ? issuer : Object.values(issuer || {}).join(', ') || 'Not collected'
 
@@ -15,7 +16,16 @@ function Certificate({ item, onOpen }) {
   const key = cert.public_key
   const names = cert.subject_alt_names || (tls.subject_alt_names || []).map(([type, value]) => ({ type, value }))
   return <article className="card panel cert-record">
-    <div className="cert-record-head"><div><h2 className="panel__title">{item.host}</h2><p className="caption grey">Checked {formatDate(item.checkedAt)}</p></div><Badge tone={item.status}>{item.label}</Badge></div>
+    <div className="cert-record-head">
+      <div className="cert-record-title">
+        <SiteIcon url={item.host} size={22} />
+        <div>
+          <h2 className="panel__title">{item.host}</h2>
+          <p className="caption grey">Checked {formatDate(item.checkedAt)}</p>
+        </div>
+      </div>
+      <Badge tone={item.status}>{item.label}</Badge>
+    </div>
     {item.error && <p className="dash__err">{item.error}</p>}
     <dl className="cert-record-grid">
       <div><dt>Issuer</dt><dd>{issuerName(cert.issuer || tls.issuer)}</dd></div>
