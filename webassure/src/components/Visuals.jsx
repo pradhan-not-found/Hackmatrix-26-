@@ -74,22 +74,48 @@ export function PhishingVisual() {
 }
 
 /* 02 Certificate intelligence */
+const Tick = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+const Cross = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
+const Bang = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5v7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /><circle cx="12" cy="17.5" r="1.7" fill="currentColor" /></svg>
+const MARK = { ok: <Tick />, bad: <Cross />, warn: <Bang /> }
+
 export function CertificateVisual() {
-  const chain = [['Root CA', 'ISRG Root X1', 'ok'], ['Intermediate', 'Unverified CA', 'bad'], ['Site', '*.portal-login.in', 'bad']]
+  const chain = [
+    ['Root CA', 'ISRG Root X1', 'Trusted root', 'ok'],
+    ['Intermediate', 'Unverified CA', 'Not in any trust store', 'bad'],
+    ['Site certificate', '*.portal-login.in', 'Wildcard on a new domain', 'warn'],
+  ]
+  const facts = [
+    ['Key', 'RSA 1024', 'Weak', 'bad'],
+    ['Issued', '2 days ago', 'New', 'warn'],
+    ['CT logs', '0 of 3', 'Missing', 'bad'],
+  ]
   return (
-    <Window url="portal-login.in" secure chip="3 issues" tone="bad" bg="peach">
-      <div className="chain">
-        {chain.map(([role, name, t], i) => (
-          <div key={role} className="chain__node va" style={{ '--d': `${120 + i * 80}ms` }}>
-            <span className="chain__role">{role}</span>
-            <span className="chain__name"><span className={`sd sd--${t}`} />{name}</span>
-          </div>
-        ))}
-      </div>
-      <div className="win__list">
-        <Row k="Issued" v="2 days ago" tone="warn" d="320ms" />
-        <Row k="Key" v="RSA 1024 · weak" tone="bad" d="380ms" />
-        <Row k="Certificate Transparency" v="Not found in 3 logs" tone="bad" d="440ms" />
+    <Window url="portal-login.in" chip="Untrusted chain" tone="bad" bg="peach">
+      <div className="cert">
+        <div className="cert__chain">
+          <p className="cert__h va" style={{ '--d': '80ms' }}>Certificate chain</p>
+          {chain.map(([role, name, note, t], i) => (
+            <div key={role} className={`cert__step cert__step--${t} va`} style={{ '--d': `${140 + i * 90}ms` }}>
+              <span className={`cert__mark cert__mark--${t}`}>{MARK[t]}</span>
+              <span className="cert__txt">
+                <span className="cert__role">{role}</span>
+                <span className="cert__name">{name}</span>
+                <span className={`cert__note cert__note--${t}`}>{note}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="cert__facts">
+          <p className="cert__h va" style={{ '--d': '80ms' }}>Key facts</p>
+          {facts.map(([k, v, tag, t], i) => (
+            <div key={k} className="cert__fact va" style={{ '--d': `${200 + i * 80}ms` }}>
+              <span className="cert__k">{k}</span>
+              <span className="cert__v">{v}</span>
+              <span className={`chip chip--${t}`}>{tag}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </Window>
   )

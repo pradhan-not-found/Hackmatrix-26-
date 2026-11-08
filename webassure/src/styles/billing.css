@@ -448,3 +448,33 @@ html, body { overflow-x: clip; }
 /* hero: wordmark sits higher, centred between the header and the text below */
 .hero .hero__logo { top: clamp(96px, 16svh, 210px); }
 @media (max-width: 860px) { .hero .hero__logo { top: 16svh; } }
+
+/* What we do · certificate scene: chain timeline + key facts */
+.cert { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1.6cqw; }
+.cert__h { font-size: 1.2cqw; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8a8d98; margin-bottom: 1cqw; }
+.cert__chain { position: relative; }
+.cert__step { position: relative; display: flex; gap: 1.2cqw; padding-bottom: 1.5cqw; }
+.cert__step:last-child { padding-bottom: 0; }
+.cert__step:not(:last-child)::before {
+  content: ''; position: absolute; left: 1.3cqw; top: 2.9cqw; bottom: 0.2cqw; width: 0.22cqw; border-radius: 1cqw; background: #d7f0e0;
+}
+.cert__step--bad:not(:last-child)::before, .cert__step--ok + .cert__step--bad::before { background: #f6c9cb; }
+.cert__mark { flex: none; width: 2.8cqw; height: 2.8cqw; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.cert__mark svg { width: 1.5cqw; height: 1.5cqw; }
+.cert__mark--ok { background: linear-gradient(180deg, #34c172, #1f9d55); box-shadow: 0 0 0 0.45cqw #e2f5ea; }
+.cert__mark--bad { background: linear-gradient(180deg, #f2666b, #e0353b); box-shadow: 0 0 0 0.45cqw #fde8e8; }
+.cert__mark--warn { background: linear-gradient(180deg, #f5a33a, #e08a12); box-shadow: 0 0 0 0.45cqw #fdf0dc; }
+.cert__txt { display: flex; flex-direction: column; min-width: 0; gap: 0.15cqw; padding-top: 0.1cqw; }
+.cert__role { font-size: 1.2cqw; color: #8a8d98; }
+.cert__name { font-size: 1.6cqw; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cert__note { font-size: 1.25cqw; }
+.cert__note--ok { color: #1a8a4a; } .cert__note--bad { color: #d4292f; } .cert__note--warn { color: #b8660a; }
+.cert__facts { display: flex; flex-direction: column; gap: 0.9cqw; }
+.cert__facts .cert__h { margin-bottom: 0.1cqw; }
+.cert__fact {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 1cqw; row-gap: 0.2cqw;
+  align-items: center; padding: 1.1cqw 1.3cqw; border-radius: 1.2cqw; background: #f6f7fa; box-shadow: inset 0 0 0 1px #eceef3;
+}
+.cert__k { grid-column: 1; font-size: 1.2cqw; color: #8a8d98; }
+.cert__v { grid-column: 1; font-size: 1.6cqw; font-weight: 600; }
+.cert__fact .chip { grid-column: 2; grid-row: 1 / span 2; }
