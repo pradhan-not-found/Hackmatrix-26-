@@ -1,47 +1,29 @@
 <div align="center">
 
-<img src="webassure/public/og-image.png" alt="WebAssure: know your website before you trust it" width="100%" />
+<img src="docs/assets/webassure-banner.png" alt="WebAssure: know your website before you trust it" width="100%" />
 
 <br />
 <br />
 
-<a href="https://hackmatrix.codes/"><img src="docs/assets/hackmatrix-logo.webp" alt="HackMatrix 2026" height="64" /></a>
-&nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://mlh.io/"><picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/mlh-logo-light-text.svg" />
-  <img src="docs/assets/mlh-logo.svg" alt="Major League Hacking" height="64" />
-</picture></a>
+<a href="https://hackmatrix.codes/"><img src="docs/assets/hackmatrix-partners.png" alt="HackMatrix 2026 with ACM Student Chapter, Major League Hacking, Adamas University and RICE Adamas Group" width="560" /></a>
 
-**Built at [HackMatrix 2026](https://hackmatrix.codes/)** · AI & student hackathon, Kolkata · co-powered by ACM and MLH
+<sub>Built at <a href="https://hackmatrix.codes/">HackMatrix 2026</a> · Next.js · FastAPI · Supabase · Apache-2.0</sub>
 
 <br />
-
-[![HackMatrix 2026](https://img.shields.io/badge/HackMatrix-2026-e73427?style=for-the-badge)](https://hackmatrix.codes/)
-[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-18-20232a?style=for-the-badge&logo=react&logoColor=61dafb)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-auth_&_data-3ecf8e?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-4672ff?style=for-the-badge)](LICENSE)
-
 <br />
 
-**[About](#why-webassure)** &nbsp;·&nbsp;
-**[Features](#features)** &nbsp;·&nbsp;
-**[Architecture](#architecture)** &nbsp;·&nbsp;
-**[Getting started](#getting-started)** &nbsp;·&nbsp;
-**[API](#api)** &nbsp;·&nbsp;
-**[Testing](#testing)** &nbsp;·&nbsp;
-**[HackMatrix](#built-at-hackmatrix-2026)** &nbsp;·&nbsp;
-**[Team](#team)**
+<a href="#why-webassure">About</a> &nbsp;·&nbsp;
+<a href="#features">Features</a> &nbsp;·&nbsp;
+<a href="#architecture">Architecture</a> &nbsp;·&nbsp;
+<a href="#getting-started">Getting started</a> &nbsp;·&nbsp;
+<a href="#api">API</a> &nbsp;·&nbsp;
+<a href="#testing">Testing</a> &nbsp;·&nbsp;
+<a href="#built-at-hackmatrix-2026">HackMatrix</a> &nbsp;·&nbsp;
+<a href="#team">Team</a>
 
 </div>
 
 ---
-
-# WebAssure
-
-**Know your website before you trust it.**
 
 WebAssure is an AI-assisted web threat detection platform. Paste a suspicious link and get an evidence-based assessment of whether it is safe, suspicious or malicious, with every finding explained in plain language.
 
@@ -267,7 +249,7 @@ Found a security issue? Please report it privately to the maintainers rather tha
 
 ## Built at HackMatrix 2026
 
-WebAssure was built for **[HackMatrix 2026](https://hackmatrix.codes/)**, the AI & student hackathon organised by the ACM Student Chapter at Adamas University, Kolkata, and co-powered by ACM and [Major League Hacking](https://mlh.io/).
+WebAssure was built for **[HackMatrix 2026](https://hackmatrix.codes/)**, the AI & student hackathon organised by the [ACM Student Chapter](https://acm.cycoders.in) at [Adamas University](https://www.aucse.in), Kolkata, with RICE Adamas Group, and co-powered by [ACM](https://acm.org) and [Major League Hacking](https://mlh.io/).
 
 | | |
 | --- | --- |
