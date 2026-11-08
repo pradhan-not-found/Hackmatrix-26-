@@ -879,3 +879,82 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 .report-drawer .analysis-facts > div + div { border-left: 1px solid var(--report-line); box-shadow: none; }
 .report-drawer .report-tabs { background: none; border-radius: 0; }
 .report-drawer .analysis-facts > div { border-radius: 0; }
+
+/* ===== investigation report: layered summary, tables ===== */
+.report-drawer .report-summary.rsum { display: flex; flex-direction: column; gap: 18px; padding: 6px 32px 26px; }
+.rsum__site { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.rsum__site .report-url { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.rsum__id { opacity: 0.6; }
+.rsum__row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.rsum__verdict {
+  display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 20px 0 14px; border-radius: 999px;
+  font-size: 17px; font-weight: 600; color: var(--analysis-tone, var(--report-ink));
+  background: color-mix(in srgb, var(--analysis-tone, var(--report-muted)) 13%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--analysis-tone, var(--report-muted)) 26%, transparent);
+}
+.rsum__verdict svg { width: 20px; height: 20px; }
+.rsum__jumps { display: flex; gap: 8px; flex-wrap: wrap; }
+.rsum__jump {
+  display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px 0 6px; border: 0; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 500; color: var(--report-muted); background: var(--report-alt);
+  transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.rsum__jump b { display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--report-ink); background: var(--report-surface); }
+.rsum__jump:hover { color: var(--report-ink); background: color-mix(in srgb, var(--report-alt) 70%, var(--report-ink) 8%); }
+.report-drawer .report-tabs { padding-top: 14px; }
+
+/* tables */
+.rt-wrap { overflow-x: auto; margin: 0 -4px; }
+.rt { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rt th { text-align: left; font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--report-muted); padding: 0 12px 10px; white-space: nowrap; }
+.rt td { padding: 12px; vertical-align: top; border-top: 1px solid var(--report-line); color: var(--report-ink); line-height: 1.5; }
+.rt__name { font-weight: 600; white-space: nowrap; }
+.rt__num { width: 1%; color: var(--report-muted); font-variant-numeric: tabular-nums; }
+.rt__url { overflow-wrap: anywhere; min-width: 200px; }
+.rt__mono { font: 12.5px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: nowrap; }
+.rt__detail p { margin-bottom: 4px; color: var(--report-muted); }
+.rt__detail details > summary { padding: 2px 0; font-size: 12px; }
+.rt__pill {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; white-space: nowrap;
+  font-size: 12px; font-weight: 600; text-transform: capitalize; color: var(--rt-tone); background: color-mix(in srgb, var(--rt-tone) 13%, transparent);
+}
+.rt__pill svg { width: 13px; height: 13px; }
+.rt__pill[data-tone='ok'] { --rt-tone: var(--analysis-ok); }
+.rt__pill[data-tone='warn'] { --rt-tone: var(--analysis-warn); }
+.rt__pill[data-tone='bad'] { --rt-tone: var(--analysis-bad); }
+.rt__pill[data-tone='neutral'], .rt__pill:not([data-tone]) { --rt-tone: var(--report-muted); }
+.rt__tls { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; font-weight: 600; color: var(--analysis-ok); }
+.rt__tls svg { width: 14px; height: 14px; }
+.rt__tls em { font-style: normal; font-weight: 400; color: var(--report-muted); width: 100%; font-size: 12px; }
+.rt-more { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--report-line); }
+.rt-more__t { font-size: 12px; font-weight: 600; color: var(--report-muted); margin-bottom: 4px; }
+
+/* checks: coverage + page inspection as calm tiles */
+.report-drawer .analysis-availability { display: flex; flex-wrap: wrap; gap: 8px; }
+.report-drawer .analysis-availability span { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--report-surface); font-size: 12.5px; }
+.report-drawer .analysis-availability svg { width: 14px; height: 14px; color: var(--report-muted); }
+.report-drawer .page-inspection-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.report-drawer .page-inspection-summary > div { padding: 12px 14px; border-radius: 12px; background: var(--report-surface); }
+.report-drawer .page-inspection-summary dt { font-size: 11.5px; color: var(--report-muted); }
+.report-drawer .page-inspection-summary dd { margin-top: 4px; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+
+/* overview: tidy AI summary + empty findings */
+.report-drawer .report-insight-summary { padding: 18px 20px; border-radius: 14px; box-shadow: none; background: var(--report-surface); border-left: 3px solid var(--workspace-accent, #4672ff); }
+.report-drawer .report-insight-summary .analysis-eyebrow { display: block !important; font-size: 11px; margin-bottom: 6px; color: var(--report-muted); }
+.report-drawer .analysis-explanation details { border-radius: 12px; background: var(--report-surface); }
+@media (max-width: 640px) {
+  .report-drawer .report-summary.rsum { padding: 4px 18px 20px; }
+  .report-drawer .page-inspection-summary { grid-template-columns: 1fr 1fr; }
+}
+
+/* risk score cell (email analysis and tables) */
+.riskcell { display: inline-flex; align-items: center; gap: 10px; min-width: 120px; --rc: var(--grey); }
+.riskcell[data-tone='ok'] { --rc: var(--st-ok); }
+.riskcell[data-tone='warn'] { --rc: var(--st-warn); }
+.riskcell[data-tone='bad'] { --rc: var(--st-bad); }
+.riskcell b { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 2ch; }
+.riskcell__bar { flex: 1; height: 6px; border-radius: 99px; background: var(--console); overflow: hidden; }
+.riskcell__bar span { display: block; height: 100%; border-radius: 99px; background: var(--rc); }
+.report-drawer .report-summary.rsum { background: transparent; align-items: stretch; }
+.rsum__row { justify-content: flex-start; }
+.rt__name { text-transform: capitalize; }

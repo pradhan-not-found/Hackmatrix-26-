@@ -107,13 +107,16 @@ export default function ReportDetails({ id, onClose }) {
     {!report && !error && <div className="analysis-loading"><p role="status">Loading saved report?</p><span /><span /><span /></div>}
     {error && <div role="alert" className="analysis-error"><AlertIcon /><p>{error}</p><button className="btn btn--ink" onClick={() => setAttempt((value) => value + 1)}>Retry report</button></div>}
     {report && <>
-      <div className="report-summary">
-      <div className="analysis-target"><SiteIcon url={report.normalized_url} size={22} /><div><p className="report-url">{report.normalized_url}</p><p className="caption grey">Investigated {formatDate(report.created_at)}</p><p className="caption grey">Report {report.id}</p></div></div>
-      <div className="analysis-verdict" data-tone={verdictTone}>
-        <span className="analysis-verdict-icon">{verdictTone === 'bad' || verdictTone === 'warn' ? <AlertIcon /> : verdictTone === 'ok' ? <ShieldIcon /> : <InfoIcon />}</span>
-        <div><p className="analysis-eyebrow">PHISHING ASSESSMENT</p><Badge tone={verdictTone}>{report.risk_classification}</Badge><p className="caption grey">Evidence-based assessment. Configuration warnings are evaluated separately.</p></div>
-      </div>
-      <dl className="analysis-facts" aria-label="Report summary"><div><dt>Findings</dt><dd>{report.findings.length}</dd></div><div><dt>Config warnings</dt><dd>{configurationCount}</dd></div><div><dt>Requests</dt><dd>{report.redirect_chain.length}</dd></div></dl>
+      <div className="report-summary rsum">
+        <div className="rsum__site"><SiteIcon url={report.normalized_url} size={22} /><div><p className="report-url">{report.normalized_url}</p><p className="caption grey">Investigated {formatDate(report.created_at)} · <span className="rsum__id">Report {report.id}</span></p></div></div>
+        <div className="rsum__row">
+          <span className="rsum__verdict" data-tone={verdictTone}>{verdictTone === 'bad' || verdictTone === 'warn' ? <AlertIcon /> : verdictTone === 'ok' ? <ShieldIcon /> : <InfoIcon />}{report.risk_classification}</span>
+          <div className="rsum__jumps" aria-label="Report summary">
+            <button type="button" className="rsum__jump" onClick={() => activate('overview')}><b>{report.findings.length}</b>Findings</button>
+            <button type="button" className="rsum__jump" onClick={() => activate('checks')}><b>{configurationCount}</b>Config warnings</button>
+            <button type="button" className="rsum__jump" onClick={() => activate('connection')}><b>{report.redirect_chain.length}</b>Requests</button>
+          </div>
+        </div>
       </div>
       <div className="report-tabs" role="tablist" aria-label="Report sections">{tabs.map(([name, title], index) => <button key={name} id={`report-tab-${name}`} role="tab" aria-selected={tab === name} aria-controls={`report-panel-${name}`} tabIndex={tab === name ? 0 : -1} onClick={() => activate(name)} onKeyDown={(event) => navigateTab(event, index)}><TabIcon name={name} />{title}{name === 'overview' && <span className="report-tab-count">{report.findings.length}</span>}</button>)}<span className="report-tabs-note">Read-only evidence report</span></div>
       <div className="report-panels" ref={panels}>
@@ -145,24 +148,44 @@ export default function ReportDetails({ id, onClose }) {
         <div className="report-panel" role="tabpanel" id="report-panel-checks" aria-labelledby="report-tab-checks" hidden={tab !== 'checks'}>
       <section><SectionTitle icon={CheckIcon}>Coverage</SectionTitle><div className="analysis-availability"><span><GlobeIcon />Network inspection: {report.evidence_coverage?.network_complete ? 'Complete' : 'Incomplete'}</span><span><ShieldIcon />Threat intelligence: {report.evidence_coverage?.reputation_available ? 'Available' : 'Unavailable'}</span></div><Coverage coverage={report.evidence_coverage} /><p className="analysis-caution"><InfoIcon />No detected threats does not guarantee safety.</p></section>
       {report.page_analysis && <section><SectionTitle icon={FileIcon}>Page inspection</SectionTitle><dl className="page-inspection-summary"><div><dt>Page title</dt><dd>{report.page_analysis.title || 'No title declared'}</dd></div><div><dt>Forms found</dt><dd>{report.page_analysis.form_count}</dd></div><div><dt>Mixed-content references</dt><dd>{report.page_analysis.mixed_content.length}</dd></div><div><dt>HTML refresh redirects</dt><dd>{report.page_analysis.meta_refreshes.length}</dd></div></dl><p className="caption grey">Static HTML only. No scripts, form submissions, or linked resources were executed.</p><Evidence title="Forms & page observations" value={report.page_analysis} /></section>}
-      <section><SectionTitle icon={CheckIcon} detail={`${report.checks.length} observations`}>Individual checks</SectionTitle>
-        {report.checks.map((check, index) => <article className="report-item analysis-check-row" key={index} data-tone={stateTone(check.status)}>
-          <div className="analysis-check-row-title"><StateIcon state={check.status} /><strong>{label(check.name)}</strong><span className="analysis-check-state">{check.status.replaceAll('_', ' ')}</span></div>
-          {(check.reason || check.error) && <p>{check.reason || check.error}</p>}
-          <Evidence title="Check details" value={check} />
-        </article>)}
+      <section><SectionTitle icon={CheckIcon} detail={`${report.checks.length} checks`}>Individual checks</SectionTitle>
+        <div className="rt-wrap"><table className="rt">
+          <thead><tr><th>Check</th><th>Status</th><th>Result</th></tr></thead>
+          <tbody>{report.checks.map((check, index) => <tr key={index} data-tone={stateTone(check.status)}>
+            <td className="rt__name">{label(check.name)}</td>
+            <td><span className="rt__pill" data-tone={stateTone(check.status)}><StateIcon state={check.status} />{check.status.replaceAll('_', ' ')}</span></td>
+            <td className="rt__detail">{(check.reason || check.error) && <p>{check.reason || check.error}</p>}<Evidence title="Details" value={check} /></td>
+          </tr>)}</tbody>
+        </table></div>
       </section>
         </div>
         <div className="report-panel" role="tabpanel" id="report-panel-connection" aria-labelledby="report-tab-connection" hidden={tab !== 'connection'}>
-      {!!report.url_analysis?.length && <section><SectionTitle icon={GlobeIcon}>Domain identity</SectionTitle><div className="analysis-domains">{report.url_analysis.map((domain) => <article className="analysis-domain" key={domain.url}><p className="analysis-domain-host"><GlobeIcon />{domain.hostname}</p>{domain.unicode_hostname !== domain.hostname && <p className="caption grey">Unicode: {domain.unicode_hostname}</p>}<dl><div><dt>Registrable domain</dt><dd>{domain.registrable_domain || 'Not determined'}</dd></div><div><dt>Public suffix</dt><dd>{domain.suffix || 'Not determined'}</dd></div><div><dt>Subdomain</dt><dd>{domain.subdomain || 'None'}</dd></div></dl></article>)}</div></section>}
+      {!!report.url_analysis?.length && <section><SectionTitle icon={GlobeIcon}>Domain identity</SectionTitle>
+        <div className="rt-wrap"><table className="rt">
+          <thead><tr><th>Host</th><th>Registrable domain</th><th>Public suffix</th><th>Subdomain</th></tr></thead>
+          <tbody>{report.url_analysis.map((domain) => <tr key={domain.url}>
+            <td className="rt__name">{domain.hostname}{domain.unicode_hostname !== domain.hostname && <p className="caption grey">Unicode: {domain.unicode_hostname}</p>}</td>
+            <td>{domain.registrable_domain || 'Not determined'}</td><td>{domain.suffix || 'Not determined'}</td><td>{domain.subdomain || 'None'}</td>
+          </tr>)}</tbody>
+        </table></div>
+      </section>}
       <section><SectionTitle icon={RouteIcon}>Redirects & TLS</SectionTitle>
         {!report.redirect_chain.length && <p className="caption grey">No HTTP response collected. Check DNS, TLS, and destination policy results.</p>}
-        <ol className="analysis-route">{report.redirect_chain.map((hop, index) => <li className="analysis-hop" key={index}>
-          <span className="analysis-hop-marker">{String(index + 1).padStart(2, '0')}</span><div className="analysis-hop-content"><p className="report-url">{hop.url}</p><p className="caption grey">HTTP {hop.status} · {hop.address}</p>
-          {hop.tls && <div className="analysis-tls"><LockIcon /><div><strong>Verified TLS connection</strong><p>{hop.tls.protocol || 'TLS'}{hop.tls.cipher ? ` · ${hop.tls.cipher}` : ''}</p>{hop.tls.not_after && <p className="caption grey">Certificate expires {hop.tls.not_after}</p>}</div></div>}
-          {hop.tls ? <Evidence title="Certificate & TLS details" value={hop.tls} /> : <p>Unencrypted HTTP; no TLS certificate.</p>}
+        {!!report.redirect_chain.length && <div className="rt-wrap"><table className="rt">
+          <thead><tr><th>#</th><th>URL</th><th>Status</th><th>IP address</th><th>Connection</th></tr></thead>
+          <tbody>{report.redirect_chain.map((hop, index) => <tr key={index}>
+            <td className="rt__num">{String(index + 1).padStart(2, '0')}</td>
+            <td className="rt__url">{hop.url}</td>
+            <td><span className="rt__pill" data-tone={hop.status >= 400 ? 'bad' : hop.status >= 300 ? 'warn' : 'ok'}>{hop.status}</span></td>
+            <td className="rt__mono">{hop.address || '—'}</td>
+            <td>{hop.tls ? <span className="rt__tls"><LockIcon />{hop.tls.protocol || 'TLS'}{hop.tls.not_after ? <em>expires {hop.tls.not_after}</em> : null}</span> : <span className="rt__pill" data-tone="warn">HTTP, no TLS</span>}</td>
+          </tr>)}</tbody>
+        </table></div>}
+        {report.redirect_chain.map((hop, index) => <div className="rt-more" key={index}>
+          <p className="rt-more__t">Request {String(index + 1).padStart(2, '0')} details</p>
+          {hop.tls && <Evidence title="Certificate & TLS details" value={hop.tls} />}
           <Evidence title="Response headers" value={hop.headers} />
-          </div></li>)}</ol>
+        </div>)}
       </section>
         </div>
         <div className="report-panel" role="tabpanel" id="report-panel-evidence" aria-labelledby="report-tab-evidence" hidden={tab !== 'evidence'}>

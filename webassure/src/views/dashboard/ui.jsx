@@ -154,3 +154,14 @@ export function Bars({ data }) {
     </ul>
   )
 }
+
+// Compact risk score: number out of 100 with a thin bar in the tone colour.
+export function RiskCell({ risk, tone = 'neutral' }) {
+  const value = Math.max(0, Math.min(100, Math.round(Number(risk) || 0)))
+  return (
+    <span className="riskcell" data-tone={tone} aria-label={`Risk score ${value} out of 100`}>
+      <b>{value}</b>
+      <span className="riskcell__bar"><span style={{ width: `${value}%` }} /></span>
+    </span>
+  )
+}
