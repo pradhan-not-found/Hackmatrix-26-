@@ -8,7 +8,7 @@ import { PersonPlaceholder } from '../components/Icons.jsx'
 // Replace the `#` links and add `photo: '/team/<file>.jpg'` when ready.
 const TEAM = [
   { name: 'Souradeep Pradhan', photo: '/team/souradeep.png', github: '#', website: '#', linkedin: '#' },
-  { name: 'Madhushree Dasgupta', github: '#', website: '#', linkedin: '#' },
+  { name: 'Madhushree Dasgupta', photo: '/team/madhushree.png', github: 'https://github.com/madhushree-cyber', website: '#', linkedin: 'https://www.linkedin.com/in/madhushree-dasgupta-4b8a79389' },
   { name: 'Aniruddha Das', org: 'Adamas University', photo: '/team/aniruddha.png', github: '#', website: '#', linkedin: '#' },
   { name: 'Sattwik Das', photo: '/team/sattwik.png', github: 'https://github.com/Sattwik-Das', website: 'https://sattwik-das.vercel.app/', linkedin: 'https://www.linkedin.com/in/sattwik-das-in' },
 ]
