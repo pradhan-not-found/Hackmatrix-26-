@@ -265,30 +265,10 @@ WebAssure is built by **Fantastic 4**.
 
 <br />
 
-<table>
-  <tr>
-    <td align="center" width="25%">
-      <img src="docs/assets/team/souradeep.png" width="120" height="120" alt="Souradeep Pradhan" /><br />
-      <sub><b>Souradeep Pradhan</b></sub><br />
-      <sub>Fantastic 4</sub>
-    </td>
-    <td align="center" width="25%">
-      <img src="docs/assets/team/madhushree.png" width="120" height="120" alt="Madhushree Dasgupta" /><br />
-      <sub><b>Madhushree Dasgupta</b></sub><br />
-      <sub>Fantastic 4</sub>
-    </td>
-    <td align="center" width="25%">
-      <img src="docs/assets/team/aniruddha.png" width="120" height="120" alt="Aniruddha Das" /><br />
-      <sub><b>Aniruddha Das</b></sub><br />
-      <sub>Fantastic 4</sub>
-    </td>
-    <td align="center" width="25%">
-      <img src="docs/assets/team/sattwik.png" width="120" height="120" alt="Sattwik Das" /><br />
-      <sub><b>Sattwik Das</b></sub><br />
-      <sub>Fantastic 4</sub>
-    </td>
-  </tr>
-</table>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/team-dark.png" />
+  <img src="docs/assets/team-light.png" alt="Fantastic 4: Souradeep Pradhan, Madhushree Dasgupta, Aniruddha Das and Sattwik Das" width="720" />
+</picture>
 
 </div>
 
