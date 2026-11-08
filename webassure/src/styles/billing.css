@@ -506,3 +506,11 @@ html, body { overflow-x: clip; }
 .tick__item svg { flex: none; }
 @media (prefers-reduced-motion: reduce) { .tick__rail { transition: none; } }
 @media (max-width: 520px) { .getapps__row { flex-direction: column; } .getapp { width: 100%; } }
+
+/* What we do scenes: brand favicons and the SBI mark */
+.fav { display: inline-grid; place-items: center; flex: none; width: 1.5cqw; height: 1.5cqw; border-radius: 0.35cqw; background: #fff; box-shadow: 0 0 0 1px #eceef3; }
+.fav svg { width: 1.15cqw !important; height: 1.15cqw !important; }
+.win__url .fav { margin-right: 0.2cqw; }
+.led__host { display: flex; align-items: center; gap: 0.8cqw; }
+.ms__logo { background: none; width: 2cqw; height: 2cqw; }
+.ms__logo svg { width: 100%; height: 100%; }

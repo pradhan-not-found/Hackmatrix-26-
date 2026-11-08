@@ -1,4 +1,15 @@
 // "What we do" scenes. All four share one app-window design so they read as a set.
+import { BRAND } from './brandIcons.js'
+
+// State Bank of India mark: blue disc with the keyhole cut-out.
+const SbiLogo = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path fillRule="evenodd" fill="#22409a" d="M12 1a11 11 0 1 1 0 22 11 11 0 0 1 0-22zm0 8.2a2.8 2.8 0 0 0-1.1 5.38V23h2.2v-8.42A2.8 2.8 0 0 0 12 9.2z" />
+  </svg>
+)
+const Fav = ({ name }) => (name === 'sbi'
+  ? <span className="fav"><SbiLogo /></span>
+  : <span className="fav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d={BRAND[name].path} fill={BRAND[name].color} /></svg></span>)
 
 const Lock = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="9" rx="2" fill="currentColor" /><path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11" fill="none" stroke="currentColor" strokeWidth="2.2" /></svg>
@@ -7,13 +18,13 @@ const Warn = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z" fill="currentColor" /></svg>
 )
 
-function Window({ url, secure, chip, tone, bg, children }) {
+function Window({ url, secure, chip, tone, bg, fav, children }) {
   return (
     <div className={`vis vis--${bg}`}>
       <div className="win va" style={{ '--d': '0ms' }}>
         <div className="win__bar">
           <span className="win__dots"><i /><i /><i /></span>
-          <span className={`win__url${secure ? '' : ' win__url--bad'}`}>{secure ? <Lock /> : <Warn />}{url}</span>
+          <span className={`win__url${secure ? '' : ' win__url--bad'}`}>{secure ? <Lock /> : <Warn />}{fav && <Fav name={fav} />}{url}</span>
           <span className={`chip chip--${tone}`}>{chip}</span>
         </div>
         <div className="win__body">{children}</div>
@@ -38,7 +49,7 @@ function MiniSite({ host, fake, d }) {
         <span className={`ms__tag chip chip--${fake ? 'bad' : 'ok'}`}>{fake ? 'Look-alike' : 'Original'}</span>
       </div>
       <div className="ms__page">
-        <div className="ms__brand"><span className="ms__logo">S</span><span>State Bank</span></div>
+        <div className="ms__brand"><span className="ms__logo"><SbiLogo /></span><span>State Bank of India</span></div>
         <p className="ms__h">Log in to Internet Banking</p>
         <span className="ms__label">Username</span>
         <span className="ms__input">rahul.k</span>
@@ -52,7 +63,7 @@ function MiniSite({ host, fake, d }) {
 
 export function PhishingVisual() {
   return (
-    <Window url="secure-sbi-kyc-update.xyz/login" chip="Phishing" tone="bad" bg="blue">
+    <Window url="secure-sbi-kyc-update.xyz/login" chip="Phishing" tone="bad" bg="blue" fav="sbi">
       <div className="cmp2">
         <MiniSite host="onlinesbi.sbi" d="120ms" />
         <span className="cmp2__match va" style={{ '--d': '260ms' }}>
@@ -130,7 +141,7 @@ export function AuditVisual() {
     ['HSTS', 'Enabled', 'ok'],
   ]
   return (
-    <Window url="shop.example-store.in" secure chip="Grade D" tone="warn" bg="mint">
+    <Window url="shop.example-store.in" secure chip="Grade D" tone="warn" bg="mint" fav="shopify">
       <div className="grade va" style={{ '--d': '120ms' }}>
         <span className="grade__l">D</span>
         <span>
@@ -148,17 +159,17 @@ export function AuditVisual() {
 /* 04 Threat ledger */
 export function LedgerVisual() {
   const reports = [
-    ['#4821', 'secure-sbi-kyc-update.xyz', 12, 'Anchored', 'ok'],
-    ['#4820', 'careers-infosys.work', 3, 'Pending', 'warn'],
-    ['#4819', 'aadhaar-update-portal.in', 9, 'Anchored', 'ok'],
+    ['#4821', 'secure-sbi-kyc-update.xyz', 12, 'Anchored', 'ok', 'sbi'],
+    ['#4820', 'careers-infosys.work', 3, 'Pending', 'warn', 'infosys'],
+    ['#4819', 'amazon-refund-help.top', 9, 'Anchored', 'ok', 'amazon'],
   ]
   return (
     <Window url="ledger.webassure.dev" secure chip="Tamper-proof" tone="ok" bg="lilac">
       <div className="win__list">
-        {reports.map(([id, host, n, s, t], i) => (
+        {reports.map(([id, host, n, s, t, f], i) => (
           <div key={id} className="led va" style={{ '--d': `${120 + i * 80}ms` }}>
             <span className="led__id">{id}</span>
-            <span className="led__host">{host}</span>
+            <span className="led__host"><Fav name={f} />{host}</span>
             <span className="led__conf"><span style={{ width: `${Math.min(100, (n / 12) * 100)}%` }} /></span>
             <span className={`chip chip--${t}`}>{s}</span>
           </div>
