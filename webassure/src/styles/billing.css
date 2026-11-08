@@ -479,29 +479,6 @@ html, body { overflow-x: clip; }
 .cert__v { grid-column: 1; font-size: 1.6cqw; font-weight: 600; }
 .cert__fact .chip { grid-column: 2; grid-row: 1 / span 2; }
 
-/* footer: coming-soon app buttons */
-.site-footer .footer__brand { max-width: 480px; }
-.getapps { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-.getapp {
-  display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 12px 0 16px; border-radius: 12px;
-  font: inherit; font-size: 14.5px; font-weight: 500; white-space: nowrap; cursor: default; border: 0;
-}
-.getapp:disabled { opacity: 1; }
-.getapp--solid { background: var(--ink); color: var(--page); box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.6); }
-.getapp--line { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line), 0 8px 20px -14px rgba(0, 0, 0, 0.35); }
-.getapp__ic { display: grid; place-items: center; width: 18px; height: 18px; animation: getapp-in 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
-.getapp__txt { display: inline-flex; gap: 0.3em; overflow: hidden; }
-.getapp__swap { display: inline-block; min-width: 4.6em; animation: getapp-in 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
-@keyframes getapp-in { from { opacity: 0; transform: translateY(60%); } }
-.getapp__soon {
-  margin-left: 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
-  padding: 3px 7px; border-radius: 999px;
-}
-.getapp--solid .getapp__soon { background: color-mix(in srgb, var(--page) 16%, transparent); color: color-mix(in srgb, var(--page) 80%, transparent); }
-.getapp--line .getapp__soon { background: var(--console); color: var(--grey); }
-@media (prefers-reduced-motion: reduce) { .getapp__swap, .getapp__ic { animation: none; } }
-@media (max-width: 520px) { .getapps { flex-direction: column; align-items: stretch; } .getapp { justify-content: flex-start; } .getapp__soon { margin-left: auto; } }
-
 /* footer: copyright + socials sit at the very end of the page, no divider lines */
 .site-footer, .site-footer .footer__top, .site-footer .footer__base { border: 0 !important; box-shadow: none; }
 .site-footer .footer__base { padding: 140px 0 28px; }
@@ -509,8 +486,23 @@ html, body { overflow-x: clip; }
   .site-footer .footer__base { flex-direction: column-reverse; align-items: flex-start; gap: 12px; padding-top: 96px; }
 }
 .site-footer .footer__brand { flex: 0 1 460px; min-width: 0; }
-.getapps { flex-wrap: nowrap; }
-.getapp__swap { min-width: 0; }
-.getapp--solid .getapp__swap { min-width: 4.4em; }
-.getapp--line .getapp__swap { min-width: 3.6em; }
-@media (max-width: 1100px) { .getapps { flex-wrap: wrap; } }
+
+/* footer: coming-soon app + extension buttons (logo and name roll like a ticker) */
+.site-footer .footer__brand { max-width: 480px; }
+.getapps { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.getapps__k { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey); }
+.getapps__row { display: flex; gap: 12px; flex-wrap: wrap; }
+.getapp {
+  height: 48px; padding: 0 20px; border: 0; border-radius: 12px; font: inherit; cursor: default;
+  display: inline-flex; align-items: center; overflow: hidden;
+}
+.getapp:disabled { opacity: 1; }
+.getapp--dark { background: #0a0a0b; color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 10px 24px -14px rgba(0, 0, 0, 0.8); }
+.getapp--light { background: #fff; color: #151518; box-shadow: inset 0 0 0 1px rgba(15, 20, 40, 0.08), 0 10px 24px -14px rgba(0, 0, 0, 0.5); }
+.tick { position: relative; display: block; height: 24px; overflow: hidden; }
+.tick__rail { display: flex; flex-direction: column; transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1); }
+.tick__item { display: flex; align-items: center; gap: 10px; height: 24px; font-size: 15px; font-weight: 500; white-space: nowrap; }
+.tick__item b { font-weight: 600; }
+.tick__item svg { flex: none; }
+@media (prefers-reduced-motion: reduce) { .tick__rail { transition: none; } }
+@media (max-width: 520px) { .getapps__row { flex-direction: column; } .getapp { width: 100%; } }
