@@ -1007,3 +1007,53 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / contain no-repeat;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / contain no-repeat;
 }
+
+
+/* Threat ledger separated cards — clean spacing, zero container padding */
+.dash .ledger-panel {
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 22px !important;
+  max-width: none !important;
+  width: 100% !important;
+}
+.ledger-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+.ledger-address-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  margin-top: 2px;
+}
+.ledger-address-bar a {
+  text-decoration: none !important;
+}
+.ledger-address-bar code {
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace !important;
+  padding: 4px 8px !important;
+  border-radius: 8px !important;
+  background: var(--console) !important;
+  color: var(--ink) !important;
+  display: inline-block !important;
+  transition: background 0.15s, color 0.15s;
+}
+.ledger-address-bar a:hover code {
+  background: color-mix(in srgb, var(--workspace-accent) 15%, var(--console)) !important;
+  color: var(--workspace-accent) !important;
+}
+.ledger-explorer {
+  text-decoration: none;
+}

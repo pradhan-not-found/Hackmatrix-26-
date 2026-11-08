@@ -19,10 +19,10 @@ function downloadConfig(config) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function ChainLink({ config, type, value, children }) {
+function ChainLink({ config, type, value, children, className = '' }) {
   let href = null
   try { href = explorerLink(config, type, value) } catch {}
-  return href ? <a className="ledger-explorer" href={href} target="_blank" rel="noopener noreferrer">{children}</a> : children
+  return href ? <a className={`ledger-explorer ${className}`} href={href} target="_blank" rel="noopener noreferrer">{children}</a> : children
 }
 
 export default function Ledger() {
@@ -192,14 +192,17 @@ export default function Ledger() {
         </div>
 
         {config && (
-          <p className="caption grey ledger-address">
-            Chain {config.chainId} · Registry <ChainLink config={config} type="address" value={config.address}><code>{config.address}</code></ChainLink>
-          </p>
+          <div className="ledger-address-bar">
+            <span className="caption grey">Chain {config.chainId} · Registry</span>
+            <ChainLink config={config} type="address" value={config.address}><code>{config.address}</code></ChainLink>
+          </div>
         )}
 
         {config?.deploymentTransaction && (
           <div className="ledger-actions">
-            <ChainLink config={config} type="tx" value={config.deploymentTransaction}>View deployment transaction</ChainLink>
+            <ChainLink config={config} type="tx" value={config.deploymentTransaction}>
+              <span className="btn btn--ghost">View deployment transaction</span>
+            </ChainLink>
             <button className="btn btn--ghost" onClick={() => downloadConfig(config)}>Download deployment config</button>
             {config.pending && <button className="btn btn--ink" disabled={!!busy} onClick={checkDeployment}>Check deployment</button>}
           </div>
@@ -301,9 +304,10 @@ export default function Ledger() {
               </button>
             </div>
             {bundle.registration && (
-              <p className="caption grey ledger-address">
-                Transaction <ChainLink config={bundle.registration} type="tx" value={bundle.registration.transactionHash}><code>{bundle.registration.transactionHash}</code></ChainLink>
-              </p>
+              <div className="ledger-address-bar">
+                <span className="caption grey">Transaction</span>
+                <ChainLink config={bundle.registration} type="tx" value={bundle.registration.transactionHash}><code>{bundle.registration.transactionHash}</code></ChainLink>
+              </div>
             )}
           </div>
         )}
