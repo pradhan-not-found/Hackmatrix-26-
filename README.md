@@ -59,7 +59,7 @@ Phishing pages, fake recruitment portals, fraudulent payment links and impersona
 
 - **Landing page** with live link checker, product walkthrough, sector coverage, sample report, pricing and FAQ.
 - **Sign-up and login** with a hand-off flow: a link pasted on the landing page is scanned automatically after sign-in.
-- **Dashboard** with Overview, Scans, Reports and account Settings. Threat campaigns, monitoring and the ledger remain previews.
+- **Dashboard** with Overview, Scans, Messages, Reports, Threat ledger and account Settings. Message links can be investigated through the URL scanner. Threat campaigns and certificate monitoring remain previews.
 - **Light and dark themes**, responsive layout, SEO metadata, Open Graph image, sitemap, robots rules and web manifest.
 
 > Complete the [Supabase setup](docs/auth.md), including the database migration and Google provider configuration, before signing in. Notification preferences are saved; email alert delivery is not connected.
@@ -230,7 +230,7 @@ WebAssure is a hackathon-stage project. To be clear about what is real today:
 | Page-content analysis (HEAD-only today) | Planned |
 | Certificate Transparency monitoring, revocation and key-strength analysis | Planned |
 | Scam-message analysis | Planned |
-| Blockchain threat ledger | Planned (shown as a UI concept) |
+| Blockchain threat ledger | Local EVM report registration, receipt export/import and independent integrity verification ([setup](docs/ledger.md)) |
 
 The backend is a local MVP. Run a single worker. Before any public deployment, add per-user rate limits, data retention controls, network egress restrictions and a durable job queue with hard deadlines.
 

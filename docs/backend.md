@@ -53,8 +53,9 @@ Keep the root `.env` API keys on the backend; do not copy them into frontend
 variables. The proxy has a 90-second timeout. A timed-out submission may still
 finish in the backend, so refresh saved history before retrying it.
 
-Certificate monitoring, threat campaigns, and ledger entries are
-still demo features, labeled accordingly. Real TLS evidence is in scan reports.
+Certificate monitoring and threat campaigns remain demo features. Real TLS
+evidence is in scan reports. The threat ledger supports local EVM registration
+and independent verification; see [ledger setup](ledger.md).
 This integration does not make the application ready for public multi-user use;
 the deployment limits below still apply.
 
@@ -238,8 +239,9 @@ Before public exposure add per-user rate limits, retention/deletion
 controls, network egress restrictions, and a durable worker with hard job deadlines.
 Reports contain submitted URLs and may contain sensitive query strings; protect the database.
 Static inspection cannot evaluate script-rendered pages, submit forms, or establish overall website safety.
-Revocation, compromised-CA intelligence, CT monitoring, signature/key-strength
-analysis, scam-message analysis, and blockchain reporting are not implemented.
+Revocation, compromised-CA intelligence, CT monitoring, and signature/key-strength
+analysis are not implemented. Message analysis is documented below; report
+commitment registration and independent verification are documented in [ledger.md](ledger.md).
 API provider failures never count as clean reputation results.
 
 ## Local explanations (default)

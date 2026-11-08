@@ -4,5 +4,7 @@ node_modules
 .next-test
 out
 dist
+.npm-cache/
+/public/ledger-config.json
 .env.local
 .env.*.local
