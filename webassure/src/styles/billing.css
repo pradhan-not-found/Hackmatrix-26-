@@ -530,3 +530,36 @@ html, body { overflow-x: clip; }
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%);
   mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%); }
 .tick__rail { transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1); will-change: transform; }
+
+/* legal: on-this-page tracker (line, nodes, moving plastic circle) */
+.legal__toc .toc { position: relative; gap: 0; padding-left: 26px; }
+.legal__toc .toc::before {
+  content: ''; position: absolute; left: 7px; top: 18px; bottom: 18px; width: 2px; border-radius: 2px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.toc__fill {
+  position: absolute; left: 7px; top: 18px; width: 2px; border-radius: 2px; height: max(0px, calc(var(--dot-y) - 18px));
+  background: linear-gradient(180deg, #8eb0ff, #3461f0); transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.toc li { position: relative; }
+.toc li::before {
+  content: ''; position: absolute; left: -23px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%;
+  background: var(--page); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 22%, transparent);
+  transition: background-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.toc li[data-state='past']::before { background: #4f7dff; box-shadow: none; }
+.toc__dot {
+  position: absolute; left: 1px; top: 0; width: 14px; height: 14px; border-radius: 50%; z-index: 1; pointer-events: none;
+  transform: translateY(calc(var(--dot-y) - 7px)); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  background: radial-gradient(circle at 35% 30%, #c8d8ff 0%, #6f97ff 35%, #2f56e6 100%);
+  box-shadow: 0 0 0 4px color-mix(in srgb, #4f7dff 20%, transparent), inset 0 -1px 1px rgba(12, 32, 130, 0.4);
+}
+.legal__toc .toc a { display: block; padding: 8px 12px; border-radius: 10px; color: var(--grey); transition: color 0.2s var(--ease), background-color 0.2s var(--ease); }
+.legal__toc .toc a:hover { color: var(--ink); background: var(--tile); }
+.legal__toc .toc a[aria-current] { color: var(--ink); font-weight: 600; }
+@media (max-width: 900px) { .toc__dot, .toc__fill, .legal__toc .toc::before, .toc li::before { display: none; } .legal__toc .toc { padding-left: 0; } }
+@media (prefers-reduced-motion: reduce) { .toc__dot, .toc__fill { transition: none; } }
+
+/* team portraits: canvas overlaps the frame by 1px so no light edge shows at the rounded corners */
+.pp { inset: -1px; }
+.pp__canvas { inset: 0; width: 100%; height: 100%; }
