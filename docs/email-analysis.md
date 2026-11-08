@@ -57,9 +57,23 @@ which can be forged; the system does not independently verify DKIM signatures.
 Missing authentication evidence is displayed as **Not provided**. Attachments
 are assessed by metadata only, never executed or malware-scanned.
 
-Mailbox OAuth/Gmail endpoints are not exposed by this frontend integration.
-This page handles manual submission and saved results; connecting an inbox is a
-separate feature requiring its own account-bound OAuth flow.
+## Gmail inbox protection
+
+Each signed-in user can connect their own Gmail in **Settings > Connected accounts**.
+Set `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET` and `GMAIL_REDIRECT_URI` in the root `.env`, enable the Gmail API,
+and add `http://localhost:3000/api/email/gmail/callback` as an authorized redirect URI.
+
+- Every Gmail route except the Google callback requires a verified session. The callback accepts only a single-use, 10-minute state bound to the user who started the sign-in.
+- Google tokens are encrypted with a key derived from the client secret. Replacing that secret requires users to reconnect.
+- The 15 newest inbox emails are screened while the dashboard is open, on load and every five minutes.
+- Background screening never opens links. They are assessed from their text, because a link may be a one-time login or unsubscribe action.
+- Likely phishing or scam emails raise a dashboard-wide alert. Dismissed alerts stay dismissed in that browser.
+- Flagged emails are added once to the Email analysis history. Full email bodies are not saved.
+- Disconnecting revokes the Google grant and deletes the stored tokens. Saved reports remain in the user's history.
+
+`gmail.readonly` is a restricted Google scope. While the OAuth app is in Testing mode, only listed test users can
+connect and their authorization expires after about seven days. Public access requires Google verification.
+Alerts appear inside WebAssure, not inside Gmail, and only while the dashboard is open.
 
 ## Focused verification
 

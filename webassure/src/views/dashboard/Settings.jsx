@@ -296,7 +296,7 @@ export default function Settings() {
               <h2>Connected accounts</h2>
               <p>Link your own accounts so WebAssure can check messages where they arrive.</p>
             </header>
-            <ConnectedAccounts userId={user.id} />
+            <ConnectedAccounts />
           </section>}
 
           {active === 'session' && <section className="st__sec" id="session">

@@ -3,6 +3,7 @@
 import os
 import json
 import secrets
+import time
 import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,9 +29,9 @@ GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 GMAIL_API_BASE = "https://gmail.googleapis.com/gmail/v1/users/me"
 USERINFO_ENDPOINT = "https://www.googleapis.com/oauth2/v2/userinfo"
 
-# In-memory state store (in production, use Redis or database)
+# Pending sign-ins only. Each state is single-use and bound to the user who started it.
 _oauth_states = {}
-_user_tokens = {}
+STATE_TTL_SECONDS = 600
 
 
 def get_oauth_config() -> dict:
@@ -47,25 +48,17 @@ def get_oauth_config() -> dict:
     }
 
 
-def generate_auth_url(state: Optional[str] = None) -> tuple[str, str]:
-    """
-    Generate Google OAuth authorization URL.
-
-    Returns:
-        Tuple of (auth_url, state)
-    """
+def generate_auth_url(owner_id: str) -> tuple[str, str]:
+    """Return a Google consent URL and a single-use state bound to this WebAssure user."""
     config = get_oauth_config()
     if not config["client_id"] or not config["redirect_uri"]:
         raise ValueError("Gmail OAuth not configured. Set GMAIL_CLIENT_ID and GMAIL_REDIRECT_URI in .env")
 
-    if state is None:
-        state = secrets.token_urlsafe(32)
-
-    # Store state for validation
-    _oauth_states[state] = {
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "used": False
-    }
+    now = time.time()
+    for key in [key for key, value in _oauth_states.items() if value["expires_at"] <= now]:
+        del _oauth_states[key]
+    state = secrets.token_urlsafe(32)
+    _oauth_states[state] = {"owner_id": owner_id, "expires_at": now + STATE_TTL_SECONDS}
 
     params = {
         "client_id": config["client_id"],
@@ -77,29 +70,21 @@ def generate_auth_url(state: Optional[str] = None) -> tuple[str, str]:
         "state": state,
         "include_granted_scopes": "true"
     }
-
-    auth_url = f"{GOOGLE_AUTH_ENDPOINT}?{urllib.parse.urlencode(params)}"
-    return auth_url, state
+    return f"{GOOGLE_AUTH_ENDPOINT}?{urllib.parse.urlencode(params)}", state
 
 
-def validate_state(state: str) -> bool:
-    """Validate and consume OAuth state parameter."""
-    if state not in _oauth_states:
-        return False
-    if _oauth_states[state]["used"]:
-        return False
-    _oauth_states[state]["used"] = True
-    return True
+def validate_state(state: str) -> Optional[str]:
+    """Consume an OAuth state and return the WebAssure user that started the sign-in."""
+    entry = _oauth_states.pop(state, None)
+    if not entry or entry["expires_at"] <= time.time():
+        return None
+    return entry["owner_id"]
 
 
-def exchange_code_for_tokens(auth_code: str, state: str) -> dict:
-    """
-    Exchange authorization code for access and refresh tokens.
-
-    Returns:
-        Dict with access_token, refresh_token, expires_in, token_type
-    """
-    if not validate_state(state):
+def exchange_code_for_tokens(auth_code: str, state: str) -> tuple[str, dict]:
+    """Exchange a code for tokens. Returns the owning WebAssure user and the token data."""
+    owner_id = validate_state(state)
+    if not owner_id:
         raise ValueError("Invalid or expired OAuth state")
 
     config = get_oauth_config()
@@ -113,44 +98,16 @@ def exchange_code_for_tokens(auth_code: str, state: str) -> dict:
         "redirect_uri": config["redirect_uri"],
         "grant_type": "authorization_code"
     }).encode()
-
-    request = Request(
-        GOOGLE_TOKEN_ENDPOINT,
-        data=data,
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        method="POST"
-    )
-
+    request = Request(GOOGLE_TOKEN_ENDPOINT, data=data,
+                      headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST")
     try:
         with urlopen(request, timeout=30) as response:
             token_data = json.loads(response.read().decode())
-    except HTTPError as e:
-        error_body = e.read().decode()
-        raise ValueError(f"Token exchange failed: {error_body}")
-    except URLError as e:
-        raise ValueError(f"Network error during token exchange: {e}")
+    except (HTTPError, URLError) as failure:
+        raise ValueError("Google token exchange failed") from failure
 
-    # Get user info
-    user_info = get_user_info(token_data["access_token"])
-
-    # Store tokens (in production, encrypt and store in database)
-    user_id = user_info.get("email", "unknown")
-    _user_tokens[user_id] = {
-        "access_token": token_data["access_token"],
-        "refresh_token": token_data.get("refresh_token"),
-        "expires_at": datetime.now(timezone.utc).timestamp() + token_data.get("expires_in", 3600),
-        "token_type": token_data.get("token_type", "Bearer"),
-        "user_info": user_info,
-        "updated_at": datetime.now(timezone.utc).isoformat()
-    }
-
-    return {
-        "access_token": token_data["access_token"],
-        "refresh_token": token_data.get("refresh_token"),
-        "expires_in": token_data.get("expires_in", 3600),
-        "token_type": token_data.get("token_type", "Bearer"),
-        "user_info": user_info
-    }
+    token_data["user_info"] = get_user_info(token_data["access_token"])
+    return owner_id, token_data
 
 
 def get_user_info(access_token: str) -> dict:
@@ -194,31 +151,6 @@ def refresh_access_token(refresh_token: str) -> dict:
         raise ValueError(f"Network error during token refresh: {e}")
 
 
-def get_valid_access_token(user_email: str) -> Optional[str]:
-    """Get a valid access token for a user, refreshing if necessary."""
-    if user_email not in _user_tokens:
-        return None
-
-    token_data = _user_tokens[user_email]
-    now = datetime.now(timezone.utc).timestamp()
-
-    # Check if token is expired or about to expire (5 min buffer)
-    if now >= token_data["expires_at"] - 300:
-        if not token_data.get("refresh_token"):
-            return None
-        try:
-            new_tokens = refresh_access_token(token_data["refresh_token"])
-            token_data["access_token"] = new_tokens["access_token"]
-            token_data["expires_at"] = now + new_tokens.get("expires_in", 3600)
-            if "refresh_token" in new_tokens:
-                token_data["refresh_token"] = new_tokens["refresh_token"]
-            token_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-        except Exception:
-            return None
-
-    return token_data["access_token"]
-
-
 def list_messages(
     access_token: str,
     query: str = "",
@@ -247,7 +179,7 @@ def list_messages(
     if label_ids:
         params["labelIds"] = label_ids
 
-    url = f"{GMAIL_API_BASE}/messages?{urllib.parse.urlencode(params)}"
+    url = f"{GMAIL_API_BASE}/messages?{urllib.parse.urlencode(params, doseq=True)}"
     request = Request(url, headers={"Authorization": f"Bearer {access_token}"})
 
     try:
@@ -420,16 +352,13 @@ def get_user_labels(access_token: str) -> list[dict]:
         raise ValueError(f"Network error: {e}")
 
 
-def revoke_user_tokens(user_email: str) -> bool:
-    """Revoke stored tokens for a user (logout)."""
-    if user_email in _user_tokens:
-        del _user_tokens[user_email]
-        return True
-    return False
-
-
-def get_stored_user_info(user_email: str) -> Optional[dict]:
-    """Get stored user info without making API call."""
-    if user_email in _user_tokens:
-        return _user_tokens[user_email].get("user_info")
-    return None
+def revoke_token(token: str) -> None:
+    """Ask Google to revoke a grant. Local deletion still happens if this fails."""
+    data = urllib.parse.urlencode({"token": token}).encode()
+    request = Request("https://oauth2.googleapis.com/revoke", data=data,
+                      headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST")
+    try:
+        with urlopen(request, timeout=10):
+            pass
+    except (HTTPError, URLError):
+        pass

@@ -9,6 +9,7 @@ import { takePendingScan } from '../../lib/pending.js'
 import { useTheme } from '../../components/ThemeProvider.jsx'
 import { DashContext } from './context.js'
 import Avatar from '../../components/Avatar.jsx'
+import GmailGuard from './GmailGuard.jsx'
 import ShieldMark from '../../components/ShieldMark.jsx'
 import { usePlan } from './usePlan.js'
 import { PLANS } from '../../lib/plan.js'
@@ -328,6 +329,7 @@ export default function Shell({ children }) {
         </div>
         <button className="dash__scrim" onClick={() => setNavOpen(false)} aria-label="Close navigation" tabIndex={navOpen ? 0 : -1} />
       </div>
+      <GmailGuard key={user.id} userId={user.id} />
     </DashContext.Provider>
   )
 }

@@ -9,6 +9,7 @@ import { checkedRegistry, createSnapshot, snapshotDigest, verifyBundle, deployRe
 import { registryNetwork, REGISTRY_NETWORKS, authorizeRegistryWallet, explorerLink } from '../../lib/registry-networks.mjs'
 
 const AlertIcon = () => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7.5v5.5M12 16.5h.01" /></svg>
+const WalletIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 7V5.5A1.5 1.5 0 0 0 17.5 4H5.5a2 2 0 0 0 0 4H19a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2H6a3 3 0 0 1-3-3V6" /><path d="M16.5 14h.01" /></svg>
 const UploadIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5 12 5l4.5 4.5M5 19h14" /></svg>
 
 function downloadConfig(config) {
@@ -186,6 +187,7 @@ export default function Ledger() {
               {account ? <><code title={account}>{account.slice(0, 8)}…{account.slice(-6)}</code>{balance && ` · ${Number(balance).toPrecision(4)} test ETH`}{walletChain !== chainId && ' · Switch network to continue'}</> : 'Connect MetaMask to deploy or register. Verification needs no wallet.'}
             </p>
             <button className="btn btn--ghost" disabled={!!busy} onClick={connect}>
+              <WalletIcon />
               {account && walletChain === chainId ? 'Refresh wallet' : 'Connect wallet'}
             </button>
           </div>

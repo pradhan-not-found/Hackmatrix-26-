@@ -20,7 +20,7 @@ Everything the submission form asks for, in one place. Fields marked **To add** 
 
 Up to 200 characters. Suggested subtitle if the form allows it:
 
-> WebAssure: know your website before you trust it. AI threat detection for links, messages and certificates, explained in plain language.
+> WebAssure: know your website before you trust it. AI threat detection for links, emails, messages and certificates, explained in plain language.
 
 ## GitHub repository
 
@@ -44,7 +44,7 @@ If it cannot be hosted, point judges to [Setup and run](../README.md#setup-and-r
 
 1. Paste a suspicious link on the home page and sign in (0:00–0:30)
 2. Walk through the report: verdict, evidence and plain-language explanation (0:30–1:30)
-3. Check a scam SMS on the Messages page (1:30–2:10)
+3. Check a scam SMS, then show Gmail inbox protection and its fraud alert (1:30–2:10)
 4. Show certificate inspection and the on-chain threat ledger (2:10–2:45)
 5. Close on the problem it solves (2:45–3:00)
 
@@ -56,9 +56,9 @@ To submit it: the form asks for a Google Doc or Notion page, so open the PDF in 
 
 ## Short description
 
-Up to 1,000 characters (this text is 897):
+Up to 1,000 characters (this text is 916):
 
-> WebAssure checks a suspicious link, message or certificate the way a security analyst would and explains the result in plain language. A FastAPI backend inspects each URL safely: public-DNS validation, re-checked redirects, bounded HTML reading and verified TLS. It combines Google Safe Browsing, look-alike domain detection and certificate analysis into a deterministic verdict with evidence for every finding. A scikit-learn classifier analyses scam messages, and Gemini can explain findings without changing the verdict. Users can commit a salted report fingerprint to our Solidity registry on Ethereum Sepolia, and anyone with the receipt can verify its integrity. The Next.js dashboard keeps each user's history private with Supabase row-level security. The hardest problem was trust: a provider timeout must never look like a clean result, so every check reports its own coverage and limits.
+> WebAssure checks suspicious links, emails, messages and certificates like a security analyst and explains the result in plain language. A FastAPI backend inspects URLs safely with public-DNS validation, re-checked redirects, bounded HTML reading and verified TLS, then combines Google Safe Browsing, look-alike detection and certificate analysis into a deterministic verdict with evidence. Connected Gmail inboxes are screened for fraud without opening any link, and likely fraud triggers an in-app alert. Scikit-learn analyses scam messages, and Gemini can explain findings without changing the verdict. Salted report fingerprints can be registered on Ethereum Sepolia and verified independently. Each user's data stays private behind verified sessions and owner-only storage. The hardest problem was trust: a provider timeout must never look like a clean result, so every check reports its own coverage and limits.
 
 ## Before you submit
 

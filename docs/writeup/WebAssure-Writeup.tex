@@ -43,7 +43,7 @@ Team Fantastic 4: Souradeep Pradhan, Madhushree Dasgupta, Aniruddha Das and Satt
 \vspace{4pt}
 
 \section{1.\quad Overview}
-WebAssure helps people decide whether to trust a link, message or certificate before they act on it. Instead of a bare \textbf{safe} or \textbf{malicious} label, every report shows which checks ran, what each one found, the evidence behind it, what could not be checked and what to do next.
+WebAssure helps people decide whether to trust a link, email, message or certificate before they act on it. Instead of a bare \textbf{safe} or \textbf{malicious} label, every report shows which checks ran, what each one found, the evidence behind it, what could not be checked and what to do next.
 
 The system combines three layers. \textbf{Cybersecurity} checks collect technical evidence and produce a deterministic risk classification. \textbf{AI} explains that evidence in plain language and analyses scam messages, without being able to change a verdict. \textbf{Web3} records a salted fingerprint of a report on Ethereum Sepolia so anyone holding the receipt can independently verify that it has not been altered.
 
@@ -60,6 +60,8 @@ The trust infrastructure is exposed too. In October 2026, eMudhra disclosed that
 URL investigation & Normalises the URL, analyses domain structure and look-alike or homoglyph patterns, follows redirects and inspects DNS, HTTP, security headers and static HTML. & Working \\
 TLS and web trust & Verifies the certificate against the system trust store for the hostname and checks leaf key strength and signature hash. & Working \\
 Threat intelligence & Checks submitted URLs against Google Safe Browsing, with distinct error states when the provider is unavailable. & Working, needs API key \\
+Email analysis & Inspects pasted emails, raw headers and .eml files for sender mismatches, authentication results, risky attachments, links and fraud language. & Working \\
+Gmail inbox protection & Screens the latest emails in a connected inbox, raises an in-app alert for likely fraud, and adds flagged emails to Email analysis. & Working \\
 Scam message analysis & Combines a trained classifier with explainable indicators and extracts URLs, phone numbers and email addresses without opening any link. & Working \\
 Threat correlation & Connects saved investigations through exact shared domains and leaf certificate fingerprints. Shared indicators never change a verdict. & Working \\
 AI explanations & Built-in rule-based explanations cite report evidence. Optional Gemini explanations are schema-validated. & Working \\
@@ -76,7 +78,7 @@ Dashboard & Overview, Scans, Messages, Certificates, Threats, Reports, Threat le
 \begin{figure}[H]\centering\includegraphics[width=1.0\linewidth]{figures/architecture.png}
 \caption*{\small\textcolor{muted}{System architecture.}}
 \end{figure}
-The browser signs in with Supabase Auth and calls the investigation API through a Next.js proxy. The FastAPI service verifies every bearer token with Supabase Auth, then sends that same user token to PostgREST. Owner filters and Postgres row-level security both restrict access, and the server never holds a service-role key. Wallet and contract calls happen in the browser through ethers.js, so the application never receives a private key.
+The browser signs in with Supabase Auth and calls the investigation API through a Next.js proxy. The FastAPI service verifies every bearer token with Supabase Auth, then sends that same user token to PostgREST. Gmail access runs through the same FastAPI service with verified sessions. Owner filters and Postgres row-level security both restrict access, and the server never holds a service-role key. Wallet and contract calls happen in the browser through ethers.js, so the application never receives a private key.
 
 \section{5.\quad Investigation pipeline}
 A submitted URL passes through the following stages. Each stage records its own status, so the final report shows exactly what was and was not covered.
@@ -121,7 +123,19 @@ Precision, recall and F1 are for the spam class. These are results on one held-o
 
 \textbf{Generated explanations.} Gemini is optional and runs after classification. Evidence is passed to it as untrusted data, URLs in descriptions are stripped, output must match a JSON schema, and it has no ability to change a classification. If Gemini is unavailable, the built-in rule-based explanation is used.
 
-\section{7.\quad Blockchain integrity layer}
+\section{7.\quad Email analysis and inbox protection}
+\textbf{Email analysis.} A user can paste an email, paste raw headers or upload an .eml file. The analyzer weighs sender mismatches, reported authentication results, attachment risk, link findings and fraud language into a 0 to 100 score and one of four results: Safe, Suspicious, Scam or Phishing. The score comes from deterministic weighted indicators and is not a calibrated probability.
+
+\textbf{Gmail inbox protection.} Each signed-in user can connect their own Gmail account with read-only Google access.
+
+\begin{enumerate}
+\item \textbf{Connect:} a single-use state value binds the Google consent screen to the WebAssure user who started it, so a connection cannot be attached to someone else.
+\item \textbf{Store:} Google tokens are encrypted before they are saved, and access is always resolved from the verified session, never from an email address in a request.
+\item \textbf{Screen:} the 15 newest inbox emails are checked while the dashboard is open. Links are assessed from their text and are never opened, because a link may be a one-time login or an unsubscribe action.
+\item \textbf{Warn:} likely phishing or scam emails raise a security alert across the dashboard. Each alert links to its report and to the message in Gmail.
+\item \textbf{Keep in sync:} flagged emails join the private Email analysis history once, using a stable identifier. Full email bodies are not saved.
+\end{enumerate}
+\section{8.\quad Blockchain integrity layer}
 A blockchain record can prove that a report has not changed and which wallet registered it. It cannot prove that the report is true, so WebAssure claims only integrity and provenance.
 
 \begin{enumerate}
@@ -143,16 +157,17 @@ Kept off-chain & The report, its URLs and any personal data \\
 \end{tabularx}
 \vspace{4pt}
 
-\section{8.\quad Security and privacy}
+\section{9.\quad Security and privacy}
 \begin{itemize}
 \item \textbf{SSRF protection:} only globally routable addresses are allowed, connections go to the validated address, and every redirect is checked again.
 \item \textbf{Bounded inspection:} 5-second socket timeouts, a 256 KiB HTML limit, a six-hop redirect limit and four concurrent investigations. Compressed responses and attachments are not read.
 \item \textbf{No execution:} no scripts are run, no cookies are sent, and no exploit or intrusive test is attempted.
 \item \textbf{Private by default:} reports are owner-only through row-level security. Inaccessible report IDs return 404.
+\item \textbf{Inbox access:} every Gmail route requires a verified session, Google tokens are encrypted at rest, and disconnecting revokes the grant and deletes the tokens.
 \item \textbf{Prompt injection:} page content and messages are treated as untrusted and cannot influence a classification.
 \item \textbf{No sensitive collection:} WebAssure never asks for passwords, OTPs, private keys or seed phrases.
 \end{itemize}
-\section{9.\quad Challenges we solved}
+\section{10.\quad Challenges we solved}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.260\linewidth}>{\raggedright\arraybackslash}X@{}}
 \toprule
 \textbf{Challenge} & \textbf{How we solved it} \\
@@ -162,31 +177,35 @@ Inspecting hostile URLs safely & DNS validation, connecting only to the validate
 Keeping AI from overstating evidence & Classification is deterministic and happens first. AI receives evidence as untrusted data, must return schema-valid output, and cannot alter the verdict. \\
 Separating suspicion from proof & Confirmed Malicious requires a verified provider match. High Risk requires corroboration from independent signal groups. \\
 Publishing proof without leaking data & Only a nonce-salted Keccak-256 digest goes on-chain. Report contents remain in a private receipt held by the user. \\
+Screening an inbox without side effects & Background screening inspects links offline. Opening them could consume a one-time login or trigger an unsubscribe. \\
 Multi-user privacy without a privileged key & The API forwards each verified user token, so Postgres row-level security enforces ownership on every request. \\
 \bottomrule
 \end{tabularx}
 \vspace{4pt}
 
-\section{10.\quad Testing}
-The repository has \textbf{92 backend tests} and \textbf{23 frontend tests}, all passing at the time of writing. They cover URL analysis, the investigation pipeline, certificates, threat intelligence, explanations, message analysis, the authenticated proxy, correlation and the registry. Registry tests use a real in-memory EVM for deployment, registration, duplicate rejection and tamper detection. Network and provider tests are mocked, so they verify behaviour and do not measure real-world detection accuracy.
+\section{11.\quad Testing}
+The repository has \textbf{148 backend tests} and \textbf{27 frontend tests}, all passing at the time of writing. They cover URL analysis, the investigation pipeline, certificates, threat intelligence, explanations, message and email analysis, Gmail connection security, the authenticated proxy, correlation and the registry. Registry tests use a real in-memory EVM for deployment, registration, duplicate rejection and tamper detection. Network and provider tests are mocked, so they verify behaviour and do not measure real-world detection accuracy.
 
-\section{11.\quad Limitations}
+\section{12.\quad Limitations}
 \begin{itemize}
 \item Certificate Transparency and revocation checks are not implemented yet, and each report states this.
 \item Automated checks cannot guarantee that a website is safe, and absence of known threats is not proof of safety.
 \item The registry is deployed on a testnet. Registration proves integrity and wallet provenance, not the truth of an assessment.
 \item Correlation uses exact shared evidence only and does not attribute reports to a campaign.
-\item The backend is a local MVP that runs as a single worker.
+\item Gmail read access is a restricted Google permission. Until Google verifies the app, only approved test users can connect, and Testing-mode connections expire after about seven days.
+\item Fraud alerts appear inside WebAssure, not inside Gmail itself, and only while the dashboard is open.
+\item The backend is a local MVP that runs as a single worker, and email data uses local storage.
 \end{itemize}
-\section{12.\quad What is next}
+\section{13.\quad What is next}
 \begin{itemize}
 \item Certificate Transparency, revocation and scheduled certificate monitoring.
 \item Validated campaign attribution built on exact shared evidence.
 \item A contract audit before moving beyond the Sepolia testnet.
+\item Google verification for public Gmail access, and a browser extension that warns inside Gmail.
 \item Per-user rate limits, data retention controls, network egress restrictions and a durable job queue.
 \end{itemize}
-\section{13.\quad Disclosures}
-\textbf{Open-source software:} Next.js, React, Supabase client, ethers, jsPDF, html-to-image, Solidity compiler, Ganache, FastAPI, Uvicorn, tldextract, confusable-homoglyphs, idna, cryptography, scikit-learn and joblib. \textbf{Services and data:} Supabase, Google Safe Browsing, Google Gemini and the UCI SMS Spam Collection. \textbf{AI tools:} Claude Code assisted with parts of the implementation and documentation, and Google Gemini is part of the product as the optional explanation provider.
+\section{14.\quad Disclosures}
+\textbf{Open-source software:} Next.js, React, Supabase client, ethers, jsPDF, html-to-image, Solidity compiler, Ganache, FastAPI, Uvicorn, tldextract, confusable-homoglyphs, idna, cryptography, scikit-learn and joblib. \textbf{Services and data:} Supabase, Google Safe Browsing, Google Gemini, the Gmail API and the UCI SMS Spam Collection. \textbf{AI tools:} Claude Code assisted with parts of the implementation and documentation, and Google Gemini is part of the product as the optional explanation provider.
 
 \textbf{Source code:} \href{https://github.com/pradhan-not-found/Hackmatrix-26-}{\nolinkurl{github.com/pradhan-not-found/Hackmatrix-26-}}
 

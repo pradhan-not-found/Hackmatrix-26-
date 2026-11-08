@@ -50,6 +50,8 @@ WebAssure checks a link, message or certificate the way a security analyst would
 - **Plain-language explanations.** Built-in, rule-based explanations reference the report's evidence. Optional Gemini explanations are schema-validated and cannot change the classification.
 - **Private history.** Supabase stores paginated reports with owner-only RLS and JSON export. API requests verify the user's Supabase session.
 - **Account management.** Google/email sign-in, password recovery, persistent profile/preferences, and avatar uploads through Supabase Storage.
+- **Email analysis.** Pasted emails, raw headers and `.eml` files are scored on sender mismatches, reported authentication results, attachments, links and fraud language.
+- **Gmail inbox protection.** Each user can connect their own Gmail with read-only access. The latest emails are screened without opening links, likely fraud raises a dashboard alert, and flagged emails join Email analysis. Tokens are encrypted and tied to the verified session ([details](docs/email-analysis.md)).
 - **Message spam/scam analysis.** A separate endpoint combines a trained text classifier with explainable indicators and does not open extracted links.
 - **Email analysis.** Paste emails or raw headers, upload `.eml` files, inspect findings and reported authentication, and reopen owner-scoped saved reports from the dashboard. [Usage and limits](docs/email-analysis.md).
 
@@ -57,7 +59,7 @@ WebAssure checks a link, message or certificate the way a security analyst would
 
 - **Landing page** with live link checker, product walkthrough, sector coverage, sample report, pricing and FAQ.
 - **Sign-up and login** with a hand-off flow: a link pasted on the landing page is scanned automatically after sign-in.
-- **Dashboard** with Overview, Scans, Messages, Certificates, Threats, Reports, Threat ledger and account Settings. Message links and HTTPS certificate inspections use the URL scanner. Certificates shows saved TLS evidence, and Threats connects investigations by exact shared domains and leaf fingerprints. Scheduled monitoring and validated campaign attribution remain future work.
+- **Dashboard** with Overview, Scans, Messages, Email analysis, Certificates, Threats, Reports, Threat ledger and account Settings. Message links and HTTPS certificate inspections use the URL scanner. Certificates shows saved TLS evidence, and Threats connects investigations by exact shared domains and leaf fingerprints. Scheduled monitoring and validated campaign attribution remain future work.
 - **Light and dark themes**, responsive layout, SEO metadata, Open Graph image, sitemap, robots rules and web manifest.
 
 > Complete the [Supabase setup](docs/auth.md), including the database migration and Google provider configuration, before signing in. Notification preferences are saved; email alert delivery is not connected.
@@ -87,6 +89,8 @@ WebAssure is a hackathon-stage project. To be clear about what is real today:
 | Leaf certificate key strength and signature hash checks | Implemented with saved certificate details and on-demand HTTPS inspection |
 | Certificate Transparency, revocation and scheduled monitoring | Planned |
 | Scam-message analysis | Working |
+| Email analysis (paste, headers, `.eml`) | Working |
+| Gmail inbox protection and fraud alerts | Working with OAuth setup; public access requires Google verification |
 | Blockchain threat ledger | Live on Ethereum Sepolia with MetaMask, plus a local EVM for development; receipt export/import and independent integrity verification ([setup](docs/ledger.md)) |
 
 The backend is a local MVP. Run a single worker. Before any public deployment, add per-user rate limits, data retention controls, network egress restrictions and a durable job queue with hard deadlines.
@@ -208,6 +212,7 @@ cp .env.example .env        # Windows: Copy-Item .env.example .env
 | --- | --- | --- |
 | `GOOGLE_SAFE_BROWSING_API_KEY` | Optional | Enables reputation lookups. Without it, the check is reported as unavailable. |
 | `GEMINI_API_KEY` | Optional | Enables on-demand Gemini explanations. Local explanations work without it. |
+| `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REDIRECT_URI` | Optional | Enable Gmail inbox protection. Keep them on the backend only. |
 | `GEMINI_MODEL` | Optional | Gemini model name (default `gemini-3.8-flash`). |
 | `SUPABASE_URL` | Required, backend | Supabase project URL. |
 | `SUPABASE_PUBLISHABLE_KEY` | Required, backend | Publishable key; requests also require the signed-in user's token. |

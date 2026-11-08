@@ -15,6 +15,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from uuid import uuid4
 
+from backend.url_analysis import analyze_url
 from backend.network import normalize_url
 from backend.investigation import investigate
 from backend.gemini import explain_email_analysis
@@ -450,6 +451,30 @@ def analyze_urls_in_email(urls: list[str]) -> list[dict]:
     return results
 
 
+def analyze_urls_offline(urls: list[str]) -> list[dict]:
+    """Assess URLs from their text alone, without any network request."""
+    results = []
+    weights = {"strong": 40, "moderate": 15, "weak": 3}
+    for url in list(dict.fromkeys(urls))[:MAX_URLS_TO_ANALYZE]:
+        try:
+            normalized = normalize_url(url)
+            indicators = analyze_url(normalized)["indicators"]
+        except Exception:
+            results.append({"url": url, "normalized": None, "error": "Invalid URL format",
+                            "risk_classification": "UNKNOWN", "findings": []})
+            continue
+        significant = any(item["strength"] in ("moderate", "strong") for item in indicators)
+        results.append({
+            "url": url, "normalized": normalized,
+            "risk_classification": "Suspicious" if significant else "Not checked online",
+            "risk_score": min(100, sum(weights.get(item["strength"], 0) for item in indicators)),
+            "findings": [{"category": "url", "severity": "high" if item["strength"] == "strong" else "medium" if item["strength"] == "moderate" else "low",
+                          "description": item["description"]} for item in indicators],
+            "redirect_chain": [], "final_url": normalized,
+        })
+    return results
+
+
 def calculate_url_risk_score(report: dict) -> int:
     """Calculate a numeric risk score from URL investigation report."""
     score = 0
@@ -647,7 +672,8 @@ def parse_email_text(email_text: str) -> email.message.EmailMessage:
 def analyze_email(
     email_input: str | bytes,
     input_type: Literal["text", "eml"],
-    use_gemini: bool = False
+    use_gemini: bool = False,
+    follow_links: bool = True
 ) -> dict:
     """
     Main email analysis function.
@@ -699,7 +725,7 @@ def analyze_email(
     sender_analysis = analyze_sender(sender, from_header, reply_to)
     auth_analysis = analyze_authentication_headers(msg)
     content_analysis = analyze_email_content(text_body, html_body)
-    url_analysis = analyze_urls_in_email(urls)
+    url_analysis = analyze_urls_in_email(urls) if follow_links else analyze_urls_offline(urls)
     attachments = analyze_attachments(msg)
 
     # Calculate risk score and classification

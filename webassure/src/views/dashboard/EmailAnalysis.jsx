@@ -5,6 +5,7 @@ import { Badge } from '../../components/Sections.jsx'
 import { classificationTone, downloadReport, formatDate } from '../../lib/investigations.js'
 import { emailApi, emailLabel, emailTone, MAX_EMAIL_BYTES } from '../../lib/email.js'
 import { PageHead, Tabs, Empty } from './ui.jsx'
+import InboxProtection from './InboxProtection.jsx'
 import { useDash } from './context.js'
 import { AlertIcon, CheckIcon, DownloadIcon, FileIcon, GlobeIcon, InfoIcon, MailIcon, ShieldIcon } from '../../components/Icons.jsx'
 import SiteIcon from '../../components/SiteIcon.jsx'
@@ -252,8 +253,20 @@ export default function EmailAnalysis() {
     catch (failure) { if (version === epoch.current) setError(failure.message) }
     finally { if (version === epoch.current) setBusy(false) }
   }
+  const openedFromLink = useRef(false)
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('report')
+    if (!id || openedFromLink.current) return
+    openedFromLink.current = true
+    openSaved(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const refreshHistory = useCallback(() => { loadHistory() }, [loadHistory])
+
   return <>
     <PageHead title="Email analysis" sub="Inspect suspicious messages, sender details and email authentication evidence." />
+
+    <InboxProtection onOpen={openSaved} onScanned={refreshHistory} />
 
     <form className="card panel ea-input" onSubmit={submit}>
       <div className="ea-input__head">

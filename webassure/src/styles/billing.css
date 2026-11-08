@@ -1071,3 +1071,44 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
   .ledger-card .ledger-head .caption { margin-left: 0; }
   .ledger-card .ledger-status, .ledger-card .ledger-import { margin-top: 0; }
 }
+
+/* Gmail: connected state, inbox protection and the fraud alert */
+.ca__badge { display: inline-flex; align-items: center; gap: 6px; height: 22px; margin-left: 8px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; vertical-align: 1px; color: var(--st-ok); background: color-mix(in srgb, var(--st-ok) 12%, transparent); }
+.ca__badge i { width: 6px; height: 6px; border-radius: 50%; background: var(--st-ok); }
+.ca__wait { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--grey); }
+.ca__guard { display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 14px; background: var(--tile); }
+.ca__guard-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ca__clear { font-size: 13px; color: var(--grey); }
+.ca__flagged { display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.ca__flagged li { padding: 14px 16px; border-radius: 12px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); min-width: 0; }
+.ca__flag-top, .gg__meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: 12.5px; }
+.ca__flag-top a, .gg__meta a { color: var(--workspace-accent); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.ca__tag { padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--grey); background: var(--console); }
+.ca__tag--bad { color: var(--st-bad); background: color-mix(in srgb, var(--st-bad) 12%, transparent); }
+.ca__tag--warn { color: var(--st-warn); background: color-mix(in srgb, var(--st-warn) 14%, transparent); }
+.ca__subject, .gg__subject { font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.ca__from, .ca__reason, .gg__from, .gg__reason { margin-top: 3px; font-size: 12.5px; line-height: 18px; color: var(--grey); overflow-wrap: anywhere; }
+.gg { position: fixed; inset: 0; z-index: 220; display: grid; place-items: center; padding: 20px; background: rgba(5, 8, 20, 0.62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: gg-in 0.2s ease both; }
+.gg__panel { width: min(520px, 100%); max-height: calc(100svh - 40px); overflow-y: auto; padding: 26px; border-radius: 20px; background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 40px 100px -30px rgba(0, 0, 0, 0.6); animation: gg-up 0.26s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.gg__icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; color: var(--st-bad); background: color-mix(in srgb, var(--st-bad) 12%, transparent); }
+.gg__title { margin-top: 14px; font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -0.015em; color: var(--ink); }
+.gg__desc { margin-top: 6px; font-size: 14px; line-height: 21px; color: var(--grey); }
+.gg__list { display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 18px 0 0; padding: 0; }
+.gg__item { padding: 14px 16px; border-radius: 12px; background: var(--tile); min-width: 0; }
+.gg__tag { padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--st-bad); background: color-mix(in srgb, var(--st-bad) 12%, transparent); }
+.gg__more { margin-top: 10px; font-size: 12.5px; color: var(--grey); }
+.gg__foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; font-size: 12.5px; color: var(--grey); }
+.gg__foot .btn { flex: none; }
+@keyframes gg-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gg-up { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .gg, .gg__panel { animation: none; } }
+@media (max-width: 560px) { .ca__guard-head { flex-direction: column; align-items: stretch; } .ca__wait { width: 100%; justify-content: space-between; } }
+
+/* Email analysis: inbox protection panel */
+.ea-inbox { display: flex; flex-direction: column; gap: 14px; }
+.ea-inbox--off { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+.ea-inbox__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ea-inbox__open { padding: 0; border: 0; background: none; font: inherit; color: var(--workspace-accent); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.gg__links { display: inline-flex; align-items: center; gap: 14px; flex: none; }
+.gg__links a { color: var(--workspace-accent); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+@media (max-width: 560px) { .ea-inbox--off, .ea-inbox__head { flex-direction: column; align-items: stretch; } }
