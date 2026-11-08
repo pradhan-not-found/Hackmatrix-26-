@@ -225,12 +225,10 @@ export function buildSlides(mode) {
     {
       name: 'Live demo',
       items: [
-        eyebrow('See it working', 96),
-        text(M, 122, 416, 64, 'Live demo', { size: 52, lh: 1.15, weight: 600, ls: -0.035 }),
-        ...demoTab(196, '1', 'Sign in with Google', true),
-        ...demoTab(266, '2', 'Paste a suspicious link'),
-        ...demoTab(336, '3', 'Read the risk, evidence and limits'),
-        ...demoTab(406, '4', 'Check a scam message'),
+        ...demoTab(140, '1', 'Sign in with Google', true),
+        ...demoTab(224, '2', 'Paste a suspicious link'),
+        ...demoTab(308, '3', 'Read the risk, evidence and limits'),
+        ...demoTab(392, '4', 'Check a scam message'),
         box(M, 476, 416, 52),
         text(M + 20, 491, 110, 22, 'Solution URL', { size: 13, lh: 1.3, color: C.grey }),
         box(520, 140, 688, 388, { radius: 36, stroke: C.line }),
