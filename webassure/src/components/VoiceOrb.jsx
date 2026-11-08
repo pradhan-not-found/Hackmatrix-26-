@@ -96,7 +96,17 @@ export default function VoiceOrb() {
       <span className="voice__bars" aria-hidden="true">
         <i /><i /><i />
       </span>
-      <span className="voice__tip" aria-hidden="true">{speaking ? 'Stop' : 'Listen: what is WebAssure?'}</span>
+      <span className="voice__tip" aria-hidden="true">
+        <span className="voice__tip-ic">
+          {speaking
+            ? <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+            : <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" /></svg>}
+        </span>
+        <span className="voice__tip-txt">
+          <b>{speaking ? 'Stop' : 'Listen'}</b>
+          <em>{speaking ? 'End the audio intro' : 'A short audio intro to WebAssure'}</em>
+        </span>
+      </span>
     </button>
   )
 }
