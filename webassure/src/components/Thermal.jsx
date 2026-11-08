@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { squishDown, squishUp } from '../lib/squish.js'
 
 // Heat-map wordmark: the text is filled with a moving black/white stripe, blurred,
@@ -71,9 +71,23 @@ export function ColorFilter({ id, paper, table = { R, G, B }, x = '-10%', y = '-
   )
 }
 
-export default function Thermal({ text = 'webassure', className = '', tone, viewBox = '-40 -30 980 230' }) {
+export default function Thermal({ text = 'webassure', className = '', tone, viewBox = '-40 -30 980 230', fit = false }) {
   const uid = useId().replace(/:/g, '')
   const svgRef = useRef(null)
+  // fit: trim the viewBox to the measured letters so the word spans its box edge to edge.
+  const [fitBox, setFitBox] = useState(null)
+  useEffect(() => {
+    if (!fit) return
+    let alive = true
+    const measure = () => {
+      const t = svgRef.current?.querySelector('.thermal__glass text')
+      if (!t || !alive) return
+      const b = t.getBBox()
+      if (b.width) setFitBox(`${b.x.toFixed(1)} -30 ${b.width.toFixed(1)} 230`)
+    }
+    ;(document.fonts?.ready || Promise.resolve()).then(measure)
+    return () => { alive = false }
+  }, [fit, text])
   const pressRef = useRef(null)
   const depthRef = useRef(null)
 
@@ -171,7 +185,7 @@ export default function Thermal({ text = 'webassure', className = '', tone, view
     <svg
       ref={svgRef}
       className={`thermal ${className}`}
-      viewBox={viewBox}
+      viewBox={fitBox || viewBox}
       overflow="visible"
       aria-hidden="true"
       style={{
@@ -207,10 +221,11 @@ export default function Thermal({ text = 'webassure', className = '', tone, view
         <linearGradient id={`${uid}-gfill`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="900" y2="60" spreadMethod="reflect">
           {tone === 'white' ? (
             <>
-              <stop offset="0" stopColor="#c9ceda" />
-              <stop offset=".35" stopColor="#f4f6fb" />
-              <stop offset=".6" stopColor="#ffffff" />
-              <stop offset="1" stopColor="#d6dbe6" />
+              <stop offset="0" stopColor="#8e96a8" />
+              <stop offset=".3" stopColor="#dfe3ec" />
+              <stop offset=".55" stopColor="#ffffff" />
+              <stop offset=".8" stopColor="#c3c9d6" />
+              <stop offset="1" stopColor="#9aa2b3" />
             </>
           ) : (
             <>

@@ -49,6 +49,9 @@ export default function Login({ mode }) {
   return (
     <div className="auth">
       <div className="auth__form-side">
+        <Link href="/" className="auth__back">
+          Back to home
+        </Link>
         <div className="auth__box">
           <h1 className="auth__title">{isSignup ? 'Create your account' : 'Welcome back'}</h1>
           <p className="auth__sub grey">

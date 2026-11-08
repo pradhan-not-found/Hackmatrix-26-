@@ -26,7 +26,7 @@ export default function Hero() {
     <section className="hero" id="top">
       <h1 className="skip">WebAssure</h1>
       <div className="hero__logo">
-        <Thermal text="webassure" viewBox="20 -30 860 230" />
+        <Thermal text="webassure" fit />
       </div>
       <div className="hero__band wrap">
         <p className="t-lead hero__lead">

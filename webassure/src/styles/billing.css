@@ -418,3 +418,29 @@ html, body { overflow-x: clip; }
   .auth__form-side { padding: 32px 20px; }
   .auth__box { width: 100%; max-width: 420px; margin: 0 auto; }
 }
+
+/* hero: wordmark spans exactly the content width (same edges as the text and scan box below) */
+.hero__logo, .hero .hero__logo { width: calc(min(100%, 1648px) - 2 * var(--margin)); }
+@media (max-width: 860px) { .hero__logo, .hero .hero__logo { width: calc(100% - 2 * var(--margin)); } }
+
+/* login: back to home */
+.auth__form-side { position: relative; }
+.auth__back {
+  position: absolute; top: 24px; left: 24px; z-index: 2; display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 16px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ink);
+  background: var(--console); box-shadow: inset 0 0 0 1px var(--line); transition: background-color 0.2s var(--ease);
+}
+.auth__back:hover { background: color-mix(in srgb, var(--console) 70%, var(--ink) 8%); }
+.auth__back svg { color: var(--grey); transition: transform 0.2s var(--ease); }
+.auth__back:hover svg { transform: translateX(-2px); color: var(--ink); }
+@media (max-width: 900px) { .auth__back { top: 16px; left: 16px; } .auth__form-side { padding-top: 72px; } }
+
+/* login tagline: a soft light glides through the text, left to right */
+.auth__tag {
+  color: transparent; -webkit-background-clip: text; background-clip: text;
+  background-image: linear-gradient(90deg, #7d828f 0%, #7d828f 40%, #f4f6fb 50%, #7d828f 60%, #7d828f 100%);
+  background-size: 200% 100%; background-position: 100% 0;
+  animation: tag-shine 2s linear infinite;
+}
+@keyframes tag-shine { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .auth__tag { animation: none; color: var(--grey); background: none; } }
