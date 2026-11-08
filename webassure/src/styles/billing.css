@@ -737,3 +737,6 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
   background-color: color-mix(in srgb, var(--grey) 32%, transparent); min-height: 40px;
 }
 ::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--grey) 58%, transparent); }
+/* thinner scrollbar */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-thumb { border-width: 1.5px; }
