@@ -40,6 +40,17 @@ function ExplanationText({ item, evidence }) {
     value={evidence.filter((source) => item.evidence_ids.includes(source.id))} /></div>
 }
 
+// Line icons for the report tabs (24px grid, 1.8 stroke, matching the dashboard set).
+const TAB_PATHS = {
+  overview: <><rect x="3.5" y="3.5" width="7" height="7" rx="1.8" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.8" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.8" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.8" /></>,
+  checks: <><path d="M4 6.5h9M4 12h9M4 17.5h9" /><path d="m15.5 6.5 1.6 1.6 3.2-3.4M15.5 17.5l1.6 1.6 3.2-3.4" /></>,
+  connection: <><circle cx="6" cy="6" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M8.5 6H14a4 4 0 0 1 0 8h-4a4 4 0 0 0 0 8h5.5" transform="translate(0 -2)" /></>,
+  evidence: <><path d="M7 3.5h7l4.5 4.5v12.5H7z" /><path d="M14 3.5V8h4.5" /><path d="M10 12.5h5.5M10 16h5.5" /></>,
+}
+const TabIcon = ({ name }) => (
+  <svg className="report-tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{TAB_PATHS[name]}</svg>
+)
+
 export default function ReportDetails({ id, onClose }) {
   const { getReport, explainReport } = useDash()
   const dialog = useRef(null)
@@ -104,7 +115,7 @@ export default function ReportDetails({ id, onClose }) {
       </div>
       <dl className="analysis-facts" aria-label="Report summary"><div><dt>Findings</dt><dd>{report.findings.length}</dd></div><div><dt>Config warnings</dt><dd>{configurationCount}</dd></div><div><dt>Requests</dt><dd>{report.redirect_chain.length}</dd></div></dl>
       </div>
-      <div className="report-tabs" role="tablist" aria-label="Report sections">{tabs.map(([name, title], index) => <button key={name} id={`report-tab-${name}`} role="tab" aria-selected={tab === name} aria-controls={`report-panel-${name}`} tabIndex={tab === name ? 0 : -1} onClick={() => activate(name)} onKeyDown={(event) => navigateTab(event, index)}>{title}{name === 'overview' && <span>{report.findings.length}</span>}</button>)}<span className="report-tabs-note">Read-only evidence report</span></div>
+      <div className="report-tabs" role="tablist" aria-label="Report sections">{tabs.map(([name, title], index) => <button key={name} id={`report-tab-${name}`} role="tab" aria-selected={tab === name} aria-controls={`report-panel-${name}`} tabIndex={tab === name ? 0 : -1} onClick={() => activate(name)} onKeyDown={(event) => navigateTab(event, index)}><TabIcon name={name} />{title}{name === 'overview' && <span className="report-tab-count">{report.findings.length}</span>}</button>)}<span className="report-tabs-note">Read-only evidence report</span></div>
       <div className="report-panels" ref={panels}>
         <div className="report-panel report-overview" role="tabpanel" id="report-panel-overview" aria-labelledby="report-tab-overview" hidden={tab !== 'overview'}>
           <div className="report-overview-main">
