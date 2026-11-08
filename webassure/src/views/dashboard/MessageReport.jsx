@@ -42,7 +42,7 @@ function Highlighted({ text, spans }) {
   return parts.map((p, i) => (spans.some((s) => s.toLowerCase() === p.toLowerCase()) ? <mark key={i}>{p}</mark> : p))
 }
 
-export default function MessageReport({ report, text, onExplain, explaining }) {
+export default function MessageReport({ report, text, onExplain, explaining, renderLinkActions }) {
   const tone = TONE[report.risk_level] || 'warn'
   const spans = report.indicators.flatMap((i) => i.evidence)
   const ai = report.ai_explanation
@@ -104,6 +104,7 @@ export default function MessageReport({ report, text, onExplain, explaining }) {
                     <span className="mr__ent-ic"><Icon d={ICONS[icon]} size={15} /></span>
                     <span className="mr__ent-type">{type}</span>
                     <code>{v}</code>
+                    {type === 'Link' && renderLinkActions && <div style={{ gridColumn: '1 / -1' }}>{renderLinkActions(v)}</div>}
                   </li>
                 ))}
               </ul>

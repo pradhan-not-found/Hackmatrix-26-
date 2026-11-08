@@ -146,7 +146,7 @@ export default function Shell({ children }) {
     return report
   }, [])
 
-  const runInvestigation = useCallback(async (input) => {
+  const runInvestigation = useCallback(async (input, options = {}) => {
     if (!input.trim() || submitting.current) return
     submitting.current = true
     const account = accountVersion.current
@@ -160,10 +160,11 @@ export default function Shell({ children }) {
       ++historyVersion.current
       setScans((previous) => [report, ...previous.filter((item) => item.id !== report.id)])
       setTotal((previous) => previous + 1)
-      setFocusId(report.id)
+      if (options.navigate !== false) setFocusId(report.id)
       setQuery('')
-      router.push('/dashboard/scans')
+      if (options.navigate !== false) router.push('/dashboard/scans')
       await loadHistory()
+      return report
     } catch (failure) {
       if (account === accountVersion.current) { setError(failure.message); setFailedInput(input) }
     } finally {
@@ -204,7 +205,7 @@ export default function Shell({ children }) {
   }
 
   const ctx = { scans, total, historyLoading, historyError, refreshHistory: loadHistory,
-    loadMore: () => loadHistory(scans.length), getReport, scanLoading,
+    loadMore: () => loadHistory(scans.length), getReport, scanLoading, runInvestigation,
     user, setUser, focusId, clearFocus }
 
   return (

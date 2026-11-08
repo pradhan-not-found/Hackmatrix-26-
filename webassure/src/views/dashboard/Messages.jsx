@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { getSupabase } from '../../lib/auth.js'
 import { PageHead } from './ui.jsx'
 import MessageReport from './MessageReport.jsx'
+import { useDash } from './context.js'
+import ReportDetails from './ReportDetails.jsx'
+import { Badge } from '../../components/Sections.jsx'
+import { classificationTone } from '../../lib/investigations.js'
 
 const MAX = 10000
 const SAMPLES = [
@@ -32,6 +36,17 @@ async function analyse(message, provider) {
 }
 
 export default function Messages() {
+  const { runInvestigation, scanLoading } = useDash()
+  const [linkedReports, setLinkedReports] = useState({})
+  const [openReport, setOpenReport] = useState(null)
+  const [linkBusy, setLinkBusy] = useState('')
+  const inspectLink = async (url) => {
+    setLinkBusy(url)
+    try {
+      const result = await runInvestigation(url, { navigate: false })
+      if (result) setLinkedReports((previous) => ({ ...previous, [url]: result }))
+    } finally { setLinkBusy('') }
+  }
   const [text, setText] = useState('')
   const [analysed, setAnalysed] = useState('')
   const [report, setReport] = useState(null)
@@ -99,8 +114,10 @@ export default function Messages() {
       </form>
 
       {report && (
-        <MessageReport report={report} text={analysed} onExplain={explain} explaining={explaining} />
+        <MessageReport report={report} text={analysed} onExplain={explain} explaining={explaining}
+          renderLinkActions={(url) => linkedReports[url] ? <div className="mx__indicator-link"><Badge tone={classificationTone(linkedReports[url].risk_classification)}>{linkedReports[url].risk_classification}</Badge><button type="button" className="btn btn--ghost" onClick={() => setOpenReport(linkedReports[url].id)}>View link report</button></div> : <button type="button" className="btn btn--ghost" disabled={scanLoading || !!linkBusy || busy} onClick={() => inspectLink(url)}>{linkBusy === url ? 'Investigating?' : 'Investigate link'}</button>} />
       )}
+      {openReport && <ReportDetails id={openReport} onClose={() => setOpenReport(null)} />}
     </>
   )
 }

@@ -15,7 +15,7 @@ import threading
 import time
 import unittest
 from unittest.mock import patch
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import uvicorn
 from playwright.sync_api import expect, sync_playwright
@@ -197,6 +197,82 @@ class WebAssureBrowserTests(unittest.TestCase):
         expect(page).to_have_url(self.url + '/login')
         page.goto(self.url + '/dashboard/scans')
         expect(page).to_have_url(self.url + '/login?next=%2Fdashboard%2Fscans')
+
+    def test_z_message_link_investigation_and_ledger_snapshot(self):
+        root = Path(__file__).resolve().parent.parent
+        chain = subprocess.Popen([shutil.which('node'), 'scripts/registry-browser-fixture.mjs'],
+                                 cwd=root / 'webassure', stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                 text=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+        def stop_chain():
+            chain.terminate()
+            chain.wait(timeout=10)
+            chain.stdout.close()
+        self.addCleanup(stop_chain)
+        config = json.loads(chain.stdout.readline())
+        page = self.browser.new_page(viewport={"width": 1440, "height": 1000})
+        self.addCleanup(page.close)
+        failures = []
+        page.on('pageerror', lambda failure: failures.append(str(failure)))
+        page.route('**/auth/v1/user', lambda route: route.fulfill(json=USER))
+        page.add_init_script("localStorage.setItem('wa-cookies', JSON.stringify({choice: 'essential'}))")
+        page.add_init_script("localStorage.setItem('sb-ldrspcimsdzazhbckmca-auth-token', JSON.stringify(" + json.dumps(test_session()) + "))")
+        page.goto(self.url + '/dashboard/messages')
+        page.get_by_label('Message to analyse').fill('Your bank account is blocked. Verify at https://malicious.example/login and share your OTP immediately.')
+        page.get_by_role('button', name='Analyse message', exact=True).click()
+        inspect = page.get_by_role('button', name='Investigate link', exact=True)
+        expect(inspect).to_be_visible()
+        with page.expect_response(lambda response: response.request.method == 'POST' and response.url.endswith('/api/investigations')) as response_event:
+            inspect.click()
+        report = response_event.value.json()
+        self.assertEqual(report['risk_classification'], 'Confirmed Malicious')
+        self.assertTrue(page.url.endswith('/dashboard/messages'))
+        page.get_by_role('button', name='View link report').click()
+        dialog = page.get_by_role('dialog', name='Scan details')
+        expect(dialog).to_be_visible()
+        expect(dialog.get_by_text('Confirmed Malicious', exact=True)).to_be_visible()
+        dialog.get_by_role('button', name='Close report').click()
+        page.route('**/ledger-config.json', lambda route: route.fulfill(json=config))
+        page.get_by_role('link', name='Threat ledger', exact=True).click()
+        page.get_by_label('Saved investigation').select_option(report['id'])
+        page.get_by_role('button', name='Prepare snapshot', exact=True).click()
+        with page.expect_download() as download_event:
+            page.get_by_role('button', name='Export snapshot', exact=True).click()
+        bundle = json.loads(Path(download_event.value.path()).read_text(encoding='utf8'))
+        self.assertEqual(bundle['snapshot']['report']['id'], report['id'])
+        self.assertEqual(bundle['snapshot']['schema'], 'webassure-report-commitment/v1')
+        self.assertIsNone(bundle['registration'])
+        page.get_by_role('button', name='Register with wallet').click()
+        expect(page.locator('.ledger-panel [role="alert"]')).to_contain_text('Ethereum browser wallet')
+        def rpc_call(payload):
+            method = 'eth_accounts' if payload['method'] == 'eth_requestAccounts' else payload['method']
+            request = Request(config['rpc'], data=json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': payload.get('params', [])}).encode(), headers={'Content-Type': 'application/json'})
+            with urlopen(request, timeout=15) as response:
+                result = json.load(response)
+            if 'error' in result:
+                raise RuntimeError(result['error']['message'])
+            return result['result']
+        page.expose_function('registryRpc', rpc_call)
+        page.evaluate("window.ethereum = { request: (payload) => window.registryRpc(payload) }")
+        page.get_by_role('button', name='Register with wallet').click()
+        expect(page.get_by_text('Integrity verified', exact=True)).to_be_visible(timeout=20000)
+        with page.expect_download() as receipt_event:
+            page.get_by_role('button', name='Export receipt', exact=True).click()
+        receipt_path = receipt_event.value.path()
+        receipt = json.loads(Path(receipt_path).read_text(encoding='utf8'))
+        self.assertRegex(receipt['registration']['transactionHash'], r'^0x[0-9a-f]{64}$')
+        # A new page can verify without signing or remembering the original report.
+        page.reload()
+        page.evaluate("window.ethereum = { request: (payload) => window.registryRpc(payload) }")
+        page.locator('input[type="file"]').set_input_files(receipt_path)
+        page.get_by_role('button', name='Verify integrity', exact=True).click()
+        expect(page.get_by_text('Integrity verified', exact=True)).to_be_visible(timeout=20000)
+        receipt['snapshot']['report']['risk_classification'] = 'Low Risk'
+        page.locator('input[type="file"]').set_input_files({'name': 'altered.json', 'mimeType': 'application/json', 'buffer': json.dumps(receipt).encode()})
+        page.get_by_role('button', name='Verify integrity', exact=True).click()
+        expect(page.locator('.ledger-panel [role="alert"]')).to_contain_text('Integrity mismatch')
+        page.set_viewport_size({'width': 390, 'height': 844})
+        self.assertTrue(page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
+        self.assertEqual(failures, [])
 
     def test_real_submission_persistence_evidence_download_and_retries(self):
         page = self.browser.new_page(viewport={"width": 1440, "height": 1000})
