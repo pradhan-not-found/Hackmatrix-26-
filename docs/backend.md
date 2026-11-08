@@ -54,7 +54,8 @@ variables. The proxy has a 90-second timeout. A timed-out submission may still
 finish in the backend, so refresh saved history before retrying it.
 
 Certificates now displays real saved TLS evidence and on-demand HTTPS inspections.
-Scheduled monitoring and threat campaigns are not implemented. The threat ledger supports local EVM registration
+Scheduled monitoring and validated campaign attribution are not implemented. The
+Threats page compares loaded reports for shared evidence (see below). The threat ledger supports local EVM registration
 and independent verification; see [ledger setup](ledger.md).
 This integration does not make the application ready for public multi-user use;
 the deployment limits below still apply.
@@ -249,6 +250,32 @@ including redirect hosts and failed TLS observations. It displays incomplete
 checks for older reports rather than fabricating metadata. Users can request a
 fresh HTTPS investigation, open its evidence report, and load older history.
 This is on-demand inspection with saved snapshots, not scheduled monitoring.
+
+## Related investigations
+
+The Threats page replaces its sample campaign list with deterministic connections
+across the user's loaded saved investigations. Existing owner-scoped report APIs
+are used; no public feed, cross-account lookup, new database grants, AI call or
+extra outbound website request is introduced.
+
+Domain matches use exact normalized HTTP(S) hostnames from the submitted URL and
+actual collected redirect-chain responses. Evidence distinguishes a submitted
+host, an HTTP response host and an observed redirect destination. Unfetched query
+parameters and URL-analysis suggestions are not treated as observed redirects.
+Public suffixes, shared IPs and issuing CA names do not establish connections.
+
+Certificate connections require matching full SHA-256 leaf fingerprints from
+successfully verified TLS observations. Matching fingerprints can be legitimate
+(for example, shared certificates); this is evidence of a relationship, not proof
+of a fraud campaign. Repeated scans of one target are labeled repeated observations.
+
+**Needs review** shows connections involving at least one report already classified
+Suspicious, High Risk or Confirmed Malicious. The relation never changes another
+report's classification. **All connections** includes benign repeated observations.
+Each connection lists its evidence roles, individual verdicts and timestamps, and
+opens the original report. Filtering and loading more history extend the comparison.
+The page states how many reports were compared and explicitly marks partial-load
+failures. Matching does not persist new report contents or identifiers externally.
 
 ## Tests
 

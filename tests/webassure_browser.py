@@ -198,6 +198,48 @@ class WebAssureBrowserTests(unittest.TestCase):
         page.goto(self.url + '/dashboard/scans')
         expect(page).to_have_url(self.url + '/login?next=%2Fdashboard%2Fscans')
 
+    def test_z_correlated_threats_observed_redirects_and_evidence(self):
+        def fetch(url, addresses):
+            redirected = 'shared.example' not in url
+            return {'url': url, 'status': 302 if redirected else 200, 'address': addresses[0],
+                    'headers': {'location': 'https://shared.example/entry'} if redirected else {},
+                    'tls': {'verified': True, 'protocol': 'TLSv1.3'}, 'html': {'status': 'not_applicable'}}
+        replacement = patch('backend.investigation.fetch', side_effect=fetch)
+        replacement.start()
+        self.addCleanup(replacement.stop)
+        page = self.browser.new_page(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(page.close)
+        failures = []
+        page.on('pageerror', lambda failure: failures.append(str(failure)))
+        page.route('**/auth/v1/user', lambda route: route.fulfill(json=USER))
+        page.add_init_script("localStorage.setItem('wa-cookies', JSON.stringify({choice: 'essential'}))")
+        page.add_init_script("localStorage.setItem('sb-ldrspcimsdzazhbckmca-auth-token', JSON.stringify(" + json.dumps(test_session()) + "))")
+        page.goto(self.url + '/dashboard/scans')
+        for host in ['malicious.example', 'second.example']:
+            page.get_by_label('URL to scan', exact=True).fill('https://' + host)
+            page.get_by_role('button', name='Scan', exact=True).click()
+            dialog = page.get_by_role('dialog', name='Scan details')
+            expect(dialog).to_be_visible()
+            dialog.get_by_role('button', name='Close report').click()
+        page.get_by_role('link', name='Threats', exact=True).click()
+        group = page.locator('.correlation-group').filter(has_text='shared.example')
+        expect(group).to_be_visible()
+        expect(group).to_contain_text('Shared redirect destination')
+        expect(group).to_contain_text('2 investigations')
+        expect(group).to_contain_text('Confirmed Malicious')
+        expect(group).to_contain_text('Inconclusive')
+        group.get_by_role('button', name='Open evidence report for second.example', exact=True).click()
+        dialog = page.get_by_role('dialog', name='Scan details')
+        expect(dialog.get_by_text('Inconclusive', exact=True)).to_be_visible()
+        dialog.get_by_role('button', name='Close report').click()
+        page.get_by_label('Filter related indicators').fill('no-match.example')
+        expect(page.locator('.correlation-group')).to_have_count(0)
+        page.get_by_label('Filter related indicators').fill('shared.example')
+        expect(group).to_be_visible()
+        page.set_viewport_size({'width': 390, 'height': 844})
+        self.assertTrue(page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
+        self.assertEqual(failures, [])
+
     def test_z_report_gemini_insights_retry_save_and_reuse(self):
         from backend.gemini import insight_fingerprint, INSIGHT_VERSION
         def insights(report):
