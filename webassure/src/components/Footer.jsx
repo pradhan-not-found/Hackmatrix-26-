@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import GetApps from './GetApps.jsx'
+import ShieldMark from './ShieldMark.jsx'
 
 const COLUMNS = [
   {
@@ -45,7 +46,7 @@ export default function Footer() {
       </div>
       <div className="footer__top">
         <div className="footer__brand">
-          <Link href="/" className="footer__mark" aria-label="WebAssure home">webassure</Link>
+          <Link href="/" className="footer__mark" aria-label="WebAssure home"><ShieldMark size={22} />webassure</Link>
           <p className="grey">
             AI threat detection for links, sites and certificates. Know before you click.
           </p>
