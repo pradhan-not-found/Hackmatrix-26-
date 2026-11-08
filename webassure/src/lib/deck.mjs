@@ -122,6 +122,22 @@ export function buildSlides(mode) {
     text(x + 24, 482, 320, 76, body, { size: 17, lh: 1.42, color: C.grey }),
   ]
 
+  // Reported cyber fraud losses in crore, I4C data from the National Cyber Crime Reporting Portal.
+  const LOSSES = [['2022', 2290], ['2023', 7463], ['2024', 22849], ['2025', 19813]]
+  const hikeChart = (x) => [
+    icon('trending-up', x + 8, 100, 24),
+    text(x + 40, 101, 150, 24, [{ t: '8.7x', b: true }, { t: ' since 2022', c: C.grey }], { size: 17, lh: 1.3 }),
+    ...LOSSES.flatMap(([year, value], i) => {
+      const height = Math.max(4, Math.round((value * 46) / 22849))
+      const left = x + i * 46
+      return [
+        box(left + 8, 192 - height, 30, height, { fill: year === '2025' ? C.ink : C.grey, radius: 3 }),
+        text(left, 192 - height - 17, 46, 15, value.toLocaleString('en-IN'), { size: 11, lh: 1.25, align: 'center', color: C.grey }),
+        text(left, 196, 46, 15, year, { size: 11, lh: 1.25, align: 'center', color: C.grey }),
+      ]
+    }),
+  ]
+
   const coverLogo = (name, alt, x, h, ratio) => img(asset(`logos/${name}.png`), alt, x, 76 - h / 2, h * ratio, h)
 
   const slides = [
@@ -187,7 +203,8 @@ export function buildSlides(mode) {
     {
       name: 'The numbers',
       items: [
-        text(M, 112, 740, 112, '₹19,813 crore', { size: 92, lh: 1.15, weight: 600, ls: -0.04 }),
+        text(M, 112, 560, 112, '₹19,813 crore', { size: 92, lh: 1.15, weight: 600, ls: -0.04 }),
+        ...hikeChart(632),
         text(M, 232, 700, 90, 'reported lost to cyber fraud in India in 2025, across about 21.78 lakh complaints.', { size: 26, lh: 1.35, ls: -0.02 }),
         ...statCard(72, '971,181', 'phishing attacks worldwide in Q1 2026, up 13.8% on the previous quarter.'),
         ...statCard(442, '$20.9 billion', 'in internet crime losses reported to the FBI in 2025, up 26% on 2024.'),
