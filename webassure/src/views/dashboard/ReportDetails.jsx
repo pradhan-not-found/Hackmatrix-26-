@@ -51,6 +51,18 @@ const TabIcon = ({ name }) => (
   <svg className="report-tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{TAB_PATHS[name]}</svg>
 )
 
+// Step icon for a request in the redirect route: redirect, final page, or error.
+const HopIcon = ({ status }) => {
+  const kind = status >= 400 ? 'bad' : status >= 300 ? 'redirect' : 'ok'
+  return (
+    <span className="hop-ic" data-kind={kind} title={kind === 'redirect' ? 'Redirect' : kind === 'ok' ? 'Final response' : 'Error response'}>
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {kind === 'redirect' ? <><path d="M5 7h10a4 4 0 0 1 0 8H8" /><path d="m11 18-3-3 3-3" /></> : kind === 'ok' ? <path d="m5.5 12.5 4 4 9-9" /> : <><path d="M12 7.5v5.5" /><path d="M12 16.5h.01" /></>}
+      </svg>
+    </span>
+  )
+}
+
 export default function ReportDetails({ id, onClose }) {
   const { getReport, explainReport } = useDash()
   const dialog = useRef(null)
@@ -164,7 +176,7 @@ export default function ReportDetails({ id, onClose }) {
         <div className="rt-wrap"><table className="rt">
           <thead><tr><th>Host</th><th>Registrable domain</th><th>Public suffix</th><th>Subdomain</th></tr></thead>
           <tbody>{report.url_analysis.map((domain) => <tr key={domain.url}>
-            <td className="rt__name">{domain.hostname}{domain.unicode_hostname !== domain.hostname && <p className="caption grey">Unicode: {domain.unicode_hostname}</p>}</td>
+            <td className="rt__name"><span className="url-cell"><SiteIcon url={domain.hostname} size={16} className="site-icon--sm" /><span>{domain.hostname}</span></span>{domain.unicode_hostname !== domain.hostname && <p className="caption grey">Unicode: {domain.unicode_hostname}</p>}</td>
             <td>{domain.registrable_domain || 'Not determined'}</td><td>{domain.suffix || 'Not determined'}</td><td>{domain.subdomain || 'None'}</td>
           </tr>)}</tbody>
         </table></div>
@@ -172,10 +184,10 @@ export default function ReportDetails({ id, onClose }) {
       <section><SectionTitle icon={RouteIcon}>Redirects & TLS</SectionTitle>
         {!report.redirect_chain.length && <p className="caption grey">No HTTP response collected. Check DNS, TLS, and destination policy results.</p>}
         {!!report.redirect_chain.length && <div className="rt-wrap"><table className="rt">
-          <thead><tr><th>#</th><th>URL</th><th>Status</th><th>IP address</th><th>Connection</th></tr></thead>
+          <thead><tr><th aria-label="Step"></th><th>URL</th><th>Status</th><th>IP address</th><th>Connection</th></tr></thead>
           <tbody>{report.redirect_chain.map((hop, index) => <tr key={index}>
-            <td className="rt__num">{String(index + 1).padStart(2, '0')}</td>
-            <td className="rt__url">{hop.url}</td>
+            <td className="rt__num"><HopIcon status={hop.status} /></td>
+            <td className="rt__url"><span className="url-cell"><SiteIcon url={hop.url} size={16} className="site-icon--sm" /><span>{hop.url}</span></span></td>
             <td><span className="rt__pill" data-tone={hop.status >= 400 ? 'bad' : hop.status >= 300 ? 'warn' : 'ok'}>{hop.status}</span></td>
             <td className="rt__mono">{hop.address || '—'}</td>
             <td>{hop.tls ? <span className="rt__tls"><LockIcon />{hop.tls.protocol || 'TLS'}{hop.tls.not_after ? <em>expires {hop.tls.not_after}</em> : null}</span> : <span className="rt__pill" data-tone="warn">HTTP, no TLS</span>}</td>

@@ -7,6 +7,7 @@ import { removeAvatar, resetPassword, signOut, updateUser, uploadAvatar } from '
 import Avatar from '../../components/Avatar.jsx'
 import Link from 'next/link'
 import { PageHead, Toggle } from './ui.jsx'
+import ConnectedAccounts from './ConnectedAccounts.jsx'
 import { usePlan } from './usePlan.js'
 import { PLANS, chargeFor, inr, priceFor } from '../../lib/plan.js'
 
@@ -17,6 +18,7 @@ const PAGES = [
   ['profile', 'Profile', <Ic key="p" d={<><circle cx="12" cy="8.5" r="3.5" /><path d="M5 19.5c1.3-3.3 3.9-5 7-5s5.7 1.7 7 5" /></>} />],
   ['notifications', 'Notifications', <Ic key="n" d={<><path d="M6.5 10a5.5 5.5 0 0 1 11 0v3.5l1.5 2.5H5l1.5-2.5Z" /><path d="M10 19a2 2 0 0 0 4 0" /></>} />],
   ['password', 'Password', <Ic key="k" d={<><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /><path d="M12 14.5v2" /></>} />],
+  ['accounts', 'Connected accounts', <Ic key="c" d={<><path d="M9.5 14.5 14.5 9.5" /><path d="M11 6.5l1.5-1.5a4.2 4.2 0 0 1 6 6L17 12.5" /><path d="M13 17.5 11.5 19a4.2 4.2 0 0 1-6-6L7 11.5" /></>} />],
   ['plan', 'Plan & billing', <Ic key="b" d={<><rect x="3.5" y="5.5" width="17" height="13" rx="2.5" /><path d="M3.5 10h17" /><path d="M7.5 15h3" /></>} />],
   ['session', 'Session', <Ic key="s" d={<><path d="M14.5 4h3A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-3" /><path d="M10 16.5 14.5 12 10 7.5" /><path d="M14.5 12H4" /></>} />],
 ]
@@ -287,6 +289,14 @@ export default function Settings() {
                 <p className="bl__empty">No invoices yet. They appear here after your first payment.</p>
               )}
             </div>
+          </section>}
+
+          {active === 'accounts' && <section className="st__sec" id="accounts">
+            <header className="st__head">
+              <h2>Connected accounts</h2>
+              <p>Link your own accounts so WebAssure can check messages where they arrive.</p>
+            </header>
+            <ConnectedAccounts userId={user.id} />
           </section>}
 
           {active === 'session' && <section className="st__sec" id="session">
