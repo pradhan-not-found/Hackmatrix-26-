@@ -786,3 +786,27 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--grey) 45
   --report-line: var(--line, rgba(255,255,255,0.08));
   --report-ink: var(--ink, #f2f2f4);
 }
+
+
+/* Threat ledger separated sections */
+.dash .ledger-panel.ledger-stack,
+.ledger-panel.ledger-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 22px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-width: none !important;
+  width: 100% !important;
+}
+.ledger-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px;
+}
+.ledger-card .ledger-head {
+  padding-bottom: 2px;
+}

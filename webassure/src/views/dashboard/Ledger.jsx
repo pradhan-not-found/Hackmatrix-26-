@@ -160,35 +160,165 @@ export default function Ledger() {
   }
   return <>
     <PageHead title="Threat ledger" sub="Register report fingerprints and independently verify report integrity." />
-    <section className="card panel ledger-panel">
-      <div className="ledger-head"><div><h2 className="panel__title">Report integrity registry</h2><p className="caption grey">Only a salted fingerprint is recorded on-chain. Report contents remain in your exported file. Registration proves integrity and provenance, not whether a website is malicious.</p></div><span className={`ledger-status${config && !config.pending ? ' ledger-status--on' : ''}`}><i />{configLoading ? 'Loading registry' : config?.pending ? 'Deployment pending' : config ? 'Registry configured' : 'Ready to deploy'}</span></div>
-      <p className="ledger-step"><span>1</span>Registry<em>Choose a network and connect the on-chain registry</em></p>
-      <div className="ledger-network-row"><label className="ledger-field">Network<select className="input-sm" aria-label="Registry network" value={chainId} disabled={!!busy} onChange={(event) => { setChainId(event.target.value); try { localStorage.setItem('wa-ledger-network', event.target.value) } catch {} }}>{Object.values(REGISTRY_NETWORKS).map((item) => <option key={item.chainId} value={item.chainId}>{item.name}</option>)}</select></label><div className="ledger-wallet"><p className="caption grey">{account ? <><code title={account}>{account.slice(0, 8)}…{account.slice(-6)}</code>{balance && ` · ${Number(balance).toPrecision(4)} test ETH`}{walletChain !== chainId && ' · Switch network to continue'}</> : 'Connect MetaMask to deploy or register. Verification needs no wallet.'}</p><button className="btn btn--ghost" disabled={!!busy} onClick={connect}>{account && walletChain === chainId ? 'Refresh wallet' : 'Connect wallet'}</button></div></div>
-      {config && <p className="caption grey ledger-address">Chain {config.chainId} · Registry <ChainLink config={config} type="address" value={config.address}><code>{config.address}</code></ChainLink></p>}
-      {config?.deploymentTransaction && <div className="ledger-actions"><ChainLink config={config} type="tx" value={config.deploymentTransaction}>View deployment transaction</ChainLink><button className="btn btn--ghost" onClick={() => downloadConfig(config)}>Download deployment config</button>{config.pending && <button className="btn btn--ink" disabled={!!busy} onClick={checkDeployment}>Check deployment</button>}</div>}
-      {!config && !configLoading && <div className="ledger-onboarding"><h3>Deploy your report registry</h3><p className="caption grey">One-time setup on {network.name}. MetaMask will ask you to approve a contract deployment using test ETH. Your private key stays in your wallet.</p><div className="ledger-actions"><button className="btn btn--ink" disabled={!!busy} onClick={deploy}>Deploy registry</button>{chainId === '11155111' && <a className="ledger-explorer" href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" target="_blank" rel="noopener noreferrer">Get free Sepolia ETH</a>}<a className="ledger-explorer" href="https://metamask.com/download" target="_blank" rel="noopener noreferrer">Install MetaMask</a></div></div>}
-      {!configLoading && <details className="ledger-existing"><summary>Use an already deployed registry</summary><div className="ledger-actions"><input className="input-sm" aria-label="Existing registry address" placeholder="Registry contract address (0x…)" value={existingAddress} disabled={!!busy} onChange={(event) => setExistingAddress(event.target.value)} /><button className="btn btn--ghost" disabled={!!busy || !existingAddress.trim()} onClick={useExisting}>Use registry</button></div><p className="caption grey">The deployed contract must match WebAssure’s registry bytecode.</p></details>}
-      {setupError && <div className="ledger-alert" role="status"><AlertIcon /><div><strong>Registry not connected</strong><p className="caption grey">{setupError}</p></div></div>}
-      <p className="ledger-step ledger-step--next"><span>2</span>Report<em>Fingerprint a saved investigation and register it</em></p>
-      <label className="ledger-field">Saved investigation
-        <span className="ledger-select"><select className="input-sm" value={selected} disabled={!!busy} onChange={(e) => { setSelected(e.target.value); setBundle(null); setVerified(null); setNotice('') }}>
-          <option value="">Choose a report</option>
-          {scans.map((scan) => <option key={scan.id} value={scan.id}>{scan.normalized_url} — {scan.risk_classification}</option>)}
-        </select></span>
-      </label>
-      {!scans.length && !historyError && <p className="caption grey">{historyLoading ? 'Loading saved reports…' : 'Run a URL investigation to prepare your first report.'}</p>}
-      {historyError && <div className="ledger-alert" role="alert"><AlertIcon /><div><strong>Saved reports unavailable</strong><p className="caption grey">{historyError}</p></div></div>}
-      {scans.length < total && <button className="btn btn--ghost" disabled={historyLoading || !!busy} onClick={loadMore}>Load more reports</button>}
-      <div className="ledger-actions"><button className="btn btn--ink" disabled={!selected || !!busy} onClick={prepare}>Prepare snapshot</button><label className="btn btn--ghost ledger-import"><UploadIcon />Import receipt<input className="ledger-upload" type="file" accept=".json,application/json" disabled={!!busy} onChange={upload} /></label></div>
-      {bundle && <div className="ledger-snapshot">
-        <p className="caption grey">Snapshot fingerprint</p><code>{snapshotDigest(bundle.snapshot)}</code>
-        <div className="ledger-actions"><button className="btn btn--ghost" onClick={() => downloadReport(bundle)}>Export {bundle.registration ? 'receipt' : 'snapshot'}</button><button className="btn btn--ink" disabled={!config || config.pending || !!busy || !!bundle.registration} onClick={register}>Register with wallet</button><button className="btn btn--ghost" disabled={!config || config.pending || !!busy || !bundle.registration} onClick={verify}>Verify integrity</button></div>
-        {bundle.registration && <p className="caption grey ledger-address">Transaction <ChainLink config={bundle.registration} type="tx" value={bundle.registration.transactionHash}><code>{bundle.registration.transactionHash}</code></ChainLink></p>}
-      </div>}
-      {busy && <p className="ledger-message" role="status">{busy}…</p>}
-      {error && <p className="ledger-message ledger-message--bad" role="alert">{error}</p>}
-      {notice && <p className="ledger-message" role="status">{notice}</p>}
-      {verified && <div className="ledger-verified"><strong>Integrity verified</strong><p className="caption grey ledger-address">Registered by {verified.reporter} · Block {verified.blockNumber}</p></div>}
-    </section>
+
+    <div className="ledger-panel ledger-stack">
+
+      {/* Section 1: On-chain Registry & Network */}
+      <section className="card panel ledger-card">
+        <div className="ledger-head">
+          <div>
+            <p className="ledger-step"><span>1</span>Registry<em>Choose a network and connect the on-chain registry</em></p>
+            <p className="caption grey">Only a salted fingerprint is recorded on-chain. Report contents remain in your exported file. Registration proves integrity and provenance, not whether a website is malicious.</p>
+          </div>
+          <span className={`ledger-status${config && !config.pending ? ' ledger-status--on' : ''}`}>
+            <i />{configLoading ? 'Loading registry' : config?.pending ? 'Deployment pending' : config ? 'Registry configured' : 'Ready to deploy'}
+          </span>
+        </div>
+
+        <div className="ledger-network-row">
+          <label className="ledger-field">Network
+            <select className="input-sm" aria-label="Registry network" value={chainId} disabled={!!busy} onChange={(event) => { setChainId(event.target.value); try { localStorage.setItem('wa-ledger-network', event.target.value) } catch {} }}>
+              {Object.values(REGISTRY_NETWORKS).map((item) => <option key={item.chainId} value={item.chainId}>{item.name}</option>)}
+            </select>
+          </label>
+          <div className="ledger-wallet">
+            <p className="caption grey">
+              {account ? <><code title={account}>{account.slice(0, 8)}…{account.slice(-6)}</code>{balance && ` · ${Number(balance).toPrecision(4)} test ETH`}{walletChain !== chainId && ' · Switch network to continue'}</> : 'Connect MetaMask to deploy or register. Verification needs no wallet.'}
+            </p>
+            <button className="btn btn--ghost" disabled={!!busy} onClick={connect}>
+              {account && walletChain === chainId ? 'Refresh wallet' : 'Connect wallet'}
+            </button>
+          </div>
+        </div>
+
+        {config && (
+          <p className="caption grey ledger-address">
+            Chain {config.chainId} · Registry <ChainLink config={config} type="address" value={config.address}><code>{config.address}</code></ChainLink>
+          </p>
+        )}
+
+        {config?.deploymentTransaction && (
+          <div className="ledger-actions">
+            <ChainLink config={config} type="tx" value={config.deploymentTransaction}>View deployment transaction</ChainLink>
+            <button className="btn btn--ghost" onClick={() => downloadConfig(config)}>Download deployment config</button>
+            {config.pending && <button className="btn btn--ink" disabled={!!busy} onClick={checkDeployment}>Check deployment</button>}
+          </div>
+        )}
+
+        {!config && !configLoading && (
+          <div className="ledger-onboarding">
+            <h3>Deploy your report registry</h3>
+            <p className="caption grey">One-time setup on {network.name}. MetaMask will ask you to approve a contract deployment using test ETH. Your private key stays in your wallet.</p>
+            <div className="ledger-actions">
+              <button className="btn btn--ink" disabled={!!busy} onClick={deploy}>Deploy registry</button>
+              {chainId === '11155111' && <a className="ledger-explorer" href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" target="_blank" rel="noopener noreferrer">Get free Sepolia ETH</a>}
+              <a className="ledger-explorer" href="https://metamask.com/download" target="_blank" rel="noopener noreferrer">Install MetaMask</a>
+            </div>
+          </div>
+        )}
+
+        {!configLoading && (
+          <details className="ledger-existing">
+            <summary>Use an already deployed registry</summary>
+            <div className="ledger-actions">
+              <input className="input-sm" aria-label="Existing registry address" placeholder="Registry contract address (0x…)" value={existingAddress} disabled={!!busy} onChange={(event) => setExistingAddress(event.target.value)} />
+              <button className="btn btn--ghost" disabled={!!busy || !existingAddress.trim()} onClick={useExisting}>Use registry</button>
+            </div>
+            <p className="caption grey">The deployed contract must match WebAssure’s registry bytecode.</p>
+          </details>
+        )}
+
+        {setupError && (
+          <div className="ledger-alert" role="status">
+            <AlertIcon />
+            <div>
+              <strong>Registry not connected</strong>
+              <p className="caption grey">{setupError}</p>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Section 2: Report Fingerprint, Commitment & Verification */}
+      <section className="card panel ledger-card">
+        <div className="ledger-head">
+          <div>
+            <p className="ledger-step"><span>2</span>Report commitment &amp; verification<em>Fingerprint a saved investigation or import a receipt</em></p>
+            <p className="caption grey">Commit report fingerprints on-chain with your wallet, or independently verify a receipt JSON file against the registry.</p>
+          </div>
+          <label className="btn btn--ghost ledger-import">
+            <UploadIcon />
+            <span>Import receipt</span>
+            <input className="ledger-upload" type="file" accept=".json,application/json" disabled={!!busy} onChange={upload} />
+          </label>
+        </div>
+
+        <label className="ledger-field">Saved investigation
+          <span className="ledger-select">
+            <select className="input-sm" value={selected} disabled={!!busy} onChange={(e) => { setSelected(e.target.value); setBundle(null); setVerified(null); setNotice('') }}>
+              <option value="">Choose a report</option>
+              {scans.map((scan) => <option key={scan.id} value={scan.id}>{scan.normalized_url} — {scan.risk_classification}</option>)}
+            </select>
+          </span>
+        </label>
+
+        {!scans.length && !historyError && (
+          <p className="caption grey">{historyLoading ? 'Loading saved reports…' : 'Run a URL investigation to prepare your first report.'}</p>
+        )}
+
+        {historyError && (
+          <div className="ledger-alert" role="alert">
+            <AlertIcon />
+            <div>
+              <strong>Saved reports unavailable</strong>
+              <p className="caption grey">{historyError}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="ledger-actions">
+          <button className="btn btn--ink" disabled={!selected || !!busy} onClick={prepare}>Prepare snapshot</button>
+          {scans.length < total && (
+            <button className="btn btn--ghost" disabled={historyLoading || !!busy} onClick={loadMore}>Load more reports</button>
+          )}
+        </div>
+
+        {bundle && (
+          <div className="ledger-snapshot">
+            <div>
+              <p className="caption grey">Snapshot fingerprint</p>
+              <code>{snapshotDigest(bundle.snapshot)}</code>
+            </div>
+            <div className="ledger-actions">
+              <button className="btn btn--ghost" onClick={() => downloadReport(bundle)}>
+                Export {bundle.registration ? 'receipt' : 'snapshot'}
+              </button>
+              <button className="btn btn--ink" disabled={!config || config.pending || !!busy || !!bundle.registration} onClick={register}>
+                Register with wallet
+              </button>
+              <button className="btn btn--ghost" disabled={!config || config.pending || !!busy || !bundle.registration} onClick={verify}>
+                Verify integrity
+              </button>
+            </div>
+            {bundle.registration && (
+              <p className="caption grey ledger-address">
+                Transaction <ChainLink config={bundle.registration} type="tx" value={bundle.registration.transactionHash}><code>{bundle.registration.transactionHash}</code></ChainLink>
+              </p>
+            )}
+          </div>
+        )}
+
+        {busy && <p className="ledger-message" role="status">{busy}…</p>}
+        {error && <p className="ledger-message ledger-message--bad" role="alert">{error}</p>}
+        {notice && <p className="ledger-message" role="status">{notice}</p>}
+        {verified && (
+          <div className="ledger-verified">
+            <strong>Integrity verified</strong>
+            <p className="caption grey ledger-address">Registered by {verified.reporter} · Block {verified.blockNumber}</p>
+          </div>
+        )}
+      </section>
+
+    </div>
   </>
 }
