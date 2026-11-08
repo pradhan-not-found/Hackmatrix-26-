@@ -32,7 +32,7 @@ export function buildSlides(mode) {
 
   const footer = (source) => [
     text(M, 672, 300, 20, [{ t: 'webassure', b: true }, { t: '  |  HackMatrix 2026', c: C.grey }], { size: 13, lh: 1.3 }),
-    ...(source ? [text(372, 672, 780, 20, source, { size: 12, lh: 1.3, color: C.grey, align: 'right' })] : []),
+    ...(source ? [text(372, 672, 836, 20, source, { size: 12, lh: 1.3, color: C.grey, align: 'right' })] : []),
   ]
 
   const techTile = (x, y, name, label) => [
@@ -346,8 +346,11 @@ export function buildSlides(mode) {
     },
   ]
 
-  // The HackMatrix logo sits top right on every slide after the cover.
-  const branding = img(asset('logos/hackmatrix.png'), 'HackMatrix', 1049, 24, 159, 24)
-  const pageNumber = (page) => text(1168, 672, 40, 20, String(page), { size: 13, lh: 1.3, weight: 600, align: 'right' })
-  return slides.map((slide, index) => ({ ...slide, items: slide.cover ? slide.items : [...slide.items, branding, pageNumber(index + 1)] }))
+  // Every slide after the cover shows the HackMatrix logo, a divider and the page number, top right.
+  const branding = (page) => [
+    img(asset('logos/hackmatrix.png'), 'HackMatrix', 991, 24, 159, 24),
+    box(1163, 26, 1, 20, { fill: C.grey, radius: 0 }),
+    text(1172, 26, 36, 20, String(page).padStart(2, '0'), { size: 16, lh: 1.25, weight: 600, align: 'right' }),
+  ]
+  return slides.map((slide, index) => ({ ...slide, items: slide.cover ? slide.items : [...slide.items, ...branding(index + 1)] }))
 }
