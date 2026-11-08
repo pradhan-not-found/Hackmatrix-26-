@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from backend.gemini import evidence_snapshot, explain, explain_message_analysis
+from backend.gemini import evidence_snapshot, explain, explain_message_analysis, insight_snapshot, saved_insights_match, MAX_INSIGHT_INPUT_CHARS
 from backend.main import app
 from tests.support_store import isolated_storage
 
@@ -23,7 +23,7 @@ CONTENT = {"summary": {"text": "Reputation verification is incomplete.", "eviden
 
 class GeminiTests(unittest.TestCase):
     def setUp(self):
-        patch.dict(os.environ, {"GEMINI_API_KEY": "test-secret-key", "GEMINI_MODEL": "gemini-3.8-flash"}).start()
+        patch.dict(os.environ, {"GEMINI_API_KEY": "test-secret-key", "GEMINI_MODEL": "gemini-3.8-flash", "GEMINI_REPORT_MODEL": ""}).start()
         self.opener = patch("backend.gemini.build_opener").start()
         self.response = self.opener.return_value.open.return_value.__enter__.return_value
         self.set_content(CONTENT)
@@ -44,6 +44,22 @@ class GeminiTests(unittest.TestCase):
         self.assertNotIn("test-secret-key", request.data.decode())
         self.assertIn("systemInstruction", json.loads(request.data))
         self.assertEqual(json.dumps(REPORT), original)
+        config = json.loads(request.data)['generationConfig']
+        self.assertEqual(config['maxOutputTokens'], 1800)
+        self.assertEqual(config['thinkingConfig']['thinkingLevel'], 'low')
+        self.assertTrue(saved_insights_match({**REPORT, 'ai_explanation': result}))
+        self.assertFalse(saved_insights_match({**REPORT, 'risk_classification': 'High Risk', 'ai_explanation': result}))
+
+    def test_paid_snapshot_has_a_size_limit_and_marks_omitted_evidence(self):
+        report = {**REPORT, 'findings': [
+            {'id': f'finding-{index}', 'category': 'tls', 'severity': 'medium',
+             'description': 'Large untrusted description ' * 200, 'evidence': {'secret': 'private raw certificate'}}
+            for index in range(100)]}
+        snapshot = insight_snapshot(report)
+        encoded = json.dumps(snapshot, ensure_ascii=False, separators=(',', ':'))
+        self.assertLessEqual(len(encoded), MAX_INSIGHT_INPUT_CHARS)
+        self.assertEqual(snapshot['omitted_findings'], 90)
+        self.assertNotIn('private raw certificate', encoded)
 
     def test_snapshot_excludes_raw_headers_and_finding_url_evidence(self):
         report = {**REPORT, "findings": [{"id": "finding-1", "category": "transport", "severity": "medium",
@@ -117,4 +133,6 @@ class GeminiTests(unittest.TestCase):
                     saved = client.get(f"/api/investigations/{REPORT['id']}").json()
                     self.assertEqual(saved["risk_classification"], REPORT["risk_classification"])
                     self.assertEqual(saved["ai_explanation"], result.json())
+                    client.post(f"/api/investigations/{REPORT['id']}/explanation?provider=gemini")
+                    self.assertEqual(self.opener.return_value.open.call_count, 1)
                     self.assertEqual(client.post('/api/investigations/00000000-0000-0000-0000-000000000000/explanation').status_code, 404)

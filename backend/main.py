@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from backend.investigation import investigate
 from backend.network import UnsafeURL
-from backend.gemini import explain, explain_message_analysis
+from backend.gemini import explain, explain_message_analysis, saved_insights_match
 from backend.explanation import explain_locally
 from backend.message_analysis import MAX_MESSAGE_LENGTH, analyze_message
 from backend.supabase import investigation_store
@@ -18,6 +18,7 @@ from backend.supabase import investigation_store
 app = FastAPI(title="HackMatrix URL Investigation", version="0.1.0")
 # Bound simultaneous outbound scans in this single-process MVP.
 slots = threading.BoundedSemaphore(4)
+explanation_locks = [threading.Lock() for _ in range(32)]
 
 
 def database():
@@ -82,11 +83,22 @@ def get_investigation(investigation_id: UUID, store=Depends(investigation_store)
 
 @app.post("/api/investigations/{investigation_id}/explanation")
 def explain_investigation(investigation_id: UUID, provider: Literal["local", "gemini"] = "local", store=Depends(investigation_store)):
+    # Coalesce duplicate requests in this single-process MVP, then recheck storage.
+    with explanation_locks[investigation_id.int % len(explanation_locks)]:
+        return _explain_investigation(investigation_id, provider, store)
+
+
+def _explain_investigation(investigation_id, provider, store):
+    report = store.get(str(investigation_id))
+    if provider == 'gemini' and saved_insights_match(report):
+        return report['ai_explanation']
     if not slots.acquire(blocking=False):
         raise HTTPException(429, "Investigation capacity reached; retry later")
     try:
-        report = store.get(str(investigation_id))
-        report["ai_explanation"] = explain(report) if provider == "gemini" else explain_locally(report)
+        explanation = explain(report) if provider == "gemini" else explain_locally(report)
+        if explanation.get('status') != 'completed':
+            return explanation  # Keep the saved local explanation on provider failure.
+        report["ai_explanation"] = explanation
         store.update(str(investigation_id), report)
         return report["ai_explanation"]
     finally:

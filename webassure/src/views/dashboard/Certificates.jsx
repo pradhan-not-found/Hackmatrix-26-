@@ -1,104 +1,86 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Badge } from '../../components/Sections.jsx'
-import { CERTS } from '../../lib/data.js'
-import { Kpi, PageHead } from './ui.jsx'
-import { CertificatesIcon } from './NavIcons.jsx'
+import { Kpi, PageHead, Empty } from './ui.jsx'
+import { useDash } from './context.js'
+import { certificateRows } from '../../lib/certificates.mjs'
+import { formatDate } from '../../lib/investigations.js'
+import ReportDetails from './ReportDetails.jsx'
 
-const STATUS = { ok: 'Valid', warn: 'Expiring soon', bad: 'Needs attention' }
-const LIFETIME = 365 // days, used to draw the remaining-validity bar
+const issuerName = (issuer) => typeof issuer === 'string' ? issuer : Object.values(issuer || {}).join(', ') || 'Not collected'
 
-function Lock() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
-    </svg>
-  )
-}
-
-function CertRow({ c }) {
-  const pct = c.days == null ? 0 : Math.max(4, Math.min(100, (c.days / LIFETIME) * 100))
-  const tone = c.pending ? 'warn' : c.status
-  return (
-    <li className="cr">
-      <span className={`cr__icon cr__icon--${tone}`}><Lock /></span>
-      <div className="cr__main">
-        <p className="cr__host">{c.host}</p>
-        <p className="cr__issuer">{c.issuer}</p>
-      </div>
-      <div className="cr__checks">
-        <span className={`cr__check${c.key === 'RSA 1024' ? ' cr__check--bad' : ''}`}>
-          <span className="cr__k">Key</span>{c.key}
-        </span>
-        <span className={`cr__check${c.ct === false ? ' cr__check--bad' : ''}`}>
-          <span className="cr__k">CT logs</span>{c.ct == null ? '—' : c.ct ? 'Logged' : 'Missing'}
-        </span>
-      </div>
-      <div className="cr__expiry">
-        <div className="cr__exp-top">
-          <span>{c.expires}</span>
-          <span className="cr__days">{c.days == null ? 'Pending' : `${c.days} days left`}</span>
-        </div>
-        <span className="cr__bar"><span className={`cr__fill cr__fill--${tone}`} style={{ width: `${pct}%` }} /></span>
-      </div>
-      <div className="cr__status">
-        <Badge tone={tone}>{c.pending ? 'Queued' : STATUS[c.status]}</Badge>
-      </div>
-    </li>
-  )
+function Certificate({ item, onOpen }) {
+  const { tls, cert } = item
+  const key = cert.public_key
+  const names = cert.subject_alt_names || (tls.subject_alt_names || []).map(([type, value]) => ({ type, value }))
+  return <article className="card panel cert-record">
+    <div className="cert-record-head"><div><h2 className="panel__title">{item.host}</h2><p className="caption grey">Checked {formatDate(item.checkedAt)}</p></div><Badge tone={item.status}>{item.label}</Badge></div>
+    {item.error && <p className="dash__err">{item.error}</p>}
+    <dl className="cert-record-grid">
+      <div><dt>Issuer</dt><dd>{issuerName(cert.issuer || tls.issuer)}</dd></div>
+      <div><dt>TLS connection</dt><dd>{tls.protocol || 'Not collected'}{tls.verified && ' · Hostname and system trust verified at scan'}</dd></div>
+      <div><dt>Valid from</dt><dd>{formatDate(cert.not_before || tls.not_before)}</dd></div>
+      <div><dt>Expires</dt><dd>{formatDate(cert.not_after || tls.not_after)}{item.days !== null && ` · ${item.days <= 0 ? 'Expired' : `${item.days} days left`}`}</dd></div>
+      <div><dt>Public key</dt><dd>{key ? `${key.algorithm}${key.bits ? ` ${key.bits} bits` : ''}${key.curve ? ` (${key.curve})` : ''} · ${key.status}` : 'Not assessed in this report'}</dd></div>
+      <div><dt>Certificate signature</dt><dd>{cert.signature ? `${cert.signature.algorithm || cert.signature.oid}${cert.signature.hash ? ` / ${cert.signature.hash}` : ''} · ${cert.signature.status}` : 'Not assessed in this report'}</dd></div>
+    </dl>
+    <details className="cert-record-details"><summary>Certificate identity and evidence</summary><dl className="cert-record-grid">
+      <div><dt>Subject</dt><dd>{cert.subject || 'Not collected'}</dd></div>
+      <div><dt>Subject Alternative Names</dt><dd>{names.length ? names.map((name) => `${name.type}: ${name.value}`).join(', ') : 'Not collected'}</dd></div>
+      <div><dt>SHA-256 fingerprint</dt><dd><code>{cert.sha256_fingerprint || 'Not collected'}</code></dd></div>
+      <div><dt>Negotiated cipher</dt><dd>{tls.cipher || 'Not collected'}</dd></div>
+    </dl></details>
+    <div className="cert-record-foot"><p className="caption grey">Saved snapshot. Revocation, CT and full-chain strength are not assessed. HTTPS does not establish website legitimacy.</p><button className="btn btn--ghost" onClick={() => onOpen(item.reportId)}>View scan report</button></div>
+  </article>
 }
 
 export default function Certificates() {
-  const [certs, setCerts] = useState(CERTS)
+  const { scans, getReport, runInvestigation, scanLoading, historyLoading, historyError, refreshHistory, total, loadMore } = useDash()
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [attempt, setAttempt] = useState(0)
   const [host, setHost] = useState('')
-  const [err, setErr] = useState('')
-
-  const add = (e) => {
-    e.preventDefault()
-    const h = host.trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0]
-    if (!/^[a-z0-9*.-]+\.[a-z]{2,}$/.test(h)) return setErr('Enter a domain such as shop.example.com')
-    if (certs.some((c) => c.host === h)) return setErr('That domain is already monitored.')
-    setErr('')
-    setCerts((c) => [{ host: h, issuer: 'Awaiting first check', expires: '—', days: null, key: '—', ct: null, status: 'warn', pending: true }, ...c])
-    setHost('')
+  const [openReport, setOpenReport] = useState(null)
+  useEffect(() => {
+    let active = true
+    setLoading(true); setError(''); setReports([])
+    const collect = async () => {
+      const results = []
+      let failed = 0
+      // Bound report retrieval; older history is fetched explicitly by the user.
+      for (let offset = 0; offset < scans.length; offset += 4) {
+        const batch = await Promise.allSettled(scans.slice(offset, offset + 4).map((scan) => getReport(scan.id)))
+        if (!active) return
+        for (const result of batch) result.status === 'fulfilled' ? results.push(result.value) : failed++
+      }
+      if (active) { setReports(results); setLoading(false); if (failed) setError(`${failed} saved report(s) could not be loaded. The list and counts are incomplete.`) }
+    }
+    collect()
+    return () => { active = false }
+  }, [scans, getReport, attempt])
+  const rows = useMemo(() => certificateRows(reports), [reports])
+  const count = (status) => rows.filter((row) => row.status === status).length
+  const inspect = async (event) => {
+    event.preventDefault()
+    if (scanLoading) return
+    setError('')
+    try {
+      const url = new URL(host.includes('://') ? host.trim() : `https://${host.trim()}`)
+      if (url.protocol !== 'https:' || url.username || url.password) throw new Error('Enter an HTTPS URL or domain without credentials.')
+      const result = await runInvestigation(url.href, { navigate: false })
+      if (result) setHost('')
+    } catch (failure) { setError(failure.message) }
   }
-
-  const count = (s) => certs.filter((c) => !c.pending && c.status === s).length
-
-  return (
-    <>
-      <PageHead title="Certificates" />
-
-      <section className="kpis">
-        <Kpi label="Monitored domains" value={certs.length} delta="TLS certificates watched" />
-        <Kpi label="Valid" value={count('ok')} delta="Trusted chain, logged in CT" />
-        <Kpi label="Expiring soon" value={count('warn')} delta="Within 14 days" />
-        <Kpi label="Needs attention" value={count('bad')} delta="Weak key, unknown issuer or missing CT" />
-      </section>
-
-      <form className="card panel cmon" onSubmit={add}>
-        <span className="cmon__icon"><CertificatesIcon /></span>
-        <div className="cmon__txt">
-          <p className="panel__title">Monitor a domain</p>
-          <p className="caption grey">Get alerts on expiry, weak keys, unknown issuers and missing Certificate Transparency entries.</p>
-        </div>
-        <div className="cmon__field">
-          <input className="input-sm" placeholder="shop.example.com" value={host} onChange={(e) => setHost(e.target.value)} aria-label="Domain to monitor" />
-          <button className="btn btn--ink" type="submit">Add domain</button>
-        </div>
-        {err && <p className="dash__err cmon__err" role="alert">{err}</p>}
-      </form>
-
-      <section className="card panel panel--flush">
-        <div className="panel__head cl__head">
-          <h2 className="panel__title">TLS certificates</h2>
-          <span className="caption grey">Preview data · live TLS results appear in each scan report</span>
-        </div>
-        <ul className="cl">
-          {certs.map((c) => <CertRow key={c.host} c={c} />)}
-        </ul>
-      </section>
-    </>
-  )
+  return <>
+    <PageHead title="Certificates" />
+    <section className="kpis"><Kpi label="Domains in loaded reports" value={loading ? '…' : rows.length} delta="Latest saved observation per host" /><Kpi label="Verified at scan" value={loading ? '…' : count('ok')} delta="Supported leaf crypto checks passed" /><Kpi label="Needs review" value={loading ? '…' : count('warn')} delta="Expiring or checks incomplete" /><Kpi label="Needs attention" value={loading ? '…' : count('bad')} delta="Verification, validity or weak crypto" /></section>
+    <form className="card panel cmon" onSubmit={inspect}><div className="cmon__txt"><p className="panel__title">Inspect a certificate</p><p className="caption grey">Run a new HTTPS investigation and save its certificate evidence.</p></div><div className="cmon__field"><input className="input-sm" value={host} onChange={(event) => setHost(event.target.value)} placeholder="shop.example.com" aria-label="Domain or HTTPS URL to inspect" required /><button className="btn btn--ink" disabled={scanLoading}>{scanLoading ? 'Inspecting…' : 'Inspect certificate'}</button></div></form>
+    {(error || historyError) && <div className="card panel" role="alert"><p>{error || historyError}</p><button className="btn btn--ghost" disabled={loading} onClick={() => historyError ? refreshHistory() : setAttempt((value) => value + 1)}>Retry certificate reports</button></div>}
+    <p className="caption grey">Using {reports.length} of {total} saved investigations. Results are snapshots; older reports may require a new scan for cryptographic details.</p>
+    {loading || historyLoading ? <p role="status">Loading certificate evidence…</p> : rows.length ? <div className="cert-records">{rows.map((item) => <Certificate key={item.host} item={item} onOpen={setOpenReport} />)}</div> : !error && !historyError && <Empty title="No certificate evidence yet" text="Inspect an HTTPS domain or load more saved investigations." />}
+    {scans.length < total && <button className="btn btn--ghost" disabled={historyLoading || loading} onClick={loadMore}>Load more investigations</button>}
+    {openReport && <ReportDetails id={openReport} onClose={() => setOpenReport(null)} />}
+  </>
 }

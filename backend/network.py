@@ -10,6 +10,7 @@ import threading
 from email.message import Message
 import idna
 from urllib.parse import quote, urlsplit, urlunsplit
+from backend.certificates import inspect_certificate
 
 
 class UnsafeURL(ValueError):
@@ -158,6 +159,7 @@ def fetch(url: str, addresses: list[str], timeout: float = 5) -> dict:
                 "issuer": dict(item for group in cert.get("issuer", ()) for item in group),
                 "not_before": cert.get("notBefore"), "not_after": cert.get("notAfter"),
                 "subject_alt_names": cert.get("subjectAltName", ()),
+                "certificate": inspect_certificate(connection.sock.getpeercert(binary_form=True)),
             }
         if time.monotonic() >= deadline:
             raise TimeoutError("Request deadline exceeded")

@@ -1,7 +1,9 @@
 """Verify sessions with Supabase Auth and access PostgREST under the caller's RLS identity."""
 
 import json
+import logging
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -11,6 +13,8 @@ from uuid import UUID
 
 from dotenv import dotenv_values
 from fastapi import Depends, Header, HTTPException
+
+logger = logging.getLogger(__name__)
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -31,18 +35,38 @@ def request_supabase(path, token, method='GET', body=None, extra_headers=None):
     url, key = configuration()
     headers = {'apikey': key, 'Authorization': f'Bearer {token}', 'Content-Type': 'application/json', **(extra_headers or {})}
     request = Request(url + path, data=json.dumps(body).encode() if body is not None else None, headers=headers, method=method)
-    try:
-        with build_opener(NoRedirect()).open(request, timeout=15) as response:
-            raw = response.read()
-            return json.loads(raw) if raw else None, response.headers
-    except HTTPError as failure:
-        if failure.code == 401:
-            raise HTTPException(401, 'Your session has expired. Sign in again.', headers={'WWW-Authenticate': 'Bearer'}) from failure
-        if failure.code == 403:
-            raise HTTPException(403, 'You do not have access to this resource.') from failure
-        raise HTTPException(503, 'Supabase storage is unavailable. Check the connection and apply the workspace migration.') from failure
-    except (URLError, TimeoutError, OSError, ValueError) as failure:
-        raise HTTPException(503, 'Cannot reach Supabase. Please retry shortly.') from failure
+    # Retry only reads: replaying a write after a lost response can duplicate it.
+    attempts = 2 if method == 'GET' else 1
+    service = 'auth' if path.startswith('/auth/') else 'reports'
+    for attempt in range(attempts):
+        try:
+            with build_opener(NoRedirect()).open(request, timeout=15) as response:
+                raw = response.read()
+                return json.loads(raw) if raw else None, response.headers
+        except HTTPError as failure:
+            if failure.code == 401:
+                raise HTTPException(401, 'Your session has expired. Sign in again.', headers={'WWW-Authenticate': 'Bearer'}) from failure
+            if failure.code == 403:
+                raise HTTPException(403, 'You do not have access to this resource.') from failure
+            retry = failure.code in (502, 503, 504) and attempt + 1 < attempts
+            logger.warning('Supabase %s %s HTTP %s; retry=%s', service, method, failure.code, retry)
+            if not retry:
+                raise HTTPException(503, 'Supabase is temporarily unavailable. Please retry shortly.') from failure
+        except (URLError, TimeoutError, OSError) as failure:
+            reason = failure.reason if isinstance(failure, URLError) else failure
+            # Exception text, request URLs and upstream bodies may contain private
+            # data. Log only error types and numeric OS codes, never credentials.
+            retry = attempt + 1 < attempts
+            logger.warning('Supabase %s %s connection failed (%s, errno=%s, winerror=%s); retry=%s',
+                           service, method, type(reason).__name__, getattr(reason, 'errno', None),
+                           getattr(reason, 'winerror', None), retry)
+            if not retry:
+                raise HTTPException(503, 'Cannot reach Supabase after retrying. Check your connection and retry shortly.'
+                                    if attempts > 1 else 'Cannot reach Supabase. Please retry shortly.') from failure
+        except ValueError as failure:
+            logger.warning('Supabase %s %s returned invalid JSON', service, method)
+            raise HTTPException(502, 'Supabase returned an invalid response. Please retry shortly.') from failure
+        time.sleep(.2)
 
 
 @dataclass(frozen=True)

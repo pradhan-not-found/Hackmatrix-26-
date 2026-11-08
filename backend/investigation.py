@@ -94,6 +94,22 @@ def investigate(url: str) -> dict:
                                      "http_status": result["status"]})
             report["checks"].append({"name": "tls", "status": "completed" if result["tls"] else "not_applicable",
                                      "url": current, "details": result["tls"]})
+            certificate = (result["tls"] or {}).get("certificate") or {}
+            for check_name, field, description in (
+                ("certificate_key_strength", "public_key", "Leaf certificate uses a weak or legacy public key"),
+                ("certificate_signature", "signature", "Leaf certificate uses a weak signature hash"),
+            ):
+                details = certificate.get(field) or {}
+                assessed = details.get("status") in ("acceptable", "weak")
+                report["checks"].append({"name": check_name, "url": current,
+                    "status": "not_applicable" if not result["tls"] else "completed" if assessed else "unavailable",
+                    "details": details, "reason": None if assessed or not result["tls"] else certificate.get("reason", "Leaf cryptographic metadata is unavailable or outside the supported policy.")})
+                if details.get("status") == "weak":
+                    remediation = "Website owner: replace the certificate with a modern key and SHA-256 or stronger signature; DSA is treated as legacy by the local policy."
+                    finding("tls", "medium", description, {"url": current, "policy": "leaf-crypto-v1", **details},
+                            remediation, source="verified TLS leaf certificate", code=check_name,
+                            impact="Weak or legacy cryptography reduces the protection provided by the certificate. This is not evidence of phishing.",
+                            remediation=remediation)
             if parts.scheme == "http":
                 finding("transport", "medium", "Connection uses unencrypted HTTP", current,
                         "Avoid submitting credentials over HTTP.")

@@ -198,6 +198,85 @@ class WebAssureBrowserTests(unittest.TestCase):
         page.goto(self.url + '/dashboard/scans')
         expect(page).to_have_url(self.url + '/login?next=%2Fdashboard%2Fscans')
 
+    def test_z_report_gemini_insights_retry_save_and_reuse(self):
+        from backend.gemini import insight_fingerprint, INSIGHT_VERSION
+        def insights(report):
+            return {'status': 'completed', 'provider': 'Gemini', 'model': 'gemini-test',
+                    'generated_at': '2026-11-08T08:00:00Z', 'insight_version': INSIGHT_VERSION,
+                    'input_fingerprint': insight_fingerprint(report),
+                    'summary': {'text': 'Missing browser protections require owner review, without establishing phishing.', 'evidence_ids': ['finding-1']},
+                    'explanations': [{'text': 'The response omitted selected security headers.', 'evidence_ids': ['finding-1']}],
+                    'next_steps': [{'text': 'Website owner: configure the missing headers and rescan.', 'evidence_ids': ['finding-1']}],
+                    'evidence': [{'id': 'finding-1', 'category': 'configuration'}]}
+        sequence = [{'status': 'unavailable', 'reason': 'Test provider temporarily unavailable'}, insights]
+        def generate(report):
+            value = sequence.pop(0)
+            return value(report) if callable(value) else value
+        mock = patch('backend.main.explain', side_effect=generate).start()
+        self.addCleanup(patch.stopall)
+        page = self.browser.new_page(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(page.close)
+        page.route('**/auth/v1/user', lambda route: route.fulfill(json=USER))
+        page.add_init_script("localStorage.setItem('wa-cookies', JSON.stringify({choice: 'essential'}))")
+        page.add_init_script("localStorage.setItem('sb-ldrspcimsdzazhbckmca-auth-token', JSON.stringify(" + json.dumps(test_session()) + "))")
+        page.goto(self.url + '/dashboard/scans')
+        page.get_by_label('URL to scan', exact=True).fill('https://insights.example')
+        page.get_by_role('button', name='Scan', exact=True).click()
+        section = page.locator('.analysis-explanation')
+        section.get_by_role('button', name='Generate AI insights', exact=True).click()
+        expect(section.get_by_role('alert')).to_contain_text('Test provider temporarily unavailable')
+        section.get_by_role('button', name='Retry AI insights', exact=True).click()
+        expect(section.locator('.report-insight-grid')).to_be_visible()
+        expect(section).to_contain_text('Missing browser protections require owner review')
+        expect(section).to_contain_text('What matters')
+        expect(section).to_contain_text('Website owner: configure the missing headers')
+        page.reload()
+        expect(page.locator('.report-insight-grid')).to_be_visible()
+        expect(page.get_by_role('button', name='Generate AI insights', exact=True)).to_have_count(0)
+        self.assertEqual(mock.call_count, 2)
+
+    def test_z_certificate_inspection_saved_details_and_report(self):
+        from tests.test_certificates import certificate
+        from backend.certificates import inspect_certificate
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        metadata = inspect_certificate(certificate(rsa.generate_private_key(65537, 2048)))
+        def fetch(url, addresses):
+            return {'url': url, 'status': 200, 'address': addresses[0], 'headers': {},
+                    'tls': {'verified': True, 'protocol': 'TLSv1.3', 'certificate': metadata},
+                    'html': {'status': 'not_applicable'}}
+        replacement = patch('backend.investigation.fetch', side_effect=fetch)
+        replacement.start()
+        self.addCleanup(replacement.stop)
+        page = self.browser.new_page(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(page.close)
+        failures = []
+        page.on('pageerror', lambda failure: failures.append(str(failure)))
+        page.route('**/auth/v1/user', lambda route: route.fulfill(json=USER))
+        page.add_init_script("localStorage.setItem('wa-cookies', JSON.stringify({choice: 'essential'}))")
+        page.add_init_script("localStorage.setItem('sb-ldrspcimsdzazhbckmca-auth-token', JSON.stringify(" + json.dumps(test_session()) + "))")
+        page.goto(self.url + '/dashboard/certificates')
+        page.get_by_label('Domain or HTTPS URL to inspect').fill('certificate.example')
+        page.get_by_role('button', name='Inspect certificate', exact=True).click()
+        record = page.locator('.cert-record').filter(has_text='certificate.example')
+        expect(record).to_be_visible()
+        expect(record).to_contain_text('CN=example.com')
+        expect(record).to_contain_text('RSA 2048 bits')
+        expect(record).to_contain_text('sha256')
+        page.reload()
+        record = page.locator('.cert-record').filter(has_text='certificate.example')
+        expect(record).to_be_visible()
+        record.get_by_text('Certificate identity and evidence', exact=True).click()
+        expect(record).to_contain_text(metadata['sha256_fingerprint'])
+        record.get_by_role('button', name='View scan report', exact=True).click()
+        dialog = page.get_by_role('dialog', name='Scan details')
+        expect(dialog).to_be_visible()
+        dialog.get_by_role('tab', name='Checks', exact=True).click()
+        expect(dialog.get_by_text('Certificate key strength', exact=True)).to_have_count(2)
+        dialog.get_by_role('button', name='Close report').click()
+        page.set_viewport_size({'width': 390, 'height': 844})
+        self.assertTrue(page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
+        self.assertEqual(failures, [])
+
     def test_z_message_link_investigation_and_ledger_snapshot(self):
         root = Path(__file__).resolve().parent.parent
         chain = subprocess.Popen([shutil.which('node'), 'scripts/registry-browser-fixture.mjs'],

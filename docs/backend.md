@@ -53,8 +53,8 @@ Keep the root `.env` API keys on the backend; do not copy them into frontend
 variables. The proxy has a 90-second timeout. A timed-out submission may still
 finish in the backend, so refresh saved history before retrying it.
 
-Certificate monitoring and threat campaigns remain demo features. Real TLS
-evidence is in scan reports. The threat ledger supports local EVM registration
+Certificates now displays real saved TLS evidence and on-demand HTTPS inspections.
+Scheduled monitoring and threat campaigns are not implemented. The threat ledger supports local EVM registration
 and independent verification; see [ledger setup](ledger.md).
 This integration does not make the application ready for public multi-user use;
 the deployment limits below still apply.
@@ -142,8 +142,9 @@ responses, including classification through the investigation pipeline.
 `assessment` records the policy version, decision rule, relevant finding IDs,
 signal groups, and configuration finding IDs. `evidence_coverage.checks` aggregates
 per-hop results into completed, partial, unavailable, failed, blocked, not_run, or
-not_applicable states. Revocation, CT, and certificate key-strength checks
-are explicitly not_implemented and excluded from core coverage. These are
+not_applicable states. Revocation and CT checks are explicitly not_implemented.
+Leaf key-strength and signature checks are implemented auxiliary checks, reported
+separately from core phishing coverage. These are
 documented heuristic rules, not calibrated probabilities.
 
 ### URL and redirect analysis
@@ -220,6 +221,35 @@ are permitted, with five-second absolute request deadlines and a budget checked 
 DNS resolution uses the OS resolver and is not covered by the socket timeout;
 the hop budget is not a hard whole-investigation deadline.
 
+## Leaf certificate inspection
+
+Install the pinned `cryptography` dependency from `requirements.txt`. Following a
+successful hostname- and system-trust-verified TLS handshake, the client parses
+the leaf certificate DER with [cryptography X.509](https://cryptography.io/en/latest/x509/reference/).
+It records subject, issuer, UTC validity dates, DNS/IP SANs, serial number,
+SHA-256 fingerprint, public-key metadata and signature algorithm/hash. No new
+outbound certificate, OCSP or CT requests are introduced, and trust verification
+is never bypassed to collect invalid certificates.
+
+The explicit `leaf-crypto-v1` local policy flags RSA below 2048 bits, EC below
+256 bits, legacy DSA keys, MD5/SHA-1 signatures and hashes below 256 bits.
+Supported acceptable keys are RSA >=2048, P-256/P-384/P-521, Ed25519 and Ed448;
+supported signature hashes are SHA-256/384/512 and intrinsic EdDSA signatures.
+Other algorithms/curves are unassessed, not automatically weak or acceptable.
+These are scoped policy checks, not a complete cryptographic security audit.
+
+Weaknesses produce separate configuration findings with evidence, impact and
+remediation. They never establish phishing or maliciousness. Parsing failures
+leave TLS verification intact but mark cryptographic checks unavailable. The
+phishing policy's existing core coverage requirement is unchanged. Intermediate
+key strength, revocation, CT and CA compromise intelligence remain unassessed.
+
+Certificates uses the latest observation per host from loaded saved reports,
+including redirect hosts and failed TLS observations. It displays incomplete
+checks for older reports rather than fabricating metadata. Users can request a
+fresh HTTPS investigation, open its evidence report, and load older history.
+This is on-demand inspection with saved snapshots, not scheduled monitoring.
+
 ## Tests
 
 ```powershell
@@ -239,8 +269,8 @@ Before public exposure add per-user rate limits, retention/deletion
 controls, network egress restrictions, and a durable worker with hard job deadlines.
 Reports contain submitted URLs and may contain sensitive query strings; protect the database.
 Static inspection cannot evaluate script-rendered pages, submit forms, or establish overall website safety.
-Revocation, compromised-CA intelligence, CT monitoring, and signature/key-strength
-analysis are not implemented. Message analysis is documented below; report
+Revocation, compromised-CA intelligence, CT monitoring and scheduled certificate
+monitoring are not implemented. Message analysis is documented below; report
 commitment registration and independent verification are documented in [ledger.md](ledger.md).
 API provider failures never count as clean reputation results.
 
@@ -349,15 +379,28 @@ Add a [Google AI Studio API key](https://aistudio.google.com/apikey) to `.env`:
 ```dotenv
 GEMINI_API_KEY=your_key
 GEMINI_MODEL=gemini-3.8-flash
+GEMINI_REPORT_MODEL=gemini-3.5-flash-lite
 ```
 
 Gemini is available only through an explicit request to
 `POST /api/investigations/{id}/explanation?provider=gemini`.
-The dashboard uses local explanations and does not call Gemini.
-The response is saved with the report and included in JSON exports. Errors and
-quota limits appear in the dashboard; the underlying report remains available.
-The model defaults to `gemini-3.8-flash`, verified against the live model list.
+The report's **Generate AI insights** action calls Gemini on demand. It displays
+a short assessment, up to three prioritized insights, and up to two concrete next
+steps, with expandable supporting evidence. Successful responses are saved with
+the report and included in JSON exports. Reopening the report costs no generation
+tokens. The backend reuses saved insights when their minimized evidence fingerprint
+and insight-format version match, and coalesces simultaneous requests per report
+in this single-process MVP. Failures do not replace the saved local explanation;
+the dashboard shows an explicit retry action without automatically retrying Gemini.
+`GEMINI_REPORT_MODEL` can select the lightweight model for report insights while
+other Gemini features retain `GEMINI_MODEL`. If it is unset, reports use
+`GEMINI_MODEL`. The supplied example uses the live-verified `gemini-3.5-flash-lite`.
 The explanation has a 45-second socket timeout and uses low thinking effort.
+Report requests cap the serialized evidence at 10,000 characters, prioritize at
+most ten findings and twelve grouped check types, and declare omitted evidence.
+Output is limited to 1,800 tokens including thinking, with a 180-word target for
+the brief. The response records provider token usage when supplied. Message
+explanations retain their existing separate configuration.
 
 The hostname, finding descriptions, selected evidence, check statuses, coverage,
 and limitations are sent to Google. URL paths, queries, raw response headers, and
@@ -371,5 +414,6 @@ not prove that a statement logically follows from its evidence; review the sourc
 checks. Gemini cannot change the deterministic risk classification.
 
 AI explanations are implemented for URL investigation reports; message analysis
-uses local rule-based explanations and blockchain reporting remains outside this
-endpoint.
+also has its own explicit Gemini action. Blockchain reporting remains outside
+this endpoint. A report registered before adding AI insights still verifies its
+original exported snapshot; register a new snapshot to commit the updated report.

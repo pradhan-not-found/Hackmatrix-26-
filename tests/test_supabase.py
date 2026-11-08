@@ -71,6 +71,46 @@ class SupabaseTests(unittest.TestCase):
             self.assertNotIn('secret-user-token', failure.exception.detail)
             self.assertNotIn('private upstream body', failure.exception.detail)
 
+    def test_transient_reads_retry_once_then_recover(self):
+        from urllib.error import URLError, HTTPError
+        from backend.supabase import request_supabase
+        for error in (URLError(ConnectionResetError(10054, 'reset')), HTTPError('https://project.supabase.co', 503, 'Unavailable', {}, None)):
+            with self.subTest(error=type(error).__name__), patch('backend.supabase.configuration', return_value=('https://project.supabase.co', 'publishable')), \
+                 patch('backend.supabase.build_opener') as opener, patch('backend.supabase.time.sleep'):
+                success = opener.return_value.open.return_value
+                success.__enter__.return_value.read.return_value = b'[]'
+                opener.return_value.open.side_effect = [error, success]
+                rows, _ = request_supabase('/rest/v1/investigations', 'user-token')
+                self.assertEqual(rows, [])
+                self.assertEqual(opener.return_value.open.call_count, 2)
+
+    def test_writes_and_auth_denials_are_not_retried(self):
+        from urllib.error import URLError, HTTPError
+        from backend.supabase import request_supabase
+        for method, error, status in (
+            ('POST', URLError(ConnectionResetError()), 503),
+            ('GET', HTTPError('https://project.supabase.co', 401, 'Expired', {}, None), 401),
+            ('GET', HTTPError('https://project.supabase.co', 403, 'Denied', {}, None), 403),
+        ):
+            with self.subTest(method=method, status=status), patch('backend.supabase.configuration', return_value=('https://project.supabase.co', 'publishable')), patch('backend.supabase.build_opener') as opener:
+                opener.return_value.open.side_effect = error
+                with self.assertRaises(HTTPException) as caught:
+                    request_supabase('/rest/v1/investigations', 'private-token', method=method)
+                self.assertEqual(caught.exception.status_code, status)
+                self.assertEqual(opener.return_value.open.call_count, 1)
+
+    def test_exhausted_retry_logs_no_private_data(self):
+        from urllib.error import URLError
+        from backend.supabase import request_supabase
+        with patch('backend.supabase.configuration', return_value=('https://project.supabase.co', 'publishable')), patch('backend.supabase.build_opener') as opener, patch('backend.supabase.time.sleep'), self.assertLogs('backend.supabase', level='WARNING') as logs:
+            opener.return_value.open.side_effect = URLError(OSError(10054, 'private-token private-body'))
+            with self.assertRaises(HTTPException) as caught:
+                request_supabase('/auth/v1/user', 'private-token')
+            self.assertEqual(caught.exception.status_code, 503)
+            self.assertEqual(opener.return_value.open.call_count, 2)
+        self.assertNotIn('private-token', ' '.join(logs.output))
+        self.assertNotIn('private-body', ' '.join(logs.output))
+
 
 if __name__ == '__main__':
     unittest.main()

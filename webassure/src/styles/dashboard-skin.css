@@ -114,6 +114,29 @@
 .ledger-snapshot > code, .ledger-address { overflow-wrap: anywhere; }
 .ledger-upload { max-width: 200px; margin-left: 10px; font-size: 12px; }
 .ledger-verified { padding: 16px; border-radius: 12px; background: var(--tile); color: var(--workspace-accent); }
+.cert-records { display: grid; gap: 18px; }
+.cert-record { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.cert-record-head, .cert-record-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+.cert-record-head > div { min-width: 0; overflow-wrap: anywhere; }
+.cert-record-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 28px; }
+.cert-record-grid dt { font-size: 12px; color: var(--grey); margin-bottom: 5px; }
+.cert-record-grid dd { margin: 0; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.cert-record-details { border-top: 1px solid var(--line); padding-top: 14px; }
+.cert-record-details summary { cursor: pointer; font-size: 13px; color: var(--grey); }
+.cert-record-details[open] summary { margin-bottom: 20px; }
+.cert-record-foot > p { flex: 1 1 240px; }
+.report-insight-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.report-drawer .report-insight-head .btn { min-height: 38px; font-size: 12px; }
+.report-insight-summary { padding: 16px; border-radius: 10px; background: color-mix(in srgb, var(--workspace-accent, #7ea0ff) 7%, var(--card)); box-shadow: inset 3px 0 0 var(--workspace-accent, #7ea0ff); }
+.report-drawer .report-insight-summary .report-statement { margin-top: 8px; background: transparent; }
+.report-insight-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.report-insight-grid h4 { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.report-drawer .report-insight-grid .report-statement { background: transparent; padding: 12px 0; border-radius: 0; box-shadow: inset 0 1px 0 var(--line); font-size: 13px; }
+.report-insight-status, .report-insight-error { font-size: 13px; padding: 12px 14px; border-radius: 8px; background: var(--tile); }
+.report-insight-status { color: var(--workspace-accent, #7ea0ff); }
+.report-insight-error { color: var(--analysis-warn); }
+@media (max-width: 700px) { .report-insight-grid { grid-template-columns: 1fr; gap: 16px; } }
+@media (max-width: 600px) { .cert-record-grid { grid-template-columns: 1fr; } }
 .report-drawer .report-panel section { display: flex; flex-direction: column; gap: 18px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
 .report-drawer .analysis-section-title { min-width: 0; flex-wrap: wrap; row-gap: 4px; }
 .report-drawer .analysis-section-title h3 { margin: 0; letter-spacing: -.015em; }

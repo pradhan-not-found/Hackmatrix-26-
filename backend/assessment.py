@@ -1,7 +1,7 @@
 """Evidence-based phishing assessment, separate from configuration warnings."""
 
-IMPLEMENTED = ("url_structure", "dns", "http", "tls", "redirects", "security_headers", "threat_intelligence", "html_inspection")
-UNIMPLEMENTED = ("certificate_revocation", "certificate_transparency", "certificate_key_strength")
+IMPLEMENTED = ("url_structure", "dns", "http", "tls", "redirects", "security_headers", "threat_intelligence", "html_inspection", "certificate_key_strength", "certificate_signature")
+UNIMPLEMENTED = ("certificate_revocation", "certificate_transparency")
 
 
 def assess(report: dict) -> None:

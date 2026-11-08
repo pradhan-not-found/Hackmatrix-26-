@@ -6,7 +6,7 @@ import { classificationTone, downloadReport, formatDate } from '../../lib/invest
 import { useDash } from './context.js'
 import { AlertIcon, CheckIcon, CloseIcon, DownloadIcon, FileIcon, GlobeIcon, InfoIcon, LockIcon, RouteIcon, SettingsIcon, ShieldIcon } from '../../components/Icons.jsx'
 
-const CHECK_LABELS = { url_structure: 'URL identity', dns: 'DNS resolution', http: 'HTTP response', tls: 'TLS verification', redirects: 'Redirect chain', security_headers: 'Security headers', threat_intelligence: 'Threat intelligence', html_inspection: 'HTML inspection', certificate_revocation: 'Certificate revocation', certificate_transparency: 'Certificate transparency', certificate_key_strength: 'Certificate key strength' }
+const CHECK_LABELS = { url_structure: 'URL identity', dns: 'DNS resolution', http: 'HTTP response', tls: 'TLS verification', redirects: 'Redirect chain', security_headers: 'Security headers', threat_intelligence: 'Threat intelligence', html_inspection: 'HTML inspection', certificate_revocation: 'Certificate revocation', certificate_transparency: 'Certificate transparency', certificate_key_strength: 'Certificate key strength', certificate_signature: 'Certificate signature' }
 const label = (name) => CHECK_LABELS[name] || name.replaceAll('_', ' ')
 const stateTone = (state) => state === 'completed' ? 'ok' : ['failed', 'blocked'].includes(state) ? 'bad' : ['unavailable', 'partial'].includes(state) ? 'warn' : 'neutral'
 const StateIcon = ({ state }) => state === 'completed' ? <CheckIcon /> : ['failed', 'blocked', 'unavailable', 'partial'].includes(state) ? <AlertIcon /> : <InfoIcon />
@@ -35,28 +35,47 @@ function Evidence({ title = 'Supporting evidence', value }) {
 
 function ExplanationText({ item, evidence }) {
   return <div className="report-statement"><p>{item.text}</p><Evidence
-    title={`Evidence: ${item.evidence_ids.join(', ')}`}
+    title="View supporting evidence"
     value={evidence.filter((source) => item.evidence_ids.includes(source.id))} /></div>
 }
 
 export default function ReportDetails({ id, onClose }) {
-  const { getReport } = useDash()
+  const { getReport, explainReport } = useDash()
   const dialog = useRef(null)
   const [report, setReport] = useState(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [tab, setTab] = useState('overview')
+  const [insightBusy, setInsightBusy] = useState(false)
+  const [insightError, setInsightError] = useState('')
+  const insightVersion = useRef(0)
   const panels = useRef(null)
   useEffect(() => { dialog.current.showModal() }, [])
   useEffect(() => {
     let active = true
     setReport(null)
     setError('')
+    ++insightVersion.current
+    setInsightBusy(false)
+    setInsightError('')
     getReport(id).then((value) => { if (active) setReport(value) })
       .catch((failure) => { if (active) setError(failure.message) })
     return () => { active = false }
   }, [id, attempt, getReport])
   const explanation = report?.ai_explanation
+  const isAI = explanation?.status === 'completed' && explanation.provider === 'Gemini'
+  const currentAI = isAI && explanation.insight_version === 'report-insights-v1'
+  const generateInsights = async () => {
+    const version = insightVersion.current
+    setInsightBusy(true); setInsightError('')
+    try {
+      const next = await explainReport(id)
+      if (version !== insightVersion.current) return
+      if (next.status !== 'completed') throw new Error(next.reason || 'AI insights are temporarily unavailable.')
+      setReport((previous) => ({ ...previous, ai_explanation: next }))
+    } catch (failure) { if (version === insightVersion.current) setInsightError(failure.message) }
+    finally { if (version === insightVersion.current) setInsightBusy(false) }
+  }
   const verdictTone = report ? classificationTone(report.risk_classification) : 'neutral'
   const configurationCount = report?.findings.filter((finding) => finding.kind === 'security_configuration').length || 0
   const tabs = [['overview', 'Overview'], ['checks', 'Checks'], ['connection', 'Connection'], ['evidence', 'Evidence']]
@@ -97,11 +116,13 @@ export default function ReportDetails({ id, onClose }) {
           <Evidence value={finding.evidence} />
         </article>)}
       </section>
-      <section className="analysis-explanation"><SectionTitle icon={FileIcon}>Understand this report</SectionTitle>
+      <section className="analysis-explanation" aria-busy={insightBusy}><div className="report-insight-head"><SectionTitle icon={FileIcon}>Report insights</SectionTitle>{!currentAI && <button className="btn btn--ink" disabled={insightBusy} onClick={generateInsights}>{insightBusy ? 'Analysing evidence…' : insightError ? 'Retry AI insights' : isAI ? 'Update AI insights' : 'Generate AI insights'}</button>}</div>
+        {!isAI && <p className="caption grey">Get a concise Gemini interpretation of the findings and the most useful next steps. Only selected report evidence is sent.</p>}
+        {insightBusy && <p className="report-insight-status" role="status">Preparing a short, evidence-based assessment…</p>}
+        {insightError && <p className="report-insight-error" role="alert">{insightError} Your original findings remain available.</p>}
         {explanation?.status === 'completed' ? <>
-          <p className="caption grey">{explanation.provider} · {explanation.model}</p>
-          <ExplanationText item={explanation.summary} evidence={explanation.evidence || []} />
-          {[["What the checks mean", explanation.explanations], ["What to do next", explanation.next_steps]].map(([title, items]) => <details key={title} className="report-group"><summary>{title}</summary>{items.map((item, index) => <ExplanationText key={index} item={item} evidence={explanation.evidence || []} />)}</details>)}
+          <div className="report-insight-summary"><p className="analysis-eyebrow">{isAI ? 'GEMINI ASSESSMENT' : 'ASSESSMENT SUMMARY'}</p><ExplanationText item={explanation.summary} evidence={explanation.evidence || []} /></div>
+          {isAI ? <><div className="report-insight-grid">{[["What matters", explanation.explanations], ["What to do next", explanation.next_steps]].map(([title, items]) => <div key={title}><h4>{title}</h4>{items.map((item, index) => <ExplanationText key={index} item={item} evidence={explanation.evidence || []} />)}</div>)}</div><p className="caption grey">{explanation.model} · Saved {formatDate(explanation.generated_at)} · AI interpretation; review the cited evidence.</p></> : [["What the checks mean", explanation.explanations], ["What to do next", explanation.next_steps]].map(([title, items]) => <details key={title} className="report-group"><summary>{title}</summary>{items.map((item, index) => <ExplanationText key={index} item={item} evidence={explanation.evidence || []} />)}</details>)}
         </> : <p className="caption grey">{explanation?.reason || 'No explanation was saved with this report. Review the findings and check details below.'}</p>}
       </section>
           </div><aside className="report-overview-side" aria-label="Actions and assessment scope">

@@ -53,6 +53,19 @@ test('detail requests accept only an investigation UUID', async () => {
   assert.equal(bad.status, 404)
 })
 
+test('insights forward only an allowed provider and require authenticated POST', async () => {
+  const id = '00000000-0000-0000-0000-000000000001'
+  const params = { path: [id, 'explanation'] }
+  const url = `http://local/api/investigations/${id}/explanation?provider=gemini&secret=discard`
+  const result = await POST(authorizedRequest(url, { method: 'POST' }), { params })
+  assert.equal(result.status, 201)
+  assert.equal(received.url, `/api/investigations/${id}/explanation?provider=gemini`)
+  assert.equal(received.body, '')
+  assert.equal((await GET(authorizedRequest(url), { params })).status, 405)
+  assert.equal((await POST(new Request(url, { method: 'POST' }), { params })).status, 401)
+  assert.equal((await POST(authorizedRequest(url.replace('provider=gemini', 'provider=other'), { method: 'POST' }), { params })).status, 400)
+})
+
 test('malformed and oversized submissions are rejected', async () => {
   for (const [body, status] of [['{', 400], ['x'.repeat(8193), 413]]) {
     const response = await POST(authorizedRequest('http://local/api/investigations', { method: 'POST', body }), { params: {} })

@@ -157,6 +157,15 @@ export default function Shell({ children }) {
     return report
   }, [])
 
+  const explainReport = useCallback(async (id) => {
+    const account = accountVersion.current
+    const report = await getReport(id)
+    const explanation = await api(`/${encodeURIComponent(id)}/explanation?provider=gemini`, { method: 'POST' })
+    if (account !== accountVersion.current) throw new Error('Your account changed. Reopen the report.')
+    if (explanation.status === 'completed') reportCache.current.set(id, { ...report, ai_explanation: explanation })
+    return explanation
+  }, [getReport])
+
   const runInvestigation = useCallback(async (input, options = {}) => {
     if (!input.trim() || submitting.current) return
     submitting.current = true
@@ -216,7 +225,7 @@ export default function Shell({ children }) {
   }
 
   const ctx = { scans, total, historyLoading, historyError, refreshHistory: loadHistory,
-    loadMore: () => loadHistory(scans.length), getReport, scanLoading, runInvestigation,
+    loadMore: () => loadHistory(scans.length), getReport, explainReport, scanLoading, runInvestigation,
     user, setUser, focusId, clearFocus }
 
   return (
