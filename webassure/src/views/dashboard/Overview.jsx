@@ -8,6 +8,7 @@ import { summarize } from '../../lib/overview.mjs'
 import { Bars, Empty, Kpi, PageHead, TrendChart } from './ui.jsx'
 import HistoryStatus from './HistoryStatus.jsx'
 import Avatar from '../../components/Avatar.jsx'
+import SiteIcon from '../../components/SiteIcon.jsx'
 
 function greeting() {
   const h = new Date().getHours()
@@ -71,7 +72,7 @@ export default function Overview() {
                 {scans.slice(0, 5).map((s) => (
                   <tr key={s.id}>
                     <td className="table__url">
-                      <Link href={`/dashboard/scans?report=${encodeURIComponent(s.id)}`}>{s.normalized_url || s.submitted_url}</Link>
+                      <Link className="url-cell" href={`/dashboard/scans?report=${encodeURIComponent(s.id)}`}><SiteIcon url={s.normalized_url || s.submitted_url} size={16} className="site-icon--sm" /><span>{s.normalized_url || s.submitted_url}</span></Link>
                     </td>
                     <td><Badge tone={classificationTone(s.risk_classification)}>{s.risk_classification}</Badge></td>
                     <td className="grey t-right">{formatDate(s.created_at)}</td>

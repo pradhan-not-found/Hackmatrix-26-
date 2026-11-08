@@ -5,6 +5,7 @@ import { Badge } from '../../components/Sections.jsx'
 import { classificationTone, downloadReport, formatDate } from '../../lib/investigations.js'
 import { useDash } from './context.js'
 import { AlertIcon, CheckIcon, CloseIcon, DownloadIcon, FileIcon, GlobeIcon, InfoIcon, LockIcon, RouteIcon, SettingsIcon, ShieldIcon } from '../../components/Icons.jsx'
+import SiteIcon from '../../components/SiteIcon.jsx'
 
 const CHECK_LABELS = { url_structure: 'URL identity', dns: 'DNS resolution', http: 'HTTP response', tls: 'TLS verification', redirects: 'Redirect chain', security_headers: 'Security headers', threat_intelligence: 'Threat intelligence', html_inspection: 'HTML inspection', certificate_revocation: 'Certificate revocation', certificate_transparency: 'Certificate transparency', certificate_key_strength: 'Certificate key strength', certificate_signature: 'Certificate signature' }
 const label = (name) => CHECK_LABELS[name] || name.replaceAll('_', ' ')
@@ -96,7 +97,7 @@ export default function ReportDetails({ id, onClose }) {
     {error && <div role="alert" className="analysis-error"><AlertIcon /><p>{error}</p><button className="btn btn--ink" onClick={() => setAttempt((value) => value + 1)}>Retry report</button></div>}
     {report && <>
       <div className="report-summary">
-      <div className="analysis-target"><GlobeIcon /><div><p className="report-url">{report.normalized_url}</p><p className="caption grey">Investigated {formatDate(report.created_at)}</p><p className="caption grey">Report {report.id}</p></div></div>
+      <div className="analysis-target"><SiteIcon url={report.normalized_url} size={22} /><div><p className="report-url">{report.normalized_url}</p><p className="caption grey">Investigated {formatDate(report.created_at)}</p><p className="caption grey">Report {report.id}</p></div></div>
       <div className="analysis-verdict" data-tone={verdictTone}>
         <span className="analysis-verdict-icon">{verdictTone === 'bad' || verdictTone === 'warn' ? <AlertIcon /> : verdictTone === 'ok' ? <ShieldIcon /> : <InfoIcon />}</span>
         <div><p className="analysis-eyebrow">PHISHING ASSESSMENT</p><Badge tone={verdictTone}>{report.risk_classification}</Badge><p className="caption grey">Evidence-based assessment. Configuration warnings are evaluated separately.</p></div>

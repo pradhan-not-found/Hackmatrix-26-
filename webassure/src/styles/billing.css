@@ -746,3 +746,67 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 /* threat ledger: full content width like the other dashboard pages */
 .dash .ledger-panel { max-width: none; width: 100%; }
 .dash .ledger-head .caption { max-width: 760px; }
+
+/* investigation report: the site's neutral palette instead of navy, borderless panels */
+.report-drawer {
+  --report-surface: #ffffff; --report-alt: #f4f4f5; --report-ink: #16161a; --report-muted: #6b6b73; --report-line: #e7e7ea;
+  --analysis-ok: #1f9d55; --analysis-warn: #b45309; --analysis-bad: #dc2f35;
+}
+[data-theme='dark'] .report-drawer {
+  --report-surface: #161618; --report-alt: #1e1e21; --report-ink: #f2f2f4; --report-muted: #9a9aa2; --report-line: #2a2a2e;
+  --analysis-ok: #3dd68c; --analysis-warn: #f5a524; --analysis-bad: #ff6369;
+}
+.report-drawer, [data-theme='dark'] .report-drawer { background: var(--report-surface); }
+.report-panel section, .report-panel > .report-evidence {
+  border: 0; border-radius: 14px; background: var(--report-alt);
+}
+.report-panel section section { background: var(--report-surface); }
+.analysis-facts { border-left: 0; padding-left: 0; gap: 10px; }
+.analysis-facts > div { padding: 12px 14px; border-radius: 12px; background: var(--report-alt); }
+.report-tabs [role='tab'][aria-selected='true'] { color: var(--report-ink); border-bottom-color: var(--workspace-accent, #4672ff); }
+.report-tabs [role='tab']:hover { color: var(--report-ink); }
+.report-header-symbol { border: 0; background: var(--report-alt); border-radius: 10px; }
+.analysis-severity { border: 0; border-radius: 999px; padding: 2px 8px; background: color-mix(in srgb, var(--report-muted) 14%, transparent); font-weight: 600; }
+.analysis-finding[data-severity='high'] .analysis-severity, .analysis-finding[data-severity='critical'] .analysis-severity { background: color-mix(in srgb, var(--analysis-bad) 14%, transparent); }
+.analysis-finding[data-severity='medium'] .analysis-severity { background: color-mix(in srgb, var(--analysis-warn) 14%, transparent); }
+.report-insight-summary { border-left-color: var(--workspace-accent, #4672ff); }
+
+/* scanned site's favicon (fetched via the favicon service, never from the site) */
+.site-icon { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--report-alt, var(--tile)); color: var(--grey); }
+.site-icon img { width: 22px; height: 22px; border-radius: 4px; }
+.analysis-target > .site-icon { margin-top: 0; }
+.url-cell { display: inline-flex; align-items: center; gap: 10px; min-width: 0; max-width: 100%; }
+.url-cell > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-icon.site-icon--sm { width: 26px; height: 26px; border-radius: 8px; background: var(--console); }
+.site-icon--sm img { width: 16px; height: 16px; }
+.site-icon--sm svg { width: 14px; height: 14px; }
+
+/* threat ledger: two clear steps, calm alerts, readable proof */
+.dash .ledger-panel { gap: 18px; padding: 28px; }
+.dash .ledger-head { padding-bottom: 6px; }
+.ledger-step { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 15px; font-weight: 600; color: var(--ink); margin-top: 4px; }
+.ledger-step span {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12.5px; font-weight: 700; color: #fff;
+  background: linear-gradient(180deg, #6b94ff 0%, #4672ff 46%, #2f56e6 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(12, 32, 130, 0.35);
+}
+.ledger-step em { font-style: normal; font-size: 13px; font-weight: 400; color: var(--grey); }
+.ledger-step--next { margin-top: 10px; padding-top: 26px; box-shadow: inset 0 1px 0 var(--line); }
+.ledger-network-row { padding: 16px; border-radius: 14px; background: var(--tile); }
+.dash .ledger-field select, .dash .ledger-existing input { height: 44px; border-radius: 12px; background: var(--console); border: 0; box-shadow: inset 0 0 0 1px var(--line); }
+.ledger-network-row .ledger-field select { background: var(--card); }
+.ledger-alert { color: var(--st-bad); background: color-mix(in srgb, var(--st-bad) 7%, var(--tile)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-bad) 18%, transparent); }
+.ledger-onboarding { box-shadow: inset 0 0 0 1px var(--line); }
+.ledger-existing { padding: 4px 2px; }
+.ledger-snapshot { box-shadow: inset 0 0 0 1px var(--line); }
+.ledger-snapshot > code, .ledger-address code {
+  display: block; padding: 10px 12px; border-radius: 10px; background: var(--console);
+  font: 12.5px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--ink);
+}
+.ledger-address code { display: inline; padding: 2px 6px; }
+.ledger-message { padding: 10px 14px; border-radius: 10px; background: var(--tile); }
+.ledger-message--bad { background: color-mix(in srgb, var(--st-bad) 8%, var(--tile)); }
+.ledger-verified { color: var(--st-ok); background: color-mix(in srgb, var(--st-ok) 9%, var(--tile)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-ok) 22%, transparent); }
+.ledger-verified strong { color: var(--st-ok); }
+.ledger-actions .btn { height: 42px; }
+@media (max-width: 560px) { .dash .ledger-panel { padding: 18px; } }

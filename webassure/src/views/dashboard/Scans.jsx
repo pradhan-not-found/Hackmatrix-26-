@@ -7,6 +7,7 @@ import { classificationTone, formatDate } from '../../lib/investigations.js'
 import { Empty, PageHead, Tabs } from './ui.jsx'
 import HistoryStatus from './HistoryStatus.jsx'
 import ReportDetails from './ReportDetails.jsx'
+import SiteIcon from '../../components/SiteIcon.jsx'
 
 export default function Scans() {
   const { scans, historyLoading, historyError, focusId, clearFocus } = useDash()
@@ -44,7 +45,7 @@ export default function Scans() {
       ]} /><input className="input-sm" placeholder="Filter by URL" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Filter scans by URL" /></div>
       {rows.length ? <div className="table-wrap"><table className="table"><thead><tr><th>URL</th><th>Assessment</th><th>Status</th><th>Created</th><th>Report</th></tr></thead><tbody>
         {rows.map((scan) => <tr key={scan.id} aria-selected={selected === scan.id}>
-          <td className="table__url">{scan.normalized_url || scan.submitted_url}</td>
+          <td className="table__url"><span className="url-cell"><SiteIcon url={scan.normalized_url || scan.submitted_url} size={16} className="site-icon--sm" /><span>{scan.normalized_url || scan.submitted_url}</span></span></td>
           <td><Badge tone={classificationTone(scan.risk_classification)}>{scan.risk_classification}</Badge></td>
           <td className="grey">{scan.status}</td><td className="grey">{formatDate(scan.created_at)}</td>
           <td><button className="btn btn--ghost" onClick={() => select(scan.id)} aria-label={`Open report for ${scan.normalized_url || scan.submitted_url}`}>Open report</button></td>
