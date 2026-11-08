@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import GetApps from './GetApps.jsx'
 
 const COLUMNS = [
   {
@@ -51,6 +52,7 @@ export default function Footer() {
           <p className="footer__made">
             Made by <Link href="/team" className="footer__team">Fantastic <span>4</span></Link>
           </p>
+          <GetApps />
         </div>
         <nav className="footer__cols" aria-label="Footer">
           {COLUMNS.map((col) => (
