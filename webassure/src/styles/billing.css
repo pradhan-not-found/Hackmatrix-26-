@@ -444,3 +444,7 @@ html, body { overflow-x: clip; }
 }
 @keyframes tag-shine { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 @media (prefers-reduced-motion: reduce) { .auth__tag { animation: none; color: var(--grey); background: none; } }
+
+/* hero: wordmark sits higher, centred between the header and the text below */
+.hero .hero__logo { top: clamp(96px, 16svh, 210px); }
+@media (max-width: 860px) { .hero .hero__logo { top: 16svh; } }
