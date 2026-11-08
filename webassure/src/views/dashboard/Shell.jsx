@@ -26,6 +26,7 @@ const NAV = [
   ['threats', 'Threats', ThreatsIcon],
   ['certificates', 'Certificates', CertificatesIcon],
   ['reports', 'Reports', ReportsIcon],
+  ['email-analysis', 'Email Analysis', MessagesIcon],
   ['ledger', 'Threat ledger', LedgerIcon],
 ]
 
@@ -200,6 +201,10 @@ export default function Shell({ children }) {
   }, [user, loadHistory, runInvestigation])
 
   const clearFocus = useCallback(() => setFocusId(null), [])
+  const addScan = useCallback((scan) => {
+    setScans((previous) => [scan, ...previous.filter((item) => item.id !== scan.id)])
+    setTotal((previous) => previous + 1)
+  }, [])
   if (!user || !introDone) {
     return (
       <div className="dash-loading" role="status" aria-label="Loading your workspace">
@@ -226,7 +231,7 @@ export default function Shell({ children }) {
 
   const ctx = { scans, total, historyLoading, historyError, refreshHistory: loadHistory,
     loadMore: () => loadHistory(scans.length), getReport, explainReport, scanLoading, runInvestigation,
-    user, setUser, focusId, clearFocus }
+    user, setUser, focusId, clearFocus, addScan }
 
   return (
     <DashContext.Provider value={ctx}>

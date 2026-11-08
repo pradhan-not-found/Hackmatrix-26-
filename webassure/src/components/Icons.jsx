@@ -70,6 +70,34 @@ export const CloseIcon = () => (
   <svg {...base}><path d="m6 6 12 12M18 6 6 18" /></svg>
 )
 
+export const MailIcon = () => (
+  <svg {...base}><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" /><path d="M22 6l-10 7L4 6" /></svg>
+)
+
+export const GmailIcon = () => (
+  <svg {...base}><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" /><path d="M22 6l-10 7L4 6" /></svg>
+)
+
+export const LinkIcon = () => (
+  <svg {...base}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+)
+
+export const ShieldCheckIcon = () => (
+  <svg {...base}><path d="M12 3l7 3v5.5c0 4.3-3 8-7 9.5-4-1.5-7-5.2-7-9.5V6l7-3z" /><path d="M9 12l2 2 4-4" /></svg>
+)
+
+export const AlertTriangleIcon = () => (
+  <svg {...base}><path d="M12 4l9 16H3z" /><path d="M12 10v4M12 17.5v.01" /></svg>
+)
+
+export const LoaderIcon = () => (
+  <svg {...base} style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" strokeOpacity="0.25" /><path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" /></svg>
+)
+
+export const XIcon = () => (
+  <svg {...base}><path d="M18 6L6 18M6 6l12 12" /></svg>
+)
+
 // Neutral silhouette used until a real photo is added.
 export const PersonPlaceholder = () => (
   <svg viewBox="0 0 64 64" aria-hidden="true" className="person-ph">
