@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 const PHRASES = ['Know your website', 'Trust every link', 'Click with confidence']
 
 const HOLD = 1900 // ms the phrases stay on screen
-const EXIT = 700 // ms fade-out
+const EXIT = 1250 // ms: phrases leave, then the panel lifts away
 
 export default function Preloader({ onDone }) {
   const [leaving, setLeaving] = useState(false)
