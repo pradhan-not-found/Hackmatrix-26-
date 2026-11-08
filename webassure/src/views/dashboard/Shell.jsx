@@ -27,7 +27,6 @@ const NAV = [
   ['threats', 'Threats', ThreatsIcon],
   ['certificates', 'Certificates', CertificatesIcon],
   ['reports', 'Reports', ReportsIcon],
-  ['email-analysis', 'Email Analysis', MessagesIcon],
   ['ledger', 'Threat ledger', LedgerIcon],
 ]
 
