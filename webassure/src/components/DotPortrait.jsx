@@ -72,10 +72,20 @@ export default function DotPortrait({ src, zoom = 1, pos = 'center 22%', origin 
         if (i >= PW) push(i - PW)
         if (i < PW * (PH - 1)) push(i + PW)
       }
+      // Soft fade toward the bottom and outer sides, so the shoulders and
+      // shirt dissolve into black instead of ending at the photo's hard edges.
+      const smooth = (e0, e1, t) => { const u = Math.min(1, Math.max(0, (t - e0) / (e1 - e0))); return u * u * (3 - 2 * u) }
+      const fadeY = new Float32Array(PH), fadeX = new Float32Array(PW)
+      for (let y = 0; y < PH; y++) fadeY[y] = 1 - smooth(0.66, 0.98, y / PH)
+      for (let x = 0; x < PW; x++) { const t = Math.min(x, PW - 1 - x) / PW; fadeX[x] = smooth(0, 0.16, t) }
       for (let i = 0, p = 0; i < seen.length; i++, p += 4) {
         if (seen[i]) { px[p + 3] = 0; continue }
         const v = 46 + px[p] * 0.82 // lift shadows off pure black
         px[p] = px[p + 1] = px[p + 2] = v
+        const y = (i / PW) | 0, x = i - y * PW
+        // sides fade only below the face, so hair and ears are never dimmed
+        const side = 1 - (1 - fadeX[x]) * smooth(0.45, 0.7, y / PH)
+        px[p + 3] = 255 * fadeY[y] * side
       }
       ctx.putImageData(im, 0, 0)
       ctx.restore()
