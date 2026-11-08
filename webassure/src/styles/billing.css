@@ -696,4 +696,4 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 /* all three preloader phrases share one size */
 .preloader .preloader__words .preloader__phrase,
 .preloader .preloader__words .preloader__phrase:first-child,
-.preloader .preloader__words .preloader__phrase:last-child { font-size: clamp(17px, 1.35vw, 21px); }
+.preloader .preloader__words .preloader__phrase:last-child { font-size: var(--t-body); }
