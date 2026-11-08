@@ -12,39 +12,33 @@
 <br />
 <br />
 
-<a href="#why-webassure">About</a> &nbsp;·&nbsp;
-<a href="#features">Features</a> &nbsp;·&nbsp;
+<a href="#problem">Problem</a> &nbsp;·&nbsp;
+<a href="#solution">Solution</a> &nbsp;·&nbsp;
+<a href="#demo">Demo</a> &nbsp;·&nbsp;
+<a href="#tech-stack">Tech stack</a> &nbsp;·&nbsp;
 <a href="#architecture">Architecture</a> &nbsp;·&nbsp;
-<a href="#getting-started">Getting started</a> &nbsp;·&nbsp;
-<a href="#api">API</a> &nbsp;·&nbsp;
-<a href="#testing">Testing</a> &nbsp;·&nbsp;
-<a href="#built-at-hackmatrix-2026">HackMatrix</a> &nbsp;·&nbsp;
+<a href="#setup-and-run">Setup</a> &nbsp;·&nbsp;
+<a href="#disclosures">Disclosures</a> &nbsp;·&nbsp;
+<a href="#track">Track</a> &nbsp;·&nbsp;
 <a href="#team">Team</a>
 
 </div>
 
 ---
 
-WebAssure is an AI-assisted web threat detection platform. Paste a suspicious link and get an evidence-based assessment of whether it is safe, suspicious or malicious, with every finding explained in plain language.
+# WebAssure
 
-Built for the *AI-Powered Web Threat Detection & Digital Trust Intelligence* challenge. See the [problem statement](docs/AI_Web_Threat_Detection_Problem_Statement.md).
+**An AI-assisted web threat detection platform: paste a suspicious link, message or certificate and get an evidence-based verdict, with every finding explained in plain language.**
 
----
+## Problem
 
-## Why WebAssure
+Phishing pages, fake recruitment portals, fraudulent payment links and impersonated brands are increasingly hard to tell apart from the real thing. Most tools return a bare *safe* or *malicious* label.
 
-Phishing pages, fake recruitment portals, fraudulent payment links and impersonated brands are increasingly hard to tell apart from the real thing. Most tools return a bare *safe* or *malicious* label. WebAssure instead shows **why**: which checks ran, what each one found, the evidence behind it and what to do next.
+People are asked to trust links every day, from bank KYC notices and job offers to payment requests and delivery updates, with no quick, understandable way to check them. The full challenge brief is in the [problem statement](docs/AI_Web_Threat_Detection_Problem_Statement.md).
 
-## What is in this repository
+## Solution
 
-| Part | Path | Stack | Purpose |
-| --- | --- | --- | --- |
-| **Web app** | [`webassure/`](webassure/) | Next.js 14, React 18 | Product website, sign-up and login, and the user dashboard |
-| **Investigation backend** | [`backend/`](backend/) | Python 3.11+, FastAPI, Supabase | Runs URL investigations and stores reports under each user's account |
-| **Tests** | [`tests/`](tests/) | `unittest`, Playwright | Pipeline, provider, explanation and dashboard tests |
-| **Docs** | [`docs/`](docs/) | Markdown | Problem statement and detailed backend guide |
-
-## Features
+WebAssure checks a link, message or certificate the way a security analyst would and shows **why**: which checks ran, what each one found, the evidence behind it and what to do next.
 
 ### Investigation backend (working)
 
@@ -67,6 +61,59 @@ Phishing pages, fake recruitment portals, fraudulent payment links and impersona
 
 > Complete the [Supabase setup](docs/auth.md), including the database migration and Google provider configuration, before signing in. Notification preferences are saved; email alert delivery is not connected.
 
+### What is in this repository
+
+| Part | Path | Stack | Purpose |
+| --- | --- | --- | --- |
+| **Web app** | [`webassure/`](webassure/) | Next.js 14, React 18 | Product website, sign-up and login, and the user dashboard |
+| **Investigation backend** | [`backend/`](backend/) | Python 3.11+, FastAPI, Supabase | Runs URL investigations and stores reports under each user's account |
+| **Tests** | [`tests/`](tests/) | `unittest`, Playwright | Pipeline, provider, explanation and dashboard tests |
+| **Docs** | [`docs/`](docs/) | Markdown | Problem statement and detailed backend guide |
+
+### Status and limitations
+
+WebAssure is a hackathon-stage project. To be clear about what is real today:
+
+| Area | Status |
+| --- | --- |
+| URL investigation, redirects, TLS verification, risk classification | Working (backend) |
+| Safe Browsing reputation lookup | Working with an API key |
+| Local and Gemini explanations | Working |
+| Web app UI: landing, auth, dashboard | Connected to the investigation backend |
+| Web app ↔ backend integration | Authenticated proxy and per-user Supabase report storage |
+| Real authentication and user accounts | Supabase Google/email, recovery, profile and Storage integration; project setup required |
+| Page-content analysis (HEAD-only today) | Planned |
+| Leaf certificate key strength and signature hash checks | Implemented with saved certificate details and on-demand HTTPS inspection |
+| Certificate Transparency, revocation and scheduled monitoring | Planned |
+| Scam-message analysis | Planned |
+| Blockchain threat ledger | Local EVM report registration, receipt export/import and independent integrity verification ([setup](docs/ledger.md)) |
+
+The backend is a local MVP. Run a single worker. Before any public deployment, add per-user rate limits, data retention controls, network egress restrictions and a durable job queue with hard deadlines.
+
+## Demo
+
+<img src="docs/assets/screenshot-home.png" alt="WebAssure home page with the link checker" width="100%" />
+
+| | |
+| --- | --- |
+| **Live demo** | _Not deployed yet_ |
+| **Demo video** | _Not published yet_ |
+| **Pitch deck** | Open `/download` in the running web app to view and download it (PPT and PDF) |
+| **Run it locally** | Web app at <http://localhost:3000>, API docs at <http://127.0.0.1:8000/docs> (see [Setup and run](#setup-and-run)) |
+
+## Tech stack
+
+| Layer | Technology |
+| --- | --- |
+| **Web app** | Next.js 14 (App Router), React 18, CSS (custom design system, no UI kit) |
+| **Auth and data** | Supabase Auth (Google and email), Supabase Postgres with row-level security, Supabase Storage |
+| **Backend** | Python 3.11+, FastAPI, Uvicorn |
+| **Detection** | DNS, redirect and TLS inspection, `tldextract`, `confusable-homoglyphs`, `idna`, `cryptography`, Google Safe Browsing |
+| **Machine learning** | scikit-learn message classifier (Logistic Regression), trained on the UCI SMS Spam Collection |
+| **AI explanations** | Google Gemini (optional, schema-validated) |
+| **Threat ledger** | Solidity contract, `ethers`, local EVM (Ganache), Sepolia deployment tooling |
+| **Testing** | Python `unittest`, browser tests on Microsoft Edge |
+
 ## Architecture
 
 ```mermaid
@@ -79,7 +126,34 @@ flowchart LR
   Browser -->|Owner-only uploads| Photos[Supabase avatar Storage]
 ```
 
-## Getting started
+### Project structure
+
+```text
+.
+├── backend/                 FastAPI investigation service
+│   ├── main.py              API routes and app setup
+│   ├── investigation.py     Investigation pipeline and classification
+│   ├── network.py           DNS, redirect and TLS inspection
+│   ├── threat_intelligence.py  Safe Browsing provider
+│   ├── explanation.py       Local rule-based explanations
+│   ├── gemini.py            Optional Gemini explanations
+│   └── supabase.py          Verified sessions and owner-scoped Supabase storage
+├── webassure/               Next.js web app
+│   ├── public/              Favicon, icons, Open Graph image, manifest
+│   └── src/
+│       ├── app/             Routes, layout, metadata, robots, sitemap
+│       ├── components/      Landing page sections and shared UI
+│       ├── views/           Landing, auth and dashboard pages
+│       ├── lib/             Supabase auth, API client and dashboard data
+│       └── styles/          Design system and page styles
+├── tests/                   Backend and dashboard tests
+├── docs/                    Problem statement and backend guide
+├── requirements.txt
+├── requirements-dev.txt
+└── .env.example
+```
+
+## Setup and run
 
 ### Prerequisites
 
@@ -121,7 +195,7 @@ npm run build
 npm start
 ```
 
-## Configuration
+### Configuration
 
 Copy the template and fill in the keys you need. `.env` is git-ignored.
 
@@ -141,7 +215,7 @@ cp .env.example .env        # Windows: Copy-Item .env.example .env
 
 Never commit `.env` or `.env.local`. Only publishable Supabase keys belong in frontend variables; keep provider secrets and service-role keys out of browser code.
 
-## API
+### API
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
@@ -173,7 +247,7 @@ Install the updated requirements, download the [UCI SMS Spam Collection](https:/
 
 The command compares Logistic Regression with Multinomial Naive Bayes on a stratified holdout set, prints real evaluation metrics, and saves the Logistic Regression artifact under `backend/models/` and metrics under ignored `data/`. The dataset is English SMS spam/ham, so it is not a comprehensive scam or phishing corpus. See [`docs/backend.md`](docs/backend.md#message-spam-scam-analysis) for the API schema and limitations.
 
-## Testing
+### Testing
 
 ```bash
 # Install test dependencies
@@ -191,63 +265,19 @@ python -m backend.validate_threat_intelligence
 
 Tests use mocked responses and do not measure real-world detection accuracy.
 
-## Project structure
+## Disclosures
 
-```text
-.
-├── backend/                 FastAPI investigation service
-│   ├── main.py              API routes and app setup
-│   ├── investigation.py     Investigation pipeline and classification
-│   ├── network.py           DNS, redirect and TLS inspection
-│   ├── threat_intelligence.py  Safe Browsing provider
-│   ├── explanation.py       Local rule-based explanations
-│   ├── gemini.py            Optional Gemini explanations
-│   └── supabase.py          Verified sessions and owner-scoped Supabase storage
-├── webassure/               Next.js web app
-│   ├── public/              Favicon, icons, Open Graph image, manifest
-│   └── src/
-│       ├── app/             Routes, layout, metadata, robots, sitemap
-│       ├── components/      Landing page sections and shared UI
-│       ├── views/           Landing, auth and dashboard pages
-│       ├── lib/             Supabase auth, API client and dashboard data
-│       └── styles/          Design system and page styles
-├── tests/                   Backend and dashboard tests
-├── docs/                    Problem statement and backend guide
-├── requirements.txt
-├── requirements-dev.txt
-└── .env.example
-```
+**Open-source libraries.** Web app: Next.js, React, `@supabase/supabase-js`, `ethers`, `jspdf`, `html-to-image`; dev tooling: `solc`, `ganache`. Backend: FastAPI, Uvicorn, `python-dotenv`, `tldextract`, `confusable-homoglyphs`, `idna`, scikit-learn, `joblib`, `cryptography`. All are used under their own open-source licences.
 
-## Status and limitations
+**External services and data.** Supabase (auth, database, storage), Google Safe Browsing (optional reputation lookups), Google Gemini (optional explanations), and the [UCI SMS Spam Collection](https://archive.ics.uci.edu/dataset/228/sms%2Bspam%2Bcollection) dataset for training the message classifier.
 
-WebAssure is a hackathon-stage project. To be clear about what is real today:
+**Templates and assets.** No website or UI template was used; the interface is custom-built. Fonts: Hanken Grotesk, Outfit, Inter and Archivo (Google Fonts, open licence). Brand logos in the UI (Apple, Android, Chrome, Firefox, Brave, Amazon, Infosys, Shopify and others) come from [Simple Icons](https://simpleicons.org/) (CC0); the SBI mark is a hand-drawn approximation. HackMatrix, ACM, MLH, Adamas University and RICE Adamas Group logos in this README are from [hackmatrix.codes](https://hackmatrix.codes/), shown with the Geist Pixel font.
 
-| Area | Status |
-| --- | --- |
-| URL investigation, redirects, TLS verification, risk classification | Working (backend) |
-| Safe Browsing reputation lookup | Working with an API key |
-| Local and Gemini explanations | Working |
-| Web app UI: landing, auth, dashboard | Connected to the investigation backend |
-| Web app ↔ backend integration | Authenticated proxy and per-user Supabase report storage |
-| Real authentication and user accounts | Supabase Google/email, recovery, profile and Storage integration; project setup required |
-| Page-content analysis (HEAD-only today) | Planned |
-| Leaf certificate key strength and signature hash checks | Implemented with saved certificate details and on-demand HTTPS inspection |
-| Certificate Transparency, revocation and scheduled monitoring | Planned |
-| Scam-message analysis | Planned |
-| Blockchain threat ledger | Local EVM report registration, receipt export/import and independent integrity verification ([setup](docs/ledger.md)) |
+**AI tools.** Claude Code (Anthropic) assisted with frontend design and implementation of the web app, the README and the page assets. Google Gemini is part of the product itself, as the optional explanation provider; it cannot change a verdict. All AI-assisted work was reviewed by the team.
 
-The backend is a local MVP. Run a single worker. Before any public deployment, add per-user rate limits, data retention controls, network egress restrictions and a durable job queue with hard deadlines.
+## Track
 
-## Security and privacy
-
-- Submitted URLs, including query strings, are stored in the report database. Protect it accordingly.
-- When Safe Browsing is enabled, submitted URLs are sent to Google. Obtain user consent before enabling it for others.
-- Gemini receives only hostnames, finding descriptions and selected evidence, never URL paths, queries or raw headers.
-- API keys are read from `.env` and are never included in reports or error messages.
-
-Found a security issue? Please report it privately to the maintainers rather than opening a public issue.
-
-## Built at HackMatrix 2026
+**AI-Powered Web Threat Detection & Digital Trust Intelligence**, at [HackMatrix 2026](https://hackmatrix.codes/).
 
 WebAssure was built for **[HackMatrix 2026](https://hackmatrix.codes/)**, the AI & student hackathon organised by the [ACM Student Chapter](https://acm.cycoders.in) at [Adamas University](https://www.aucse.in), Kolkata, with RICE Adamas Group, and co-powered by [ACM](https://acm.org) and [Major League Hacking](https://mlh.io/).
 
@@ -271,6 +301,15 @@ WebAssure is built by **Fantastic 4**.
 </picture>
 
 </div>
+
+## Security and privacy
+
+- Submitted URLs, including query strings, are stored in the report database. Protect it accordingly.
+- When Safe Browsing is enabled, submitted URLs are sent to Google. Obtain user consent before enabling it for others.
+- Gemini receives only hostnames, finding descriptions and selected evidence, never URL paths, queries or raw headers.
+- API keys are read from `.env` and are never included in reports or error messages.
+
+Found a security issue? Please report it privately to the maintainers rather than opening a public issue.
 
 ## License
 
