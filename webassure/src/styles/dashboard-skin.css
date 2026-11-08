@@ -810,3 +810,26 @@ html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--grey) 45
 .ledger-card .ledger-head {
   padding-bottom: 2px;
 }
+
+/* sidebar rail: header keeps its size so the expand button always stays clickable */
+@media (min-width: 861px) {
+  .dash .rail__head, .dash .dash__nav, .dash .dash__side-foot { flex: none; }
+  .dash .rail__head { transition: height 0.42s cubic-bezier(0.22, 1, 0.36, 1); }
+  .dash[data-rail] .rail__head { height: 92px; min-height: 0; }
+  .dash[data-rail] .rail__toggle { animation: rail-toggle-in 0.24s ease 0.18s both; }
+}
+@keyframes rail-toggle-in { from { opacity: 0; } to { opacity: 1; } }
+@media (min-width: 861px) and (max-height: 660px) {
+  .dash[data-rail] .dash__side { padding-block: 12px; gap: 10px; }
+  .dash[data-rail] .rail__head { height: 84px; min-height: 0; gap: 4px; }
+  .dash[data-rail] .dash__nav .dash__link { height: 36px; }
+}
+@media (min-width: 861px) and (max-height: 539px) {
+  .dash[data-rail] .dash__side { overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
+  .dash[data-rail] .dash__side::-webkit-scrollbar { display: none; }
+  .dash[data-rail] .dash__link::after { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash .rail__head { transition: none; }
+  .dash[data-rail] .rail__toggle { animation: none; }
+}
