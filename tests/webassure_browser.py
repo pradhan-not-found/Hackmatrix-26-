@@ -319,6 +319,80 @@ class WebAssureBrowserTests(unittest.TestCase):
         self.assertTrue(page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
         self.assertEqual(failures, [])
 
+    def test_z_sepolia_wallet_deployment_registration_and_walletless_verification(self):
+        root = Path(__file__).resolve().parent.parent
+        chain = subprocess.Popen([shutil.which('node'), 'scripts/registry-browser-fixture.mjs', '--sepolia', '--undeployed'],
+                                 cwd=root / 'webassure', stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                 text=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+        def stop_chain():
+            chain.terminate(); chain.wait(timeout=10); chain.stdout.close()
+        self.addCleanup(stop_chain)
+        config = json.loads(chain.stdout.readline())
+        def raw_rpc(payload):
+            request = Request(config['rpc'], data=json.dumps(payload).encode(), headers={'Content-Type': 'application/json'})
+            with urlopen(request, timeout=15) as response:
+                return json.load(response)
+        wallet_chain = ['0x1']
+        switches = []
+        def wallet_rpc(payload):
+            if payload['method'] == 'eth_chainId': return wallet_chain[0]
+            if payload['method'] == 'wallet_switchEthereumChain':
+                wallet_chain[0] = payload['params'][0]['chainId']
+                switches.append(wallet_chain[0])
+                return None
+            method = 'eth_accounts' if payload['method'] == 'eth_requestAccounts' else payload['method']
+            result = raw_rpc({'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': payload.get('params', [])})
+            if 'error' in result: raise RuntimeError(result['error']['message'])
+            return result['result']
+        page = self.browser.new_page(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(page.close)
+        failures = []
+        page.on('pageerror', lambda error: failures.append(str(error)))
+        page.expose_function('registryWalletRpc', wallet_rpc)
+        page.add_init_script("window.ethereum = { request: (payload) => window.registryWalletRpc(payload) }")
+        page.route('**/auth/v1/user', lambda route: route.fulfill(json=USER))
+        page.route('**/registry-sepolia.json', lambda route: route.fulfill(status=404, json={}))
+        def public_rpc(route):
+            headers = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS'}
+            if route.request.method == 'OPTIONS': route.fulfill(status=204, headers=headers)
+            else: route.fulfill(json=raw_rpc(route.request.post_data_json), headers=headers)
+        page.route('https://ethereum-sepolia-rpc.publicnode.com/**', public_rpc)
+        page.add_init_script("localStorage.setItem('wa-cookies', JSON.stringify({choice: 'essential'}))")
+        page.add_init_script("localStorage.setItem('sb-ldrspcimsdzazhbckmca-auth-token', JSON.stringify(" + json.dumps(test_session()) + "))")
+        page.goto(self.url + '/dashboard/scans')
+        page.get_by_label('URL to scan', exact=True).fill('https://wallet-test.example')
+        page.get_by_role('button', name='Scan', exact=True).click()
+        page.get_by_role('dialog', name='Scan details').get_by_role('button', name='Close report').click()
+        page.get_by_role('link', name='Threat ledger', exact=True).click()
+        expect(page.get_by_label('Registry network')).to_have_value('11155111')
+        page.get_by_role('button', name='Connect wallet', exact=True).click()
+        expect(page.get_by_role('button', name='Refresh wallet', exact=True)).to_be_visible()
+        self.assertEqual(switches, ['0xaa36a7'])
+        page.get_by_role('button', name='Deploy registry', exact=True).click()
+        expect(page.get_by_role('button', name='Download deployment config', exact=True)).to_be_visible(timeout=20000)
+        expect(page.get_by_text('Registry configured', exact=True)).to_be_visible(timeout=20000)
+        with page.expect_download() as deployment_event:
+            page.get_by_role('button', name='Download deployment config', exact=True).click()
+        deployment = json.loads(Path(deployment_event.value.path()).read_text(encoding='utf8'))
+        self.assertEqual(deployment['chainId'], '11155111')
+        self.assertGreater(deployment['deploymentBlock'], 0)
+        self.assertEqual(page.get_by_role('link', name='View deployment transaction', exact=True).get_attribute('href'), 'https://sepolia.etherscan.io/tx/' + deployment['deploymentTransaction'])
+        page.get_by_label('Saved investigation').select_option(label='https://wallet-test.example/ — Inconclusive')
+        page.get_by_role('button', name='Prepare snapshot', exact=True).click()
+        page.get_by_role('button', name='Register with wallet', exact=True).click()
+        expect(page.get_by_text('Integrity verified', exact=True)).to_be_visible(timeout=20000)
+        with page.expect_download() as receipt_event:
+            page.get_by_role('button', name='Export receipt', exact=True).click()
+        receipt_path = receipt_event.value.path()
+        page.reload()
+        page.evaluate('delete window.ethereum')
+        page.locator('input[type="file"]').set_input_files(receipt_path)
+        page.get_by_role('button', name='Verify integrity', exact=True).click()
+        expect(page.get_by_text('Integrity verified', exact=True)).to_be_visible(timeout=20000)
+        page.set_viewport_size({'width': 390, 'height': 844})
+        self.assertTrue(page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
+        self.assertEqual(failures, [])
+
     def test_z_message_link_investigation_and_ledger_snapshot(self):
         root = Path(__file__).resolve().parent.parent
         chain = subprocess.Popen([shutil.which('node'), 'scripts/registry-browser-fixture.mjs'],
@@ -341,7 +415,7 @@ class WebAssureBrowserTests(unittest.TestCase):
         page.get_by_label('Message to analyse').fill('Your bank account is blocked. Verify at https://malicious.example/login and share your OTP immediately.')
         page.get_by_role('button', name='Analyse message', exact=True).click()
         inspect = page.get_by_role('button', name='Investigate link', exact=True)
-        expect(inspect).to_be_visible()
+        expect(inspect).to_be_visible(timeout=20000)
         with page.expect_response(lambda response: response.request.method == 'POST' and response.url.endswith('/api/investigations')) as response_event:
             inspect.click()
         report = response_event.value.json()
@@ -354,6 +428,7 @@ class WebAssureBrowserTests(unittest.TestCase):
         dialog.get_by_role('button', name='Close report').click()
         page.route('**/ledger-config.json', lambda route: route.fulfill(json=config))
         page.get_by_role('link', name='Threat ledger', exact=True).click()
+        page.get_by_label('Registry network').select_option('31337')
         page.get_by_label('Saved investigation').select_option(report['id'])
         page.get_by_role('button', name='Prepare snapshot', exact=True).click()
         with page.expect_download() as download_event:

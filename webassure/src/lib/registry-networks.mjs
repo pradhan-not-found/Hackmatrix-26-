@@ -30,3 +30,13 @@ export async function switchRegistryNetwork(ethereum, chainId) {
     await ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hex }] })
   }
 }
+
+export async function authorizeRegistryWallet(ethereum, chainId) {
+  registryNetwork(chainId)
+  // Establish the site's account permission before opening a network-switch
+  // approval. Some wallet UIs cannot display a pending switch for a new origin.
+  const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
+  if (!Array.isArray(accounts) || !accounts.length) throw new Error('No wallet account was connected. Unlock MetaMask and approve this site.')
+  await switchRegistryNetwork(ethereum, chainId)
+  return accounts
+}

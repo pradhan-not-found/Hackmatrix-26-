@@ -4,13 +4,44 @@ The Threat ledger now registers real report commitments on an EVM chain. The
 repository supplies a reproducible local chain; no paid network or private service
 key is required. The sample ledger entries have been removed.
 
-## Sepolia integration status
+## Sepolia with MetaMask
 
-Sepolia network metadata, wallet network-switching helpers, reproducible deployment
-artifacts and runtime-bytecode validation are implemented. Registry interactions
-accept only Sepolia (11155111) and the local demo (31337). No public deployment
-address is supplied yet; deploying requires a funded testnet wallet and approval.
-The browser-wallet deployment and public-network selection UI are still pending.
+The project registry is deployed on Ethereum Sepolia (chain 11155111):
+
+- Contract: [`0x5AB0A5fE5026249aDFe1Fb7362C124cdA5296581`](https://sepolia.etherscan.io/address/0x5AB0A5fE5026249aDFe1Fb7362C124cdA5296581)
+- Deployment transaction: [`0x94f6a8da67b6f3dc0319b07bb603d0e268f0a61a18773bd84d3a7cf67bb63a10`](https://sepolia.etherscan.io/tx/0x94f6a8da67b6f3dc0319b07bb603d0e268f0a61a18773bd84d3a7cf67bb63a10)
+- Deployment block: `12090374`. The successful creation receipt and deployed
+  runtime bytecode were verified before publishing `public/registry-sepolia.json`.
+
+Dashboard users can use this registry directly; deploying another copy is optional.
+
+Install the extension from [MetaMask](https://metamask.com/download), create a
+wallet, enable test networks and select Ethereum Sepolia. Request free test ETH
+from the [Google Cloud faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia).
+Keep your recovery phrase private; the app never receives a private key.
+
+In **Dashboard > Threat ledger**:
+
+1. Leave **Ethereum Sepolia** selected and choose **Connect wallet**. Approve
+   connection and the network switch in MetaMask. The dashboard shows the account
+   and balance.
+2. Choose **Deploy registry** and approve the contract-creation transaction in
+   MetaMask. This requires test ETH for gas. Wait for **Registry configured**.
+3. Choose **Download deployment config**. The file contains only public chain,
+   contract and transaction metadata. The configuration is also remembered in this
+   browser. A pending deployment can be recovered using **Check deployment** after
+   a reload, without deploying again.
+4. Select a saved investigation, prepare a snapshot and export a backup. Choose
+   **Register with wallet**, approve the registration, and export the receipt.
+5. Import the receipt later and choose **Verify integrity**. Sepolia verification
+   uses public read-only RPC and does not need MetaMask or a wallet signature.
+
+Contract and transaction links open the Sepolia block explorer. An existing
+registry can be selected by address; the app checks that its deployed bytecode
+exactly matches the compiled WebAssure contract. Shared configurations are loaded
+from `public/registry-sepolia.json`; otherwise this browser's remembered deployment
+is used. This setup does not claim a public deployment until a wallet approves
+and the transaction confirms. Mainnet deployment is disabled.
 
 `npm.cmd run ledger:compile` regenerates the checked-in artifact from the contract.
 `npm.cmd run ledger:deploy -- --help` describes deployment options for a local
@@ -24,7 +55,15 @@ npm.cmd run ledger:publish -- path/to/deployment.json
 The deployment JSON must contain `chainId`, `address` and `deploymentTransaction`.
 The command verifies the runtime bytecode and successful contract-creation receipt
 before writing `public/registry-sepolia.json`. This is public deployment metadata,
-not a secret. The current dashboard still uses the local configuration below.
+not a secret. Publishing it makes the same Sepolia registry available to all users
+of the site. Commit that public file when deploying the site, or run this command
+on the hosting workspace. No wallet signing key is needed for publication.
+
+For independent Sepolia verification, use the exported deployment config:
+
+```powershell
+npm.cmd run ledger:verify -- path/to/receipt.json https://ethereum-sepolia-rpc.publicnode.com path/to/registry-11155111.json
+```
 
 ## Run locally
 

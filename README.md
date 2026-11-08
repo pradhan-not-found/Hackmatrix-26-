@@ -86,7 +86,7 @@ WebAssure is a hackathon-stage project. To be clear about what is real today:
 | Leaf certificate key strength and signature hash checks | Implemented with saved certificate details and on-demand HTTPS inspection |
 | Certificate Transparency, revocation and scheduled monitoring | Planned |
 | Scam-message analysis | Planned |
-| Blockchain threat ledger | Local EVM report registration, receipt export/import and independent integrity verification ([setup](docs/ledger.md)) |
+| Blockchain threat ledger | Local EVM and MetaMask/Sepolia deployment flow, receipt export/import and independent integrity verification ([setup](docs/ledger.md)); public deployment requires wallet approval |
 
 The backend is a local MVP. Run a single worker. Before any public deployment, add per-user rate limits, data retention controls, network egress restrictions and a durable job queue with hard deadlines.
 
