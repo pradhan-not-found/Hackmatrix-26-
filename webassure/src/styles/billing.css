@@ -514,3 +514,19 @@ html, body { overflow-x: clip; }
 .led__host { display: flex; align-items: center; gap: 0.8cqw; }
 .ms__logo { background: none; width: 2cqw; height: 2cqw; }
 .ms__logo svg { width: 100%; height: 100%; }
+
+/* footer app buttons: glossy plastic */
+.getapp--dark {
+  background: linear-gradient(180deg, #3a3a40 0%, #17171a 48%, #050506 100%); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -2px 0 rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 22px -12px rgba(0, 0, 0, 0.8);
+}
+.getapp--light {
+  background: linear-gradient(180deg, #ffffff 0%, #f2f3f6 48%, #dcdfe6 100%); color: #151518;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 rgba(15, 20, 40, 0.14), inset 0 0 0 1px rgba(15, 20, 40, 0.1), 0 10px 22px -12px rgba(0, 0, 0, 0.55);
+}
+.getapp--dark .tick__item { text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5); }
+.getapp--light .tick__item { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); }
+.tick { height: 28px; margin: -2px 0; padding: 2px 0;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%); }
+.tick__rail { transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1); will-change: transform; }

@@ -9,7 +9,7 @@ import { BRAND } from './brandIcons.js'
 const APPS = [['Mac', 'apple'], ['Android', 'android']]
 const BROWSERS = [['Chrome', 'chrome'], ['Firefox', 'firefox'], ['Brave', 'brave']]
 
-function useTicker(length, ms, offset = 0) {
+function useTicker(ms, offset = 0) {
   const [i, setI] = useState(0)
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -17,7 +17,7 @@ function useTicker(length, ms, offset = 0) {
     const start = setTimeout(() => { t = setInterval(() => setI((n) => n + 1), ms) }, offset)
     return () => { clearTimeout(start); clearInterval(t) }
   }, [ms, offset])
-  return i % length
+  return i
 }
 
 function Logo({ name, mono }) {
@@ -29,13 +29,24 @@ function Logo({ name, mono }) {
   )
 }
 
-// A vertical ticker: every option is stacked; the stack slides to the active one.
-function Ticker({ items, index, prefix, mono }) {
+// A vertical ticker that always rolls forward: the first option is repeated
+// at the end, and once the roll reaches that copy it snaps back invisibly.
+function Ticker({ items, n, prefix, mono }) {
+  const len = items.length
+  const k = n % len
+  const atCopy = n > 0 && k === 0
+  const [snapped, setSnapped] = useState(false)
+  useEffect(() => { setSnapped(false) }, [n])
+  const idx = atCopy && !snapped ? len : k
   return (
     <span className="tick" aria-live="off">
-      <span className="tick__rail" style={{ transform: `translateY(${-index * 100}%)` }}>
-        {items.map(([label, logo]) => (
-          <span key={label} className="tick__item">
+      <span
+        className="tick__rail"
+        style={{ transform: `translateY(${-idx * 24}px)`, transition: atCopy && snapped ? 'none' : undefined }}
+        onTransitionEnd={() => { if (atCopy) setSnapped(true) }}
+      >
+        {[...items, items[0]].map(([label, logo], i) => (
+          <span key={label + i} className="tick__item" aria-hidden={i === len || undefined}>
             <Logo name={logo} mono={mono && logo === 'apple'} />
             <span>{prefix} <b>{label}</b></span>
           </span>
@@ -46,17 +57,17 @@ function Ticker({ items, index, prefix, mono }) {
 }
 
 export default function GetApps() {
-  const a = useTicker(APPS.length, 2600)
-  const b = useTicker(BROWSERS.length, 2600, 1300)
+  const a = useTicker(2800)
+  const b = useTicker(2800, 1400)
   return (
     <div className="getapps">
       <p className="getapps__k">Coming soon</p>
       <div className="getapps__row">
         <button type="button" className="getapp getapp--dark" disabled aria-label="Desktop and mobile apps, coming soon">
-          <Ticker items={APPS} index={a} prefix="Download for" mono />
+          <Ticker items={APPS} n={a} prefix="Download for" mono />
         </button>
         <button type="button" className="getapp getapp--light" disabled aria-label="Browser extension, coming soon">
-          <Ticker items={BROWSERS} index={b} prefix="Add to" />
+          <Ticker items={BROWSERS} n={b} prefix="Add to" />
         </button>
       </div>
     </div>
