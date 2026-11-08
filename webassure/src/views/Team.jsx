@@ -7,9 +7,9 @@ import { PersonPlaceholder } from '../components/Icons.jsx'
 
 // Replace the `#` links and add `photo: '/team/<file>.jpg'` when ready.
 const TEAM = [
-  { name: 'Souradeep Pradhan', photo: '/team/souradeep.png', github: '#', website: '#', linkedin: '#' },
-  { name: 'Madhushree Dasgupta', photo: '/team/madhushree.png', zoom: 1.14, pos: 'center 30%', github: 'https://github.com/madhushree-cyber', website: '#', linkedin: 'https://www.linkedin.com/in/madhushree-dasgupta-4b8a79389' },
-  { name: 'Aniruddha Das', org: 'Adamas University', photo: '/team/aniruddha.png', github: '#', website: '#', linkedin: '#' },
+  { name: 'Souradeep Pradhan', photo: '/team/souradeep.png', bright: 1.12, github: '#', website: '#', linkedin: '#' },
+  { name: 'Madhushree Dasgupta', photo: '/team/madhushree.png', zoom: 1.06, pos: 'center 28%', github: 'https://github.com/madhushree-cyber', website: '#', linkedin: 'https://www.linkedin.com/in/madhushree-dasgupta-4b8a79389' },
+  { name: 'Aniruddha Das', org: 'Adamas University', photo: '/team/aniruddha.png', zoom: 1.08, pos: 'center 22%', github: '#', website: '#', linkedin: '#' },
   { name: 'Sattwik Das', photo: '/team/sattwik.png', github: 'https://github.com/Sattwik-Das', website: 'https://sattwik-das.vercel.app/', linkedin: 'https://www.linkedin.com/in/sattwik-das-in' },
 ]
 
@@ -50,7 +50,7 @@ export default function Team() {
             <li key={m.name} className="member">
               <span className="member__photo">
                 {m.photo ? (
-                  <Image src={m.photo} alt={m.name} fill sizes="(max-width: 520px) 92vw, (max-width: 1023px) 46vw, 300px" className="member__img" style={m.zoom ? { transform: `scale(${m.zoom})`, objectPosition: m.pos } : undefined} />
+                  <Image src={m.photo} alt={m.name} fill sizes="(max-width: 520px) 92vw, (max-width: 1023px) 46vw, 300px" className="member__img" style={{ ...(m.zoom && { transform: `scale(${m.zoom})`, objectPosition: m.pos }), ...(m.bright && { filter: `grayscale(1) contrast(1.06) brightness(${m.bright})` }) }} />
                 ) : (
                   <PersonPlaceholder />
                 )}

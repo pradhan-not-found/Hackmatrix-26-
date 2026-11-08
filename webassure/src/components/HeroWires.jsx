@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react'
 
-// Pump tubes for the inflated hero wordmark: three glossy plastic tubes run in
-// from each screen edge and plugs into the first letter (w) and the last
-// letter (e) through a triangular plastic connector. Bubbles of air travel along the
+// Pump tubes for the inflated hero wordmark: three glossy plastic tubes hang
+// in from each screen edge and plug into the first letter (w) and the last
+// letter (e) at its top, middle and bottom through small triangular tips. Bubbles of air travel along the
 // tubes into the letters. Same blue plastic as the wordmark, drawn on a
 // full-width canvas behind it.
 
@@ -40,50 +40,52 @@ export default function HeroWires() {
       const toCanvas = (ux, uy) => { pt.x = ux; pt.y = uy; const p = pt.matrixTransform(m); return [p.x - cb.left, p.y - cb.top] }
       const first = text.getExtentOfChar(0)
       const lastC = text.getExtentOfChar(n - 1)
-      const midY = 150 - 40
-      const [lx, ly] = toCanvas(first.x + 10, midY)
-      const [rx, ry] = toCanvas(lastC.x + lastC.width - 16, midY)
       R = Math.max(5, Math.min(12, 86 * m.a * 0.085))
-      ends = [
-        { side: -1, sx: -R * 2, sy: ly + H * 0.1, ex: lx, ey: ly },
-        { side: 1, sx: W + R * 2, sy: ry + H * 0.1, ex: rx, ey: ry },
-      ]
+      // Three plug points per letter: top, middle and bottom of the x-height.
+      const rows = [150 - 74, 150 - 43, 150 - 12]
+      const wIn = [0.04, 0.1, 0.17] // the w's outer edge slants inward toward the bottom
+      const eIn = [0.14, 0.04, 0.12] // the e's right edge is round
+      ends = []
+      rows.forEach((uy, lane) => {
+        const [lx, ly] = toCanvas(first.x + first.width * wIn[lane] + 4, uy)
+        const [rx, ry] = toCanvas(lastC.x + lastC.width * (1 - eIn[lane]) - 12, uy)
+        const drop = H * 0.02 + lane * R * 1.6 // start lower at the screen edge, spaced apart
+        ends.push({ side: -1, lane, sx: -R * 2, sy: ly + drop, ex: lx, ey: ly })
+        ends.push({ side: 1, lane, sx: W + R * 2, sy: ry + drop, ex: rx, ey: ry })
+      })
     }
 
-    // Three tubes per side, side by side, running into a triangular connector.
-    const LANES = [-1, 0, 1]
-    const r = () => R * 0.6 // radius of each tube
-    const gap = () => r() * 2.25 // centre-to-centre spacing
-    const connLen = () => R * 5
+    // Each tube hangs in a still curve that sags most at the centre; lower
+    // tubes sag a little more so the three never cross.
+    const r = () => R * 0.6 // tube radius
+    const tipLen = () => R * 2.6
 
-    // Point on lane `lane` at s (0 = screen edge, 1 = connector base), with a slow sway.
-    const at = (e, s, t, lane = 0) => {
-      const ex = e.ex - e.side * connLen()
+    const at = (e, s) => {
+      const ex = e.ex - e.side * tipLen()
       const x = e.sx + (ex - e.sx) * s
-      const sway = Math.sin(t * 0.0007 + e.side + lane * 0.6) * R * 0.5
-      const sag = Math.sin(s * Math.PI) * (R * 2.6 + sway)
-      return [x, e.sy + (e.ey - e.sy) * s + sag + lane * gap()]
+      const sag = Math.sin(s * Math.PI) * (H * 0.045 + e.lane * R * 1.1)
+      return [x, e.sy + (e.ey - e.sy) * s + sag]
     }
 
-    const path = (e, t, lane) => {
+    const path = (e) => {
       ctx.beginPath()
       for (let s = 0; s <= 1.0001; s += 0.01) {
-        const [x, y] = at(e, s, t, lane)
+        const [x, y] = at(e, s)
         s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
       }
     }
 
     // A glossy plastic tube: dark rim, body colour, soft highlight, sharp specular line.
-    const tube = (e, t, lane, pal) => {
+    const tube = (e, pal) => {
       const rr = r()
       ctx.lineCap = 'butt'; ctx.lineJoin = 'round'
       ctx.save(); ctx.shadowColor = 'rgba(0, 0, 0, 0.35)'; ctx.shadowBlur = rr * 2; ctx.shadowOffsetY = rr * 0.7
-      path(e, t, lane); ctx.strokeStyle = pal.rim; ctx.lineWidth = rr * 2; ctx.stroke(); ctx.restore()
-      path(e, t, lane); ctx.strokeStyle = pal.body; ctx.lineWidth = rr * 1.5; ctx.stroke()
+      path(e); ctx.strokeStyle = pal.rim; ctx.lineWidth = rr * 2; ctx.stroke(); ctx.restore()
+      path(e); ctx.strokeStyle = pal.body; ctx.lineWidth = rr * 1.5; ctx.stroke()
       ctx.save(); ctx.translate(0, -rr * 0.3)
-      path(e, t, lane); ctx.strokeStyle = pal.light; ctx.lineWidth = rr * 0.85; ctx.stroke()
+      path(e); ctx.strokeStyle = pal.light; ctx.lineWidth = rr * 0.85; ctx.stroke()
       ctx.translate(0, -rr * 0.25)
-      path(e, t, lane); ctx.strokeStyle = pal.spec; ctx.lineWidth = Math.max(0.8, rr * 0.24); ctx.stroke()
+      path(e); ctx.strokeStyle = pal.spec; ctx.lineWidth = Math.max(0.8, rr * 0.24); ctx.stroke()
       ctx.restore()
     }
 
@@ -94,32 +96,26 @@ export default function HeroWires() {
       return g
     }
 
-    // Triangular connector: wide base takes the three tubes, the tip plugs into the letter.
-    const connector = (e, t, pal) => {
-      const [bx, by] = at(e, 1, t, 0)
-      const half = gap() + r() * 1.5
-      const tipX = e.ex, tipY = e.ey
-      const back = bx - e.side * r() * 0.8 // base sits a little over the tube ends
+    // Small triangular plastic tip where each tube plugs into the letter.
+    const tip = (e, pal) => {
+      const [bx, by] = at(e, 1)
+      const half = r() * 1.35
       ctx.save()
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)'; ctx.shadowBlur = R * 1.4; ctx.shadowOffsetY = R * 0.5
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)'; ctx.shadowBlur = R; ctx.shadowOffsetY = R * 0.4
       ctx.beginPath()
-      ctx.moveTo(back, by - half)
-      ctx.lineTo(tipX, tipY - r() * 0.45)
-      ctx.quadraticCurveTo(tipX + e.side * r() * 0.5, tipY, tipX, tipY + r() * 0.45)
-      ctx.lineTo(back, by + half)
+      ctx.moveTo(bx, by - half)
+      ctx.lineTo(e.ex, e.ey - r() * 0.3)
+      ctx.lineTo(e.ex, e.ey + r() * 0.3)
+      ctx.lineTo(bx, by + half)
       ctx.closePath()
       ctx.fillStyle = shade(by - half, by + half, pal); ctx.fill()
       ctx.restore()
-      // highlight along the upper edge
-      ctx.beginPath(); ctx.moveTo(back, by - half + 1.5); ctx.lineTo(tipX - e.side * 2, tipY - r() * 0.3)
-      ctx.strokeStyle = pal.spec; ctx.lineWidth = 1.2; ctx.stroke()
-      // collar band across the base
-      const cw = r() * 1.3
-      const cx = back - e.side * cw * 0.5
-      ctx.fillStyle = shade(by - half - 2, by + half + 2, pal)
-      ctx.beginPath(); ctx.roundRect(cx - cw / 2, by - half - 2, cw, half * 2 + 4, cw * 0.4); ctx.fill()
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)'; ctx.lineWidth = 1
-      ctx.beginPath(); ctx.moveTo(cx - cw / 2 + 1.5, by - half); ctx.lineTo(cx - cw / 2 + 1.5, by + half); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(bx, by - half + 1.2); ctx.lineTo(e.ex - e.side * 2, e.ey - r() * 0.25)
+      ctx.strokeStyle = pal.spec; ctx.lineWidth = 1; ctx.stroke()
+      // collar
+      const cw = r() * 1.1
+      ctx.fillStyle = shade(by - half - 1.5, by + half + 1.5, pal)
+      ctx.beginPath(); ctx.roundRect(bx - e.side * cw * 0.2 - cw / 2, by - half - 1.5, cw, half * 2 + 3, cw * 0.4); ctx.fill()
     }
 
     const draw = (t, dt) => {
@@ -130,21 +126,18 @@ export default function HeroWires() {
         ? { rim: '#1c34a8', body: '#3d63f2', light: 'rgba(130, 165, 255, 0.95)', spec: 'rgba(235, 242, 255, 0.92)' }
         : { rim: '#2441c9', body: '#4672ff', light: 'rgba(150, 182, 255, 0.95)', spec: 'rgba(255, 255, 255, 0.95)' }
 
-      for (const e of ends) {
-        for (const lane of LANES) tube(e, t, lane, pal)
-        connector(e, t, pal)
-      }
+      for (const e of ends) { tube(e, pal); tip(e, pal) }
 
       // Air bubbles moving along each tube toward the letter, staggered per lane.
       if (!reduce && t > nextBubble) {
-        ends.forEach((_, k) => LANES.forEach((lane, i) => bubbles.push({ k, lane, s: -i * 0.08, v: 0.00034 + Math.random() * 0.0001 })))
+        ends.forEach((e, k) => bubbles.push({ k, s: -e.lane * 0.08, v: 0.00034 + Math.random() * 0.0001 }))
         nextBubble = t + 2000 + Math.random() * 900
       }
       bubbles = bubbles.filter((b) => (b.s += b.v * dt) < 1)
       for (const b of bubbles) {
         if (b.s <= 0) continue
         const e = ends[b.k]
-        const [x, y] = at(e, b.s, t, b.lane)
+        const [x, y] = at(e, b.s)
         const fade = Math.sin(b.s * Math.PI)
         const rr = r()
         const g = ctx.createRadialGradient(x, y - rr * 0.4, rr * 0.1, x, y, rr * 1.3)

@@ -288,3 +288,10 @@ html, * { scrollbar-width: auto; scrollbar-color: auto; }
 .member__photo { background: #ececee; overflow: hidden; }
 .member__img { filter: grayscale(1) contrast(1.06) brightness(1.04); transform-origin: center 30%; }
 [data-theme='dark'] .member__photo { background: #e6e6e8; }
+
+/* 01–04: same inflated plastic as the hero wordmark */
+.mrow__n.mrow__n--plastic, [data-theme='dark'] .mrow__n.mrow__n--plastic {
+  display: block; width: clamp(84px, 7.5vw, 112px); margin-bottom: 14px;
+  background: none; color: inherit; -webkit-text-stroke: 0; filter: none; line-height: 0;
+}
+.mrow__n--plastic .thermal { width: 100%; height: auto; }

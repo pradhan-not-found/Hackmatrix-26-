@@ -2,6 +2,7 @@
 
 import ScrollText from './ScrollText.jsx'
 import ThermalIcon from './ThermalIcon.jsx'
+import Thermal from './Thermal.jsx'
 
 const SIGNALS = [
   ['redirect', 'Redirect chains', 'Every hop followed to where the link really ends.'],
@@ -71,7 +72,7 @@ export default function Audience() {
         <ol className="mrow">
           {MOMENTS.map(([title, text], i) => (
             <li key={title} className="mrow__item reveal" style={{ transitionDelay: `${i * 90}ms` }}>
-              <span className="mrow__n">{String(i + 1).padStart(2, '0')}</span>
+              <span className="mrow__n mrow__n--plastic" aria-label={String(i + 1).padStart(2, '0')}><Thermal text={String(i + 1).padStart(2, '0')} viewBox="330 -8 240 196" /></span>
               <span className="mrow__t">{title}</span>
               <span className="mrow__d">{text}</span>
             </li>
