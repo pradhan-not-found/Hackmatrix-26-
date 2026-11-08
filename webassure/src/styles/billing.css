@@ -958,3 +958,7 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 .report-drawer .report-summary.rsum { background: transparent; align-items: stretch; }
 .rsum__row { justify-content: flex-start; }
 .rt__name { text-transform: capitalize; }
+/* report: clear separation between header, summary, tabs and content */
+.report-drawer .analysis-header { border-bottom: 1px solid var(--report-line); padding-bottom: 18px; }
+.report-drawer .report-summary.rsum { padding-top: 22px; padding-bottom: 24px; border-bottom: 1px solid var(--report-line); }
+.report-drawer .report-tabs { padding-top: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--report-line); }
