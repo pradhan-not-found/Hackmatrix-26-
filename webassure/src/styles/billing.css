@@ -740,3 +740,4 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 /* thinner scrollbar */
 ::-webkit-scrollbar { width: 7px; height: 7px; }
 ::-webkit-scrollbar-thumb { border-width: 1.5px; }
+::-webkit-scrollbar-thumb { min-height: 28px; }
