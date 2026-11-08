@@ -1,30 +1,51 @@
+<div align="center">
+
+<img src="webassure/public/og-image.png" alt="WebAssure: know your website before you trust it" width="100%" />
+
+<br />
+<br />
+
+<a href="https://hackmatrix.codes/"><img src="docs/assets/hackmatrix-logo.webp" alt="HackMatrix 2026" height="64" /></a>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://mlh.io/"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/mlh-logo-light-text.svg" />
+  <img src="docs/assets/mlh-logo.svg" alt="Major League Hacking" height="64" />
+</picture></a>
+
+**Built at [HackMatrix 2026](https://hackmatrix.codes/)** · AI & student hackathon, Kolkata · co-powered by ACM and MLH
+
+<br />
+
+[![HackMatrix 2026](https://img.shields.io/badge/HackMatrix-2026-e73427?style=for-the-badge)](https://hackmatrix.codes/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-18-20232a?style=for-the-badge&logo=react&logoColor=61dafb)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-auth_&_data-3ecf8e?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-4672ff?style=for-the-badge)](LICENSE)
+
+<br />
+
+**[About](#why-webassure)** &nbsp;·&nbsp;
+**[Features](#features)** &nbsp;·&nbsp;
+**[Architecture](#architecture)** &nbsp;·&nbsp;
+**[Getting started](#getting-started)** &nbsp;·&nbsp;
+**[API](#api)** &nbsp;·&nbsp;
+**[Testing](#testing)** &nbsp;·&nbsp;
+**[HackMatrix](#built-at-hackmatrix-2026)** &nbsp;·&nbsp;
+**[Team](#team)**
+
+</div>
+
+---
+
 # WebAssure
 
 **Know your website before you trust it.**
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-
 WebAssure is an AI-assisted web threat detection platform. Paste a suspicious link and get an evidence-based assessment of whether it is safe, suspicious or malicious, with every finding explained in plain language.
 
 Built for the *AI-Powered Web Threat Detection & Digital Trust Intelligence* challenge. See the [problem statement](docs/AI_Web_Threat_Detection_Problem_Statement.md).
-
----
-
-## Contents
-
-- [Why WebAssure](#why-webassure)
-- [What is in this repository](#what-is-in-this-repository)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Getting started](#getting-started)
-- [Configuration](#configuration)
-- [API](#api)
-- [Testing](#testing)
-- [Project structure](#project-structure)
-- [Status and limitations](#status-and-limitations)
-- [Security and privacy](#security-and-privacy)
-- [Team](#team)
-- [License](#license)
 
 ---
 
@@ -244,14 +265,26 @@ The backend is a local MVP. Run a single worker. Before any public deployment, a
 
 Found a security issue? Please report it privately to the maintainers rather than opening a public issue.
 
+## Built at HackMatrix 2026
+
+WebAssure was built for **[HackMatrix 2026](https://hackmatrix.codes/)**, the AI & student hackathon organised by the ACM Student Chapter at Adamas University, Kolkata, and co-powered by ACM and [Major League Hacking](https://mlh.io/).
+
+| | |
+| --- | --- |
+| **Online sprint** | 48 hours, 7–10 November 2026 |
+| **Hack Day** | 12 hours offline, 14 November 2026, Adamas University, Kolkata |
+| **Challenge** | AI-Powered Web Threat Detection & Digital Trust Intelligence |
+
 ## Team
 
-WebAssure is built by **Fantastic 4**:
+WebAssure is built by **Fantastic 4**.
 
-- Souradeep Pradhan
-- Madhushree Dasgupta
-- Aniruddha Das
-- Sattwik Das
+| Member | Links |
+| --- | --- |
+| Souradeep Pradhan | |
+| Madhushree Dasgupta | [GitHub](https://github.com/madhushree-cyber) · [LinkedIn](https://www.linkedin.com/in/madhushree-dasgupta-4b8a79389) |
+| Aniruddha Das | Adamas University |
+| Sattwik Das | [GitHub](https://github.com/Sattwik-Das) · [Website](https://sattwik-das.vercel.app/) · [LinkedIn](https://www.linkedin.com/in/sattwik-das-in) |
 
 ## License
 
