@@ -82,7 +82,7 @@ export default function ReportDetails({ id, onClose }) {
         <span className="analysis-verdict-icon">{verdictTone === 'bad' || verdictTone === 'warn' ? <AlertIcon /> : verdictTone === 'ok' ? <ShieldIcon /> : <InfoIcon />}</span>
         <div><p className="analysis-eyebrow">PHISHING ASSESSMENT</p><Badge tone={verdictTone}>{report.risk_classification}</Badge><p className="caption grey">Evidence-based assessment. Configuration warnings are evaluated separately.</p></div>
       </div>
-      <div className="analysis-facts"><div><span>Findings</span><strong>{report.findings.length}</strong></div><div><span>Configuration warnings</span><strong>{configurationCount}</strong></div><div><span>Requests collected</span><strong>{report.redirect_chain.length}</strong></div></div>
+      <dl className="analysis-facts" aria-label="Report summary"><div><dt>Findings</dt><dd>{report.findings.length}</dd></div><div><dt>Config warnings</dt><dd>{configurationCount}</dd></div><div><dt>Requests</dt><dd>{report.redirect_chain.length}</dd></div></dl>
       </div>
       <div className="report-tabs" role="tablist" aria-label="Report sections">{tabs.map(([name, title], index) => <button key={name} id={`report-tab-${name}`} role="tab" aria-selected={tab === name} aria-controls={`report-panel-${name}`} tabIndex={tab === name ? 0 : -1} onClick={() => activate(name)} onKeyDown={(event) => navigateTab(event, index)}>{title}{name === 'overview' && <span>{report.findings.length}</span>}</button>)}<span className="report-tabs-note">Read-only evidence report</span></div>
       <div className="report-panels" ref={panels}>
