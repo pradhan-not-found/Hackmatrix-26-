@@ -177,9 +177,9 @@ export default function Ledger() {
 
         <div className="ledger-network-row">
           <label className="ledger-field">Network
-            <select className="input-sm" aria-label="Registry network" value={chainId} disabled={!!busy} onChange={(event) => { setChainId(event.target.value); try { localStorage.setItem('wa-ledger-network', event.target.value) } catch {} }}>
+            <span className="ledger-select"><select className="input-sm" aria-label="Registry network" value={chainId} disabled={!!busy} onChange={(event) => { setChainId(event.target.value); try { localStorage.setItem('wa-ledger-network', event.target.value) } catch {} }}>
               {Object.values(REGISTRY_NETWORKS).map((item) => <option key={item.chainId} value={item.chainId}>{item.name}</option>)}
-            </select>
+            </select></span>
           </label>
           <div className="ledger-wallet">
             <p className="caption grey">

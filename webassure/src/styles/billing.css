@@ -1057,3 +1057,17 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 .ledger-explorer {
   text-decoration: none;
 }
+
+/* Threat ledger section headings: badge, title and description never crowd each other */
+.ledger-card .ledger-step { margin: 0 0 10px; column-gap: 10px; row-gap: 2px; }
+.ledger-card .ledger-step em { margin-left: 2px; }
+.ledger-card .ledger-head .caption { margin-left: 36px; line-height: 20px; }
+.ledger-card .ledger-status, .ledger-card .ledger-import { margin-top: -2px; }
+.ledger-card code { max-width: 100%; overflow-wrap: anywhere; word-break: break-all; white-space: normal; }
+.ledger-network-row { align-items: flex-end; }
+.ledger-network-row .ledger-wallet { min-height: 44px; }
+@media (max-width: 560px) {
+  .ledger-card .ledger-step em { flex: 1 1 100%; margin: 6px 0 0; line-height: 20px; }
+  .ledger-card .ledger-head .caption { margin-left: 0; }
+  .ledger-card .ledger-status, .ledger-card .ledger-import { margin-top: 0; }
+}
