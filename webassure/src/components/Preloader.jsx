@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 const PHRASES = ['Know your website', 'Trust every link', 'Click with confidence']
 
-const HOLD = 1900 // ms the phrases stay on screen
+const HOLD = 2300 // ms: phrases write in letter by letter, then hold
 const EXIT = 1250 // ms: phrases leave, then the panel lifts away
 
 export default function Preloader({ onDone }) {
@@ -31,8 +31,12 @@ export default function Preloader({ onDone }) {
   return (
     <div className="preloader" data-leaving={leaving || undefined} aria-hidden="true">
       {PHRASES.map((p, i) => (
-        <span key={p} className="preloader__phrase" style={{ animationDelay: `${0.15 + i * 0.18}s` }}>
-          {p}
+        <span key={p} className="preloader__phrase" aria-label={p}>
+          {[...p].map((ch, j) => (
+            <span key={j} className="preloader__ch" style={{ animationDelay: `${0.15 + i * 0.22 + j * 0.032}s` }}>
+              {ch === ' ' ? ' ' : ch}
+            </span>
+          ))}
         </span>
       ))}
     </div>

@@ -4,7 +4,7 @@ export const FAQS = [
   ['What can I submit?', 'Any URL, domain, email or message. WebAssure extracts the links and checks each one.'],
   ['Do I have to open the suspicious site?', 'No. Pages are fetched in an isolated sandbox on our side, so nothing runs on your device.'],
   ['How is the risk score calculated?', 'Four engines (AI content analysis, certificate validation, site-security scanning and reputation data) each contribute weighted indicators. The report shows every one.'],
-  ['What does the blockchain part do?', 'Confirmed threats are anchored on-chain so reports cannot be quietly altered or removed, and anyone can verify them.'],
+  ['How does the on-chain threat ledger work?', 'Every confirmed threat is hashed and committed on-chain, creating a tamper-proof, publicly verifiable record. No one, including us, can quietly edit or delete a report, and anyone can check it against the ledger without trusting WebAssure.'],
   ['Is there an API?', 'Yes. Security teams can submit URLs and pull reports programmatically from the dashboard.'],
 ]
 

@@ -586,3 +586,15 @@ html:has(.preloader) body::-webkit-scrollbar, html:has(.dash-loading) body::-web
 html:has(.preloader[data-leaving]) main { animation: page-settle 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both; }
 @keyframes page-settle { from { transform: translateY(28px) scale(0.985); opacity: 0.4; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .preloader, .preloader[data-leaving] .preloader__phrase, html:has(.preloader[data-leaving]) main { transition: none; animation: none; } }
+
+/* preloader: each phrase writes in letter by letter, blur to sharp */
+.preloader .preloader__phrase { opacity: 1; animation: none; white-space: nowrap; }
+.preloader__ch {
+  display: inline-block; opacity: 0; filter: blur(8px); transform: translateY(4px);
+  animation: ch-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes ch-in { to { opacity: 1; filter: blur(0); transform: none; } }
+/* exit: whole phrases blur away and rise, then the panel lifts (rules above) */
+.preloader[data-leaving] .preloader__phrase { animation: phrase-out 0.5s cubic-bezier(0.55, 0, 0.75, 0.2) forwards; }
+@keyframes phrase-out { from { opacity: 1; transform: none; filter: blur(0); } to { opacity: 0; transform: translateY(-16px); filter: blur(10px); } }
+@media (prefers-reduced-motion: reduce) { .preloader__ch { animation: none; opacity: 1; filter: none; transform: none; } }
