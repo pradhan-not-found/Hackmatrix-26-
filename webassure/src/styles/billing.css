@@ -640,3 +640,25 @@ html:has(.preloader[data-leaving]) main { animation: page-unblur 1.2s cubic-bezi
 /* keep the cookie notice out of the way until the preloader is gone */
 html:has(.preloader) .cookie { opacity: 0; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .preloader { transition: none; } }
+
+/* preloader exit, refined: words leave first, then a wide, very soft blob opens fast
+   while the whole screen fades, so no half-revealed fragment ever lingers */
+.preloader {
+  -webkit-mask-image:
+    radial-gradient(circle at 46% 54%, transparent var(--b1), #000 calc(var(--b1) + 30%)),
+    radial-gradient(circle at 56% 46%, transparent var(--b2), #000 calc(var(--b2) + 30%)),
+    radial-gradient(circle at 50% 60%, transparent var(--b3), #000 calc(var(--b3) + 30%));
+  mask-image:
+    radial-gradient(circle at 46% 54%, transparent var(--b1), #000 calc(var(--b1) + 30%)),
+    radial-gradient(circle at 56% 46%, transparent var(--b2), #000 calc(var(--b2) + 30%)),
+    radial-gradient(circle at 50% 60%, transparent var(--b3), #000 calc(var(--b3) + 30%));
+  transition:
+    --b1 0.8s cubic-bezier(0.55, 0, 0.25, 1) 0.42s,
+    --b2 0.8s cubic-bezier(0.55, 0, 0.25, 1) 0.48s,
+    --b3 0.8s cubic-bezier(0.55, 0, 0.25, 1) 0.38s,
+    opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.72s;
+}
+.preloader[data-leaving] { --b1: 140%; --b2: 140%; --b3: 140%; opacity: 0; }
+.preloader[data-leaving] .preloader__phrase { animation: phrase-soft 0.38s cubic-bezier(0.4, 0, 1, 1) forwards; }
+@keyframes phrase-soft { to { opacity: 0; filter: blur(10px); transform: scale(0.98); } }
+html:has(.preloader[data-leaving]) main { animation: page-unblur 1s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both; }
