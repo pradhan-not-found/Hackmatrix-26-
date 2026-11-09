@@ -125,6 +125,9 @@ export default function ReportDetails({ id, onClose }) {
     return () => { active = false }
   }, [id, attempt, getReport])
   const explanation = report?.ai_explanation
+  const incompleteChecks = report?.risk_classification === 'Inconclusive'
+    ? (report.checks || []).filter((check) => !['completed', 'not_applicable'].includes(check.status))
+    : []
   const isAI = explanation?.status === 'completed' && explanation.provider === 'Gemini'
   const currentAI = isAI && explanation.insight_version === 'report-insights-v1'
   const generateInsights = async () => {
@@ -173,6 +176,14 @@ export default function ReportDetails({ id, onClose }) {
       <div className="report-panels" ref={panels}>
         <div className="report-panel report-overview" role="tabpanel" id="report-panel-overview" aria-labelledby="report-tab-overview" hidden={tab !== 'overview'}>
           <div className="report-overview-main">
+      {report.risk_classification === 'Inconclusive' && <section aria-label="Incomplete assessment">
+        <SectionTitle icon={InfoIcon}>Why this assessment is inconclusive</SectionTitle>
+        <p className="caption grey">Required checks did not finish. No threats detected in completed checks does not establish safety.</p>
+        <ul className="drawer__list">{incompleteChecks.map((check, index) => <li key={`${check.name}-${index}`}><strong>{label(check.name)}: </strong>{check.reason || check.error || check.status.replaceAll('_', ' ')}</li>)}</ul>
+        {!incompleteChecks.length && <p className="caption grey">This saved report lacks sufficient coverage details. Review the Checks tab.</p>}
+        <p className="caption grey">After the cause is resolved, run a new scan to collect fresh evidence. Saved reports retain their original results.</p>
+        <button type="button" className="btn btn--ghost" onClick={() => activate('checks')}>Review all checks</button>
+      </section>}
       <section><SectionTitle icon={ShieldIcon} detail={`${report.findings.length} recorded`}>Findings</SectionTitle>
         {!report.findings.length && <NoFindings coverage={report.evidence_coverage} />}
         {report.findings.map((finding) => <article className="report-item analysis-finding" key={finding.id} data-severity={finding.severity}>

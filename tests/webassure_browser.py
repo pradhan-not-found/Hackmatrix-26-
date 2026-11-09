@@ -510,6 +510,23 @@ class WebAssureBrowserTests(unittest.TestCase):
         self.assertTrue(page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
         self.assertEqual(failures, [])
 
+    def test_inconclusive_overview_explains_missing_evidence(self):
+        page = self.browser.new_page(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(page.close)
+        page.route('**/auth/v1/user', lambda route: route.fulfill(json=USER))
+        page.add_init_script("localStorage.setItem('wa-cookies', JSON.stringify({choice: 'essential'}))")
+        page.add_init_script("localStorage.setItem('sb-ldrspcimsdzazhbckmca-auth-token', JSON.stringify(" + json.dumps(test_session()) + "))")
+        page.goto(self.url + '/dashboard/scans')
+        page.get_by_label('URL to scan', exact=True).fill('https://example.com')
+        page.get_by_role('button', name='Scan', exact=True).click()
+        dialog = page.get_by_role('dialog', name='Scan details')
+        incomplete = dialog.get_by_role('region', name='Incomplete assessment')
+        expect(incomplete.get_by_role('heading', name='Why this assessment is inconclusive')).to_be_visible()
+        expect(incomplete).to_contain_text('Test provider unavailable')
+        expect(incomplete).to_contain_text('Saved reports retain their original results')
+        incomplete.get_by_role('button', name='Review all checks').click()
+        expect(dialog.get_by_role('tab', name='Checks', exact=True)).to_have_attribute('aria-selected', 'true')
+
     def test_real_submission_persistence_evidence_download_and_retries(self):
         page = self.browser.new_page(viewport={"width": 1440, "height": 1000})
         self.addCleanup(page.close)

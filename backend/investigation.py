@@ -150,7 +150,7 @@ def investigate(url: str) -> dict:
                 finding("configuration", "info", "Security headers absent from HTTP response", missing,
                         "Website owner: review security header configuration; absence alone is not evidence of phishing.")
             html_check = {"name": "html_inspection", "url": current, **html}
-            if html["status"] == "completed" and html_text is not None:
+            if html["status"] in ("completed", "partial") and html_text is not None:
                 try:
                     page = analyze_html(html_text, current)
                     for issue in page.pop("findings"):

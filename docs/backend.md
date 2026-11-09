@@ -182,8 +182,8 @@ connection checks. A bounded GET retrieves the terminal page; JavaScript remains
 
 The pinned HTTP client requests HTML using GET and `Accept-Encoding: identity`.
 Only successful responses declared as `text/html` or `application/xhtml+xml` are
-read. Bodies are capped at 256 KiB, including responses without Content-Length.
-Oversized declarations, attachments, and compressed bodies are skipped. A
+read. Bodies are capped at 2 MiB, including responses without Content-Length.
+Oversized HTML is inspected only up to the cap and reported as partial; attachments and compressed bodies are skipped. A
 five-second absolute socket deadline interrupts slow headers and slow body streams;
 redirects are returned to the existing validated traversal loop, never automatically
 followed. Non-HTML bodies are not read.

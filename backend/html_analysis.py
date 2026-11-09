@@ -7,9 +7,8 @@ from urllib.parse import urljoin, urlsplit
 from backend.network import normalize_url
 from backend.url_analysis import BRANDS, analyze_url, domain_info
 
-
-# Large legitimate pages reference hundreds of images and scripts; the tag cap still bounds parsing.
-MAX_RESOURCES = 2000
+MAX_RESOURCES = 2048
+MAX_SRCSET_CANDIDATES = 64
 
 
 class PageParser(HTMLParser):
@@ -22,6 +21,13 @@ class PageParser(HTMLParser):
         self.capture = None
         self.inert = []
         self.tags = 0
+        self.resources_limited = False
+
+    def add_resource(self, tag, value):
+        if len(self.resources) < MAX_RESOURCES:
+            self.resources.append((tag, value))
+        else:
+            self.resources_limited = True
 
     def handle_starttag(self, tag, attrs):
         self.tags += 1
@@ -29,7 +35,9 @@ class PageParser(HTMLParser):
             raise ValueError("HTML tag inspection limit reached")
         if tag in ("script", "style", "template", "noscript"):
             if not self.inert and tag == "script":
-                self.resources.extend([("script", value) for name, value in attrs if name == "src" and value])
+                for name, value in attrs:
+                    if name == "src" and value:
+                        self.add_resource("script", value)
             self.inert.append(tag)
             return
         if self.inert:
@@ -51,15 +59,18 @@ class PageParser(HTMLParser):
                                       "payment": bool(set((attrs.get("autocomplete") or "").lower().split()) & {"cc-number", "cc-csc", "cc-exp"}),
                                       "override": attrs.get("formaction") if control_type in ("submit", "image") else None,
                                       "method": attrs.get("formmethod")})
-        if len(self.resources) < MAX_RESOURCES:
-            if (tag in ("img", "iframe", "audio", "video", "source") or (tag == "input" and (attrs.get("type") or "").lower() == "image")) and attrs.get("src"):
-                self.resources.append((tag, attrs["src"]))
-            if tag == "link" and "stylesheet" in (attrs.get("rel") or "").lower().split() and attrs.get("href"):
-                self.resources.append(("stylesheet", attrs["href"]))
-            if tag in ("img", "source") and attrs.get("srcset"):
-                self.resources.extend((tag, value.strip().split()[0]) for value in attrs["srcset"].split(",")[:10] if value.strip())
-            if tag == "video" and attrs.get("poster"):
-                self.resources.append(("poster", attrs["poster"]))
+        if (tag in ("img", "iframe", "audio", "video", "source") or (tag == "input" and (attrs.get("type") or "").lower() == "image")) and attrs.get("src"):
+            self.add_resource(tag, attrs["src"])
+        if tag == "link" and "stylesheet" in (attrs.get("rel") or "").lower().split() and attrs.get("href"):
+            self.add_resource("stylesheet", attrs["href"])
+        if tag in ("img", "source") and attrs.get("srcset"):
+            candidates = [value.strip().split()[0] for value in attrs["srcset"].split(",") if value.strip()]
+            if len(candidates) > MAX_SRCSET_CANDIDATES:
+                self.resources_limited = True
+            for value in candidates[:MAX_SRCSET_CANDIDATES]:
+                self.add_resource(tag, value)
+        if tag == "video" and attrs.get("poster"):
+            self.add_resource("poster", attrs["poster"])
         if tag == "meta" and (attrs.get("http-equiv") or "").lower() == "refresh" and len(self.refreshes) < 20:
             self.refreshes.append(attrs.get("content") or "")
 
@@ -169,7 +180,7 @@ def analyze_html(text: str, url: str) -> dict:
 
     mixed = []
     if urlsplit(url).scheme == "https":
-        for tag, reference in parser.resources[:100]:
+        for tag, reference in parser.resources:
             destination = resolve(reference, base)
             if destination and urlsplit(destination).scheme == "http":
                 mixed.append({"element": tag, "url": destination, "fetched": False})
@@ -190,7 +201,7 @@ def analyze_html(text: str, url: str) -> dict:
     limitations = ["Static parse only: no JavaScript, stylesheets, frames, resources, or form actions are executed or fetched.",
                    "Title/heading brand matches use a limited registry and do not establish ownership or impersonation.",
                    "Browser DOM repair, CSS resource URLs, disabled fieldsets, and script-driven forms are not fully modeled."]
-    limited = len(parser.forms) >= 100 or len(parser.controls) >= 500 or len(parser.resources) >= MAX_RESOURCES or len(forms) >= 200
+    limited = len(parser.forms) >= 100 or len(parser.controls) >= 500 or parser.resources_limited or len(forms) >= 200
     if limited:
         limitations.append("Element limits reached; some page elements were not inspected.")
     return {"url": url, "base_url": base, "title": title, "heading": heading, "form_count": len(parser.forms), "limited": limited,

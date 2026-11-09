@@ -6,6 +6,33 @@ from backend.investigation import investigate
 
 
 class HTMLPipelineTests(unittest.TestCase):
+    def test_truncated_html_preserves_findings_without_claiming_full_coverage(self):
+        report = self.inspect('<script src="http://example.com/app.js"></script>', status='partial')
+        self.assertEqual(report['risk_classification'], 'Inconclusive')
+        self.assertEqual(len(report['page_analysis']['mixed_content']), 1)
+        check = next(c for c in report['checks'] if c['name'] == 'html_inspection')
+        self.assertEqual(check['status'], 'partial')
+
+    def test_resource_rich_page_is_complete_and_late_mixed_content_is_detected(self):
+        html = '<img src="/image.png">' * 150 + '<script src="http://example.com/app.js"></script>'
+        report = self.inspect(html)
+        self.assertEqual(report['risk_classification'], 'Low Risk')
+        self.assertFalse(report['page_analysis']['limited'])
+        self.assertEqual(len(report['page_analysis']['mixed_content']), 1)
+
+    def test_resource_overflow_still_prevents_low_risk(self):
+        from backend.html_analysis import MAX_RESOURCES
+        report = self.inspect('<img src="/image.png">' * (MAX_RESOURCES + 1))
+        self.assertEqual(report['risk_classification'], 'Inconclusive')
+        exact = self.inspect('<img src="/image.png">' * MAX_RESOURCES)
+        self.assertEqual(exact['risk_classification'], 'Low Risk')
+
+    def test_responsive_images_with_many_variants_are_fully_inspected(self):
+        variants = ', '.join(f'/image-{i}.png {i+1}w' for i in range(15))
+        report = self.inspect(f'<img srcset="{variants}, http://example.com/insecure.png 20w">')
+        self.assertEqual(report['risk_classification'], 'Low Risk')
+        self.assertEqual(len(report['page_analysis']['mixed_content']), 1)
+
     def inspect(self, html, url="https://example.com/", status="completed"):
         response = {"url": url, "status": 200, "headers": {}, "address": "8.8.8.8", "tls": {"verified": True},
                     "html": {"status": status, "text": html, "bytes_read": len(html)}}

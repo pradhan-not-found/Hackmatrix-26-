@@ -32,6 +32,8 @@ class Handler(BaseHTTPRequestHandler):
                     time.sleep(.03)
             elif self.path == "/large":
                 self.wfile.write(b"x" * (MAX_HTML_BYTES + 1))
+            elif self.path == "/modern-page":
+                self.wfile.write(b"<title>Modern page</title>" + b" " * (600 * 1024))
             else:
                 self.wfile.write(b"<title>Benign fixture</title>")
         except OSError:
@@ -39,6 +41,12 @@ class Handler(BaseHTTPRequestHandler):
 
 
 class BoundedHTMLFetchTests(unittest.TestCase):
+    def test_modern_page_above_old_limit_is_read_completely(self):
+        result = self.get('/modern-page')
+        self.assertEqual(result['html']['status'], 'completed')
+        self.assertGreater(result['html']['bytes_read'], 256 * 1024)
+        self.assertTrue(result['html']['text'].startswith('<title>Modern page</title>'))
+
     @classmethod
     def setUpClass(cls):
         cls.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
@@ -74,11 +82,11 @@ class BoundedHTMLFetchTests(unittest.TestCase):
 
     def test_large_pages_are_read_only_up_to_the_limit_and_say_so(self):
         result = self.get("/large")["html"]
-        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["status"], "partial")
         self.assertTrue(result["truncated"])
         self.assertEqual(result["bytes_read"], MAX_HTML_BYTES)
         self.assertEqual(len(result["text"]), MAX_HTML_BYTES)
-        self.assertIn("first 256 KiB", result["reason"])
+        self.assertIn("first 2 MiB", result["reason"])
 
     def test_redirect_is_returned_not_followed(self):
         result = self.get("/redirect")

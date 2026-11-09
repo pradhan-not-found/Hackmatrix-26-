@@ -27,7 +27,7 @@ def create_tls_context():
     return context
 
 
-MAX_HTML_BYTES = 256 * 1024
+MAX_HTML_BYTES = 2 * 1024 * 1024
 
 
 def read_html(response, headers: dict, deadline: float) -> dict:
@@ -71,7 +71,7 @@ def read_html(response, headers: dict, deadline: float) -> dict:
         text = raw.decode(charset, errors="replace")
     result = {"status": "completed", "text": text, "bytes_read": size, "charset": charset}
     if truncated:
-        result.update(truncated=True, reason="Only the first 256 KiB of this page's HTML was inspected.")
+        result.update(status="partial", truncated=True, reason="Only the first 2 MiB of this page's HTML was inspected.")
     return result
 
 
