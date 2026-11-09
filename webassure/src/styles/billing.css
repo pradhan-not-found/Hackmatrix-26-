@@ -1309,3 +1309,19 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 .no-findings p span { font-weight: 400; color: var(--report-muted); }
 .no-findings > div { display: flex; flex-wrap: wrap; gap: 8px; }
 .no-findings .rt__pill { height: 28px; text-transform: none; font-weight: 500; }
+
+/* report insights: one reading flow */
+.ins { display: flex; flex-direction: column; gap: 20px; }
+.ins__tag { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--workspace-accent, #7ea0ff); }
+.ins__tag svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.ins__summary { margin-top: 8px; font-size: 16px; line-height: 1.6; font-weight: 500; letter-spacing: -.008em; color: var(--report-ink); }
+.ins__title { margin-bottom: 10px; font-size: 13px; font-weight: 600; color: var(--report-muted); }
+.ins__list { display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0; margin: 0; }
+.ins__list li { display: flex; align-items: flex-start; gap: 12px; padding: 13px 15px; border-radius: 12px; background: var(--report-surface); }
+.ins__list span { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700; color: var(--workspace-accent, #7ea0ff); background: color-mix(in srgb, var(--workspace-accent, #4672ff) 14%, transparent); }
+.ins__list span svg { width: 13px; height: 13px; }
+.ins__list p { font-size: 14px; line-height: 1.55; color: var(--report-ink); }
+.ins__foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; }
+.report-drawer .ins__foot details { background: none; border-radius: 0; }
+.report-drawer .ins__foot details[open] { flex-basis: 100%; }
+.report-drawer .ins__foot summary { padding: 2px 0; font-size: 12.5px; }

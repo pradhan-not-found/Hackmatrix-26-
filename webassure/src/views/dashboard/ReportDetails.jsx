@@ -34,10 +34,23 @@ function Evidence({ title = 'Supporting evidence', value }) {
   return <details className="report-evidence"><summary>{title}</summary><pre>{JSON.stringify(value, null, 2)}</pre></details>
 }
 
-function ExplanationText({ item, evidence }) {
-  return <div className="report-statement"><p>{item.text}</p><Evidence
-    title="View supporting evidence"
-    value={evidence.filter((source) => item.evidence_ids.includes(source.id))} /></div>
+function Insights({ explanation, isAI }) {
+  const groups = [[isAI ? 'What matters' : 'What the checks mean', explanation.explanations, false], ['What to do next', explanation.next_steps, true]]
+  const cited = [explanation.summary, ...explanation.explanations, ...explanation.next_steps].flatMap((item) => item.evidence_ids)
+  return <div className="ins">
+    <div>
+      <p className="ins__tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 4 1.9 5.1L18 11l-5.1 1.9L11 18l-1.9-5.1L4 11l5.1-1.9z" /><path d="M19 3v4" /><path d="M17 5h4" /></svg>{isAI ? 'Gemini assessment' : 'Assessment summary'}</p>
+      <p className="ins__summary">{explanation.summary.text}</p>
+    </div>
+    {groups.map(([title, items, action]) => !!items.length && <div key={title}>
+      <h4 className="ins__title">{title}</h4>
+      <ol className="ins__list">{items.map((item, index) => <li key={index}><span>{action ? <CheckIcon /> : index + 1}</span><p>{item.text}</p></li>)}</ol>
+    </div>)}
+    <div className="ins__foot">
+      <Evidence title="View supporting evidence" value={(explanation.evidence || []).filter((source) => cited.includes(source.id))} />
+      {isAI && <p className="caption grey">{explanation.model} · {formatDate(explanation.generated_at)} · AI interpretation; review the evidence.</p>}
+    </div>
+  </div>
 }
 
 // With nothing flagged, show what was actually examined rather than an empty box.
@@ -197,10 +210,7 @@ export default function ReportDetails({ id, onClose }) {
         {!isAI && <p className="caption grey">Get a concise Gemini interpretation of the findings and the most useful next steps. Only selected report evidence is sent.</p>}
         {insightBusy && <p className="report-insight-status" role="status">Preparing a short, evidence-based assessment…</p>}
         {insightError && <p className="report-insight-error" role="alert">{insightError} Your original findings remain available.</p>}
-        {explanation?.status === 'completed' ? <>
-          <div className="report-insight-summary"><p className="analysis-eyebrow">{isAI ? 'GEMINI ASSESSMENT' : 'ASSESSMENT SUMMARY'}</p><ExplanationText item={explanation.summary} evidence={explanation.evidence || []} /></div>
-          {isAI ? <><div className="report-insight-grid">{[["What matters", explanation.explanations], ["What to do next", explanation.next_steps]].map(([title, items]) => <div key={title}><h4>{title}</h4>{items.map((item, index) => <ExplanationText key={index} item={item} evidence={explanation.evidence || []} />)}</div>)}</div><p className="caption grey">{explanation.model} · Saved {formatDate(explanation.generated_at)} · AI interpretation; review the cited evidence.</p></> : <div className="report-insight-grid">{[["What the checks mean", explanation.explanations], ["What to do next", explanation.next_steps]].map(([title, items]) => <div key={title}><h4>{title}</h4>{items.map((item, index) => <ExplanationText key={index} item={item} evidence={explanation.evidence || []} />)}</div>)}</div>}
-        </> : <p className="caption grey">{explanation?.reason || 'No explanation was saved with this report. Review the findings and check details below.'}</p>}
+        {explanation?.status === 'completed' ? <Insights explanation={explanation} isAI={isAI} /> : <p className="caption grey">{explanation?.reason || 'No explanation was saved with this report. Review the findings and check details below.'}</p>}
       </section>
           </div><aside className="report-overview-side" aria-label="Actions and assessment scope">
       <section><SectionTitle icon={CheckIcon}>Recommended actions</SectionTitle><ul className="analysis-actions">{!report.recommendations.length && <li><InfoIcon /><span>No specific remediation was identified. Review the report limitations before sharing sensitive information.</span></li>}{report.recommendations.map((text) => <li key={text}><CheckIcon /><span>{text}</span></li>)}</ul></section>
