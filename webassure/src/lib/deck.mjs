@@ -73,15 +73,6 @@ export function buildSlides(mode) {
     text(x + 54, y + (h - 40) / 2, 150, 44, value, { size: 15, lh: 1.35 }),
   ]
 
-  // Numbered demo steps; the sign-in step also shows the Google logo.
-  const demoTab = (y, n, value, google) => [
-    box(M, y, 416, 62),
-    box(M + 14, y + 17, 28, 28, { fill: C.console, radius: 14 }),
-    text(M + 14, y + 22, 28, 18, n, { size: 13, lh: 1.3, weight: 600, align: 'center' }),
-    ...(google ? [img('/deck/google-color.png', 'Google', M + 56, y + 20, 22, 22)] : []),
-    text(M + (google ? 90 : 56), y + 18, 300, 26, value, { size: 17, lh: 1.3 }),
-  ]
-
   // Two-by-two card grid shared by Impact and Next steps.
   const gridCard = (x, y, name, heading, body, status) => [
     box(x, y, 376, 230),
@@ -221,21 +212,6 @@ export function buildSlides(mode) {
         box(564, 502, 640, 14, { fill: C.base, radius: 7 }),
         box(844, 502, 80, 6, { fill: C.laptop, radius: 3 }),
         text(564, 532, 640, 22, 'WebAssure dashboard, shown with sample scans', { size: 14, lh: 1.3, color: C.grey, align: 'center' }),
-        ...footer(),
-      ],
-    },
-    {
-      name: 'Live demo',
-      items: [
-        ...demoTab(140, '1', 'Sign in with Google', true),
-        ...demoTab(224, '2', 'Paste a suspicious link'),
-        ...demoTab(308, '3', 'Read the risk, evidence and limits'),
-        ...demoTab(392, '4', 'Check a scam email or message'),
-        box(M, 476, 416, 52),
-        text(M + 20, 491, 110, 22, 'Solution URL', { size: 13, lh: 1.3, color: C.grey }),
-        text(M + 130, 490, 270, 24, 'https://web-assure.vercel.app', { size: 16, lh: 1.3, weight: 600 }),
-        box(520, 140, 688, 388, { radius: 36, stroke: C.line }),
-        text(520, 544, 688, 24, 'Demo video', { size: 15, lh: 1.3, color: C.grey, align: 'center' }),
         ...footer(),
       ],
     },
