@@ -75,6 +75,20 @@ export default function ReportDetails({ id, onClose }) {
   const insightVersion = useRef(0)
   const panels = useRef(null)
   useEffect(() => { dialog.current.showModal() }, [])
+  // Fade the scroll area's edges only while there is more content in that direction.
+  useEffect(() => {
+    const el = panels.current
+    if (!el) return
+    const sync = () => {
+      el.style.setProperty('--fade-t', el.scrollTop > 4 ? '36px' : '0px')
+      el.style.setProperty('--fade-b', el.scrollHeight - el.clientHeight - el.scrollTop > 4 ? '36px' : '0px')
+    }
+    sync()
+    el.addEventListener('scroll', sync, { passive: true })
+    const observer = new ResizeObserver(sync)
+    observer.observe(el)
+    return () => { el.removeEventListener('scroll', sync); observer.disconnect() }
+  }, [report, tab])
   useEffect(() => {
     let active = true
     setReport(null)

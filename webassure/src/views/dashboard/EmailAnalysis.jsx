@@ -29,18 +29,21 @@ function EmailReport({ report }) {
     <section className="ea-result" aria-label="Email analysis results" aria-live="polite">
 
       {/* Verdict header */}
-      <div className="card panel ea-verdict">
-        <div className="ea-verdict__main">
-          <p className="analysis-eyebrow">EMAIL ASSESSMENT</p>
-          <h2 data-tone={tone}>{emailLabel(report.classification)}</h2>
-          <p className="ea-verdict__subject">{report.subject || '(No subject)'}</p>
-          <p className="caption grey">{report.sender || 'Sender not provided'} · {formatDate(report.analyzed_at)}</p>
+      <div className="card panel ea-sum">
+        <div className="rsum__site">
+          <span className="site-icon"><MailIcon /></span>
+          <div><p className="report-url">{report.subject || '(No subject)'}</p><p className="caption grey">{report.sender || 'Sender not provided'} · {formatDate(report.analyzed_at)}</p></div>
         </div>
-        <div className="ea-verdict__score">
-          <strong className="ea-score-num">{report.risk_score}<small>/100</small></strong>
-          <span className="caption grey">Indicator score, not a fraud probability</span>
-          <Badge tone={tone}>{report.classification === 'SAFE' ? 'No significant indicators' : report.classification}</Badge>
+        <div className="rsum__row">
+          <span className="rsum__verdict" data-tone={tone}>{tone === 'bad' || tone === 'warn' ? <AlertIcon /> : tone === 'ok' ? <ShieldIcon /> : <InfoIcon />}{emailLabel(report.classification)}</span>
+          <div className="rsum__jumps">
+            <span className="rsum__jump" title="Indicator score, not a fraud probability"><b>{report.risk_score}</b>Risk score /100</span>
+            <span className="rsum__jump"><b>{report.indicators.length}</b>Indicators</span>
+            <span className="rsum__jump"><b>{report.urls.length}</b>Links</span>
+            <span className="rsum__jump"><b>{report.attachments.length}</b>Attachments</span>
+          </div>
         </div>
+        <p className="caption grey">The score reflects matched indicators. It is not a fraud probability.</p>
       </div>
 
       {/* Two-column layout */}
@@ -198,7 +201,7 @@ export default function EmailAnalysis() {
   const [mode, setMode] = useState('email')
   const [text, setText] = useState('')
   const [file, setFile] = useState(null)
-  const [useGemini, setUseGemini] = useState(false)
+  const [dragging, setDragging] = useState(false)
   const [report, setReport] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -235,11 +238,11 @@ export default function EmailAnalysis() {
       let result
       if (mode === 'file') {
         if (!file || !/\.eml$/i.test(file.name) || !file.size || file.size > MAX_EMAIL_BYTES) throw new Error('Choose a nonempty .eml file no larger than 500 KB.')
-        const body = new FormData(); body.set('file', file); body.set('use_gemini', String(useGemini))
+        const body = new FormData(); body.set('file', file); body.set('use_gemini', 'false')
         result = await emailApi('upload', { method: 'POST', body })
       } else {
         if (!text.trim() || bytes > MAX_EMAIL_BYTES) throw new Error('Enter email content no larger than 500 KB.')
-        result = await emailApi('analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [mode === 'headers' ? 'raw_headers' : 'email_content']: text, use_gemini: useGemini }) })
+        result = await emailApi('analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [mode === 'headers' ? 'raw_headers' : 'email_content']: text, use_gemini: false }) })
       }
       if (version !== epoch.current) return
       setReport(result); await loadHistory()
@@ -274,13 +277,12 @@ export default function EmailAnalysis() {
         <p className="caption grey">Paste the original message with headers, inspect headers alone, or upload an .eml file. Results are saved privately to your signed-in account.</p>
       </div>
       <Tabs value={mode} onChange={(value) => { if (!busy) { setMode(value); setError('') } }} options={[["email", 'Paste email'], ['headers', 'Raw headers'], ['file', 'Upload .eml']]} />
-      {mode === 'file' ? <label className="email-file">Choose an .eml file<input type="file" accept=".eml,message/rfc822" aria-label="Email file" disabled={busy} onChange={(event) => setFile(event.target.files?.[0] || null)} /><span className="caption grey">{file ? `${file.name} · ${file.size.toLocaleString()} bytes` : 'Maximum 500 KB. Attachments are assessed by metadata only.'}</span></label> : <><label className="email-text-label" htmlFor="email-content">{mode === 'headers' ? 'Raw email headers' : 'Original email content'}</label><textarea id="email-content" className="mx__text" rows={9} value={text} disabled={busy} maxLength={MAX_EMAIL_BYTES} onChange={(event) => setText(event.target.value)} placeholder={mode === 'headers' ? 'From: sender@example.com\nReply-To: …\nAuthentication-Results: …' : 'From: sender@example.com\nSubject: …\n\nPaste the email body here…'} /><span className="caption grey">{bytes.toLocaleString()} / 500,000 bytes</span></>}
+      {mode === 'file' ? <label className="ea-drop" data-over={dragging || undefined} data-filled={file ? true : undefined} onDragOver={(event) => { event.preventDefault(); if (!busy) setDragging(true) }} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); if (!busy && event.dataTransfer.files?.[0]) setFile(event.dataTransfer.files[0]) }}><input className="ea-drop__input" type="file" accept=".eml,message/rfc822" aria-label="Email file" disabled={busy} onChange={(event) => setFile(event.target.files?.[0] || null)} /><span className="ea-drop__icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{file ? <path d="m5 12.5 4.5 4.5L19 7.5" /> : <><path d="M12 16V5" /><path d="M7.5 9.5 12 5l4.5 4.5" /><path d="M5 19h14" /></>}</svg></span><span className="ea-drop__t">{file ? file.name : <>Drop an .eml file here, or <u>browse</u></>}</span><span className="caption grey">{file ? `${file.size.toLocaleString()} bytes` : 'Maximum 500 KB. Attachments are assessed by metadata only.'}</span></label> : <><label className="email-text-label" htmlFor="email-content">{mode === 'headers' ? 'Raw email headers' : 'Original email content'}</label><textarea id="email-content" className="mx__text" rows={9} value={text} disabled={busy} maxLength={MAX_EMAIL_BYTES} onChange={(event) => setText(event.target.value)} placeholder={mode === 'headers' ? 'From: sender@example.com\nReply-To: …\nAuthentication-Results: …' : 'From: sender@example.com\nSubject: …\n\nPaste the email body here…'} /><span className="caption grey">{bytes.toLocaleString()} / 500,000 bytes</span></>}
       <div className="ea-input__foot">
+        <p className="caption grey ea-input__note">Extracted links are inspected by the backend, so messages with several links can take longer.</p>
         {mode === 'email' && <button className="btn btn--ghost" type="button" disabled={busy} onClick={() => setText(SAMPLE)}>Try scam sample</button>}
-        <label className="ea-ai-opt"><input type="checkbox" checked={useGemini} disabled={busy} onChange={(event) => setUseGemini(event.target.checked)} />Include Gemini insights</label>
         <button className="btn btn--ink" disabled={busy || (mode === 'file' ? !file : !text.trim() || bytes > MAX_EMAIL_BYTES)}>{busy ? 'Analysing…' : 'Analyse email'}</button>
       </div>
-      <p className="caption grey">Extracted links are inspected by the backend. Analysis may take longer for messages with several links. {useGemini ? 'Selected findings and evidence snippets will also be shared with Gemini.' : 'Gemini is off; no AI tokens are used.'}</p>
       {busy && <p role="status">Processing the email report…</p>}
       {error && <p className="dash__err" role="alert">{error}</p>}
     </form>

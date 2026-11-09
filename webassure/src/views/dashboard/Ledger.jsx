@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { BrowserProvider, JsonRpcProvider, formatEther, getAddress } from 'ethers'
 import { useDash } from './context.js'
 import { PageHead } from './ui.jsx'
+import { DownloadIcon, InfoIcon } from '../../components/Icons.jsx'
 import { downloadReport } from '../../lib/investigations.js'
 import { checkedRegistry, createSnapshot, snapshotDigest, verifyBundle, deployRegistry } from '../../lib/registry.mjs'
 import { registryNetwork, REGISTRY_NETWORKS, authorizeRegistryWallet, explorerLink } from '../../lib/registry-networks.mjs'
@@ -167,9 +168,9 @@ export default function Ledger() {
       {/* Section 1: On-chain Registry & Network */}
       <section className="card panel ledger-card">
         <div className="ledger-head">
-          <div>
-            <p className="ledger-step"><span>1</span>Registry<em>Choose a network and connect the on-chain registry</em></p>
-            <p className="caption grey">Only a salted fingerprint is recorded on-chain. Report contents remain in your exported file. Registration proves integrity and provenance, not whether a website is malicious.</p>
+          <div className="ledger-title">
+            <span className="ledger-num">1</span>
+            <div><h2>Registry</h2><p>Choose a network and connect the on-chain registry.</p></div>
           </div>
           <span className={`ledger-status${config && !config.pending ? ' ledger-status--on' : ''}`}>
             <i />{configLoading ? 'Loading registry' : config?.pending ? 'Deployment pending' : config ? 'Registry configured' : 'Ready to deploy'}
@@ -194,19 +195,18 @@ export default function Ledger() {
         </div>
 
         {config && (
-          <div className="ledger-address-bar">
-            <span className="caption grey">Chain {config.chainId} · Registry</span>
-            <ChainLink config={config} type="address" value={config.address}><code>{config.address}</code></ChainLink>
-          </div>
-        )}
-
-        {config?.deploymentTransaction && (
-          <div className="ledger-actions">
-            <ChainLink config={config} type="tx" value={config.deploymentTransaction}>
-              <span className="btn btn--ghost">View deployment transaction</span>
-            </ChainLink>
-            <button className="btn btn--ghost" onClick={() => downloadConfig(config)}>Download deployment config</button>
-            {config.pending && <button className="btn btn--ink" disabled={!!busy} onClick={checkDeployment}>Check deployment</button>}
+          <div className="ledger-facts">
+            <dl>
+              <div><dt>Chain ID</dt><dd>{config.chainId}</dd></div>
+              <div className="ledger-facts__wide"><dt>Registry contract</dt><dd><ChainLink config={config} type="address" value={config.address}><code>{config.address}</code></ChainLink></dd></div>
+              {config.deploymentTransaction && <div><dt>Deployment</dt><dd><ChainLink config={config} type="tx" value={config.deploymentTransaction}>View transaction</ChainLink></dd></div>}
+            </dl>
+            {config.deploymentTransaction && (
+              <div className="ledger-actions">
+                {config.pending && <button className="btn btn--ink" disabled={!!busy} onClick={checkDeployment}>Check deployment</button>}
+                <button className="btn btn--ghost" onClick={() => downloadConfig(config)}><DownloadIcon /><span>Download config</span></button>
+              </div>
+            )}
           </div>
         )}
 
@@ -242,14 +242,16 @@ export default function Ledger() {
             </div>
           </div>
         )}
+
+        <p className="ledger-note"><InfoIcon />Only a salted fingerprint is recorded on-chain. Report contents remain in your exported file. Registration proves integrity and provenance, not whether a website is malicious.</p>
       </section>
 
       {/* Section 2: Report Fingerprint, Commitment & Verification */}
       <section className="card panel ledger-card">
         <div className="ledger-head">
-          <div>
-            <p className="ledger-step"><span>2</span>Report commitment &amp; verification<em>Fingerprint a saved investigation or import a receipt</em></p>
-            <p className="caption grey">Commit report fingerprints on-chain with your wallet, or independently verify a receipt JSON file against the registry.</p>
+          <div className="ledger-title">
+            <span className="ledger-num">2</span>
+            <div><h2>Report commitment &amp; verification</h2><p>Commit report fingerprints with your wallet, or verify a receipt against the registry.</p></div>
           </div>
           <label className="btn btn--ghost ledger-import">
             <UploadIcon />
