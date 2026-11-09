@@ -40,6 +40,17 @@ function ExplanationText({ item, evidence }) {
     value={evidence.filter((source) => item.evidence_ids.includes(source.id))} /></div>
 }
 
+// With nothing flagged, show what was actually examined rather than an empty box.
+function NoFindings({ coverage }) {
+  const checks = (coverage?.checks || []).filter((check) => check.status !== 'not_implemented')
+  const completed = checks.filter((check) => check.status === 'completed').length
+  if (!checks.length) return <p className="caption grey">No threat indicators were found. This does not prove the site is safe.</p>
+  return <div className="no-findings">
+    <p>{completed === checks.length ? `No threat indicators found. All ${checks.length} checks completed.` : `No threat indicators found in the ${completed} of ${checks.length} checks that could run.`} <span>This does not prove the site is safe.</span></p>
+    <div>{checks.map((check) => <span className="rt__pill" key={check.name} data-tone={stateTone(check.status)}><StateIcon state={check.status} />{label(check.name)}</span>)}</div>
+  </div>
+}
+
 // Line icons for the report tabs (24px grid, 1.8 stroke, matching the dashboard set).
 const TAB_PATHS = {
   overview: <><rect x="3.5" y="3.5" width="7" height="7" rx="1.8" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.8" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.8" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.8" /></>,
@@ -163,7 +174,7 @@ export default function ReportDetails({ id, onClose }) {
         <div className="report-panel report-overview" role="tabpanel" id="report-panel-overview" aria-labelledby="report-tab-overview" hidden={tab !== 'overview'}>
           <div className="report-overview-main">
       <section><SectionTitle icon={ShieldIcon} detail={`${report.findings.length} recorded`}>Findings</SectionTitle>
-        {!report.findings.length && <p className="caption grey">No findings recorded. Review coverage before drawing conclusions.</p>}
+        {!report.findings.length && <NoFindings coverage={report.evidence_coverage} />}
         {report.findings.map((finding) => <article className="report-item analysis-finding" key={finding.id} data-severity={finding.severity}>
           <div className="analysis-finding-head"><span className="analysis-category-icon">{finding.kind === 'security_configuration' ? <SettingsIcon /> : <ShieldIcon />}</span><strong>{finding.description}</strong><span className="analysis-severity">{finding.severity}</span></div><p className="caption grey">{finding.kind?.replaceAll('_', ' ') || finding.category} · {finding.source} · {formatDate(finding.observed_at)}</p>
           {finding.impact && <p className="report-finding-context"><strong>Impact</strong>{finding.impact}</p>}
@@ -177,7 +188,7 @@ export default function ReportDetails({ id, onClose }) {
         {insightError && <p className="report-insight-error" role="alert">{insightError} Your original findings remain available.</p>}
         {explanation?.status === 'completed' ? <>
           <div className="report-insight-summary"><p className="analysis-eyebrow">{isAI ? 'GEMINI ASSESSMENT' : 'ASSESSMENT SUMMARY'}</p><ExplanationText item={explanation.summary} evidence={explanation.evidence || []} /></div>
-          {isAI ? <><div className="report-insight-grid">{[["What matters", explanation.explanations], ["What to do next", explanation.next_steps]].map(([title, items]) => <div key={title}><h4>{title}</h4>{items.map((item, index) => <ExplanationText key={index} item={item} evidence={explanation.evidence || []} />)}</div>)}</div><p className="caption grey">{explanation.model} · Saved {formatDate(explanation.generated_at)} · AI interpretation; review the cited evidence.</p></> : [["What the checks mean", explanation.explanations], ["What to do next", explanation.next_steps]].map(([title, items]) => <details key={title} className="report-group"><summary>{title}</summary>{items.map((item, index) => <ExplanationText key={index} item={item} evidence={explanation.evidence || []} />)}</details>)}
+          {isAI ? <><div className="report-insight-grid">{[["What matters", explanation.explanations], ["What to do next", explanation.next_steps]].map(([title, items]) => <div key={title}><h4>{title}</h4>{items.map((item, index) => <ExplanationText key={index} item={item} evidence={explanation.evidence || []} />)}</div>)}</div><p className="caption grey">{explanation.model} · Saved {formatDate(explanation.generated_at)} · AI interpretation; review the cited evidence.</p></> : <div className="report-insight-grid">{[["What the checks mean", explanation.explanations], ["What to do next", explanation.next_steps]].map(([title, items]) => <div key={title}><h4>{title}</h4>{items.map((item, index) => <ExplanationText key={index} item={item} evidence={explanation.evidence || []} />)}</div>)}</div>}
         </> : <p className="caption grey">{explanation?.reason || 'No explanation was saved with this report. Review the findings and check details below.'}</p>}
       </section>
           </div><aside className="report-overview-side" aria-label="Actions and assessment scope">

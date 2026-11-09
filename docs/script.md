@@ -39,3 +39,69 @@ Finally, the Threat ledger. We take a saved report, create its fingerprint and r
 ## 2:50 – 3:00 · Close
 
 That's WebAssure. Know your website before you trust it. Thank you.
+
+---
+
+# Sample inputs for the demo
+
+Paste these into WebAssure only. Do not open the links in a browser. Emails and messages use made-up details.
+
+## Links (dashboard scan)
+
+| Expected result | Link |
+| --- | --- |
+| Confirmed Malicious | `http://testsafebrowsing.appspot.com/apiv4/ANY_PLATFORM/MALWARE/URL/` |
+| Confirmed Malicious | `http://testsafebrowsing.appspot.com/apiv4/ANY_PLATFORM/SOCIAL_ENGINEERING/URL/` |
+| Suspicious | `http://secure-sbi-kyc-update.xyz/login` |
+| Suspicious | `https://paypa1-account-verify.com/login` |
+| Low Risk | `https://github.com/` |
+| Low Risk | `https://www.wikipedia.org/` |
+| Inconclusive | `http://refund-help-portal.example/claim` |
+
+The two Confirmed Malicious links are Google's official Safe Browsing test pages and are harmless.
+
+## Emails (Email analysis, Paste email)
+
+**Bank KYC phishing (expected: Phishing indicators)**
+
+```text
+From: SBI Account Security <alerts@secure-sbi-kyc-update.example>
+Reply-To: recovery@unrelated-mailbox.example
+Subject: URGENT: Your account will be blocked today
+Authentication-Results: mx.example; spf=fail; dkim=fail; dmarc=fail
+
+Dear customer, your KYC has expired and your account will be blocked within 24 hours.
+Verify immediately by entering your password and OTP here: http://secure-sbi-kyc-update.example/login
+Failure to act will result in permanent suspension.
+```
+
+**Fake job offer (expected: Phishing indicators)**
+
+```text
+From: HR Team <jobs@careers-offer-desk.example>
+Reply-To: payments@quick-transfer.example
+Subject: Congratulations! You are selected. Pay registration fee today
+
+You have been selected for a work from home job with salary of Rs 85,000 per month.
+Pay a refundable registration fee of Rs 2,500 urgently to confirm your offer letter.
+Send your Aadhaar, bank details and OTP to complete verification: http://careers-offer-desk.example/pay
+```
+
+**Normal email (expected: No significant indicators)**
+
+```text
+From: Priya Sharma <priya@example.com>
+Subject: Notes from today's project meeting
+
+Hi team, I have added the notes from today's meeting to our shared folder.
+Please review them before Friday. Thanks, Priya
+```
+
+## Messages (Messages page)
+
+| Expected result | Message |
+| --- | --- |
+| Likely scam or spam | `Dear customer your SBI account will be blocked today. Update KYC now at http://sbi-kyc-update.example/login or call 9000000000` |
+| Likely scam or spam | `Congratulations! You have won Rs 25,00,000 in a lucky draw. Click http://claim-prize.example and share your OTP to claim now.` |
+| Likely scam or spam | `Your electricity connection will be disconnected tonight. Pay immediately at http://bill-update.example` |
+| No strong indicators detected | `Hi, are we still meeting at 5 pm tomorrow near the library?` |

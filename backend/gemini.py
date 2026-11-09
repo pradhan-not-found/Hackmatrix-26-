@@ -124,7 +124,7 @@ def evidence_snapshot(report: dict) -> dict:
             "limitations": report.get("limitations", [])}
 
 
-def explain(report: dict) -> dict:
+def _generate_insights(report: dict) -> dict:
     local = dotenv_values(ENV_FILE, interpolate=False)
     key = os.environ.get("GEMINI_API_KEY", local.get("GEMINI_API_KEY") or "").strip()
     report_model = os.environ.get('GEMINI_REPORT_MODEL', local.get('GEMINI_REPORT_MODEL') or '')
@@ -151,7 +151,7 @@ def explain(report: dict) -> dict:
             "and explain the browser protection affected, without claiming an exploitable vulnerability. "
             "Differentiate advice for a visitor from remediation for the website owner. "
             "Do not infer ownership or legitimacy from the hostname. Mixed statuses or omitted evidence limit coverage. "
-            "Every summary, explanation and next step must cite supporting evidence IDs. "
+            "Every summary, explanation and next step must cite supporting evidence IDs, using only the exact id values in the evidence list. Limitations have no id and must not be cited. "
             "Do not invent findings, change the assessment, or equate TLS or no reputation matches with safety. "
             "Configuration weaknesses alone do not prove phishing. Distinguish incomplete checks from threats. "
             "Mention uncertainty. Return only the requested JSON structure."
@@ -196,6 +196,12 @@ def explain(report: dict) -> dict:
         return unavailable("network_error", "Could not complete a secure Gemini request within its timeout.")
     except (ValueError, KeyError, IndexError, TypeError):
         return unavailable("invalid_response", "Gemini returned an incomplete explanation or unsupported evidence references. Try again.")
+
+
+def explain(report: dict) -> dict:
+    """Generate report insights, retrying once when a response fails validation."""
+    result = _generate_insights(report)
+    return _generate_insights(report) if result.get("error_code") == "invalid_response" else result
 
 
 def explain_message_analysis(analysis: dict) -> dict:

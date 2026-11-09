@@ -1302,3 +1302,10 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 .rsum__why svg { flex: none; width: 18px; height: 18px; margin-top: 1px; color: var(--analysis-warn); }
 .rsum__why strong { display: block; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--report-ink); }
 .rsum__why p { margin-top: 3px; font-size: 13px; line-height: 19px; color: var(--report-muted); }
+
+/* findings: show what was checked when nothing was flagged */
+.no-findings { display: flex; flex-direction: column; gap: 14px; }
+.no-findings p { font-size: 14px; line-height: 21px; font-weight: 500; color: var(--report-ink); }
+.no-findings p span { font-weight: 400; color: var(--report-muted); }
+.no-findings > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.no-findings .rt__pill { height: 28px; text-transform: none; font-weight: 500; }
