@@ -14,6 +14,27 @@ Everything the submission form asks for, in one place. Fields marked **To add** 
 
 ---
 
+## What is implemented
+
+| Area | What works today | Status |
+| --- | --- | --- |
+| **URL investigation** | Public-DNS validation, re-checked redirects, verified TLS, bounded static HTML reading, look-alike domains and a deterministic verdict with evidence | Working |
+| **Investigation report** | Verdict, findings, individual checks, connection and redirect tables, source evidence and JSON export | Working |
+| **Certificates** | Saved TLS evidence and on-demand HTTPS inspection, including key strength and signature hash | Working |
+| **Reputation** | Google Safe Browsing lookup. A failed lookup is reported as unavailable, never as clean | Working with an API key |
+| **Scam messages** | Trained scikit-learn classifier plus explainable indicators, without opening extracted links | Working |
+| **Email analysis** | Pasted emails, raw headers and `.eml` uploads, with sender, SPF, DKIM and DMARC evidence, link and attachment checks, and a saved private history | Working |
+| **Gmail inbox protection** | Read-only Gmail connection in Settings, inbox screening and in-app fraud alerts | Working with OAuth setup; public access requires Google verification |
+| **Threats** | Investigations connected by exact shared domains and certificate fingerprints | Working |
+| **Threat ledger** | Salted report fingerprints registered through MetaMask, with receipt export, import and independent verification | Live on Ethereum Sepolia |
+| **AI explanations** | Built-in rule-based explanations, plus optional schema-validated Gemini explanations for URL reports that cannot change the verdict | Working; Gemini needs an API key |
+| **Accounts and privacy** | Google and email sign-in, password recovery, profile, verified sessions and owner-only storage | Working with Supabase setup |
+| **Tests** | 155 backend and 27 web app automated tests. They use mocked network calls and do not measure real-world detection accuracy | Passing |
+
+Not implemented yet: Certificate Transparency, revocation and scheduled monitoring, validated campaign attribution, and production hardening (per-user rate limits, retention controls, egress restrictions and a durable job queue).
+
+---
+
 ## Project name
 
 **WebAssure**
@@ -30,7 +51,7 @@ The repository contains the full source: the Next.js web app (`webassure/`), the
 
 ## Pitch deck link
 
-**To add.** Export the deck from the web app's `/download` page (PPT or PDF), upload it to Google Drive, Google Slides or Canva, and set sharing to *Anyone with the link can view*.
+**To add.** The deck now covers email analysis, Gmail inbox protection and the live Sepolia registry. Export it from the web app's `/download` page (PPT or PDF), upload it to Google Drive, Google Slides or Canva, and set sharing to *Anyone with the link can view*.
 
 ## Live website / demo link
 
@@ -44,7 +65,7 @@ If it cannot be hosted, point judges to [Setup and run](../README.md#setup-and-r
 
 1. Paste a suspicious link on the home page and sign in (0:00–0:30)
 2. Walk through the report: verdict, evidence and plain-language explanation (0:30–1:30)
-3. Check a scam SMS, then show Gmail inbox protection and its fraud alert (1:30–2:10)
+3. Analyse a scam email, check a scam SMS, then show Gmail inbox protection and its fraud alert (1:30–2:10)
 4. Show certificate inspection and the on-chain threat ledger (2:10–2:45)
 5. Close on the problem it solves (2:45–3:00)
 

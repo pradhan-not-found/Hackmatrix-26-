@@ -67,10 +67,10 @@ export function buildSlides(mode) {
     text(x + 20, 542, 226, 24, 'Fantastic 4', { size: 15, lh: 1.3, color: C.grey }),
   ]
 
-  const smallCard = (x, y, name, value) => [
-    box(x, y, 214, 96),
-    icon(name, x + 16, y + 20, 26),
-    text(x + 54, y + 18, 150, 62, value, { size: 15, lh: 1.35 }),
+  const smallCard = (x, y, art, value, h = 96) => [
+    box(x, y, 214, h),
+    art(x + 16, y + (h - 26) / 2, 26),
+    text(x + 54, y + (h - 40) / 2, 150, 44, value, { size: 15, lh: 1.35 }),
   ]
 
   // Numbered demo steps; the sign-in step also shows the Google logo.
@@ -200,7 +200,7 @@ export function buildSlides(mode) {
       name: 'The question',
       items: [
         text(M, 222, 900, 32, 'How might we...', { size: 24, color: C.grey }),
-        text(M, 276, 1110, 200, 'give every internet user clear, evidence-backed assurance about a link, message or certificate before they trust it?', { size: 46, lh: 1.25, ls: -0.03 }),
+        text(M, 276, 1110, 200, 'give every internet user clear, evidence-backed assurance about a link, email, message or certificate before they trust it?', { size: 46, lh: 1.25, ls: -0.03 }),
         ...footer(),
       ],
     },
@@ -209,11 +209,13 @@ export function buildSlides(mode) {
       items: [
         eyebrow('The solution', 104),
         text(M, 134, 460, 100, 'Verify what you are about to trust.', { size: 38, lh: 1.2, weight: 600, ls: -0.03 }),
-        text(M, 240, 450, 90, 'Paste a link or a message. See the risk, the evidence and what to do next.', { size: 19, lh: 1.45, color: C.grey }),
-        ...smallCard(72, 348, 'link', 'URL and redirect investigation'),
-        ...smallCard(298, 348, 'lock-keyhole', 'TLS certificate analysis'),
-        ...smallCard(72, 456, 'message-square-warning', 'Scam message analysis'),
-        ...smallCard(298, 456, 'file-search', 'Evidence-backed explanations'),
+        text(M, 240, 450, 90, 'Paste a link, an email or a message. See the risk, the evidence and what to do next.', { size: 19, lh: 1.45, color: C.grey }),
+        ...smallCard(72, 336, useIcon('link'), 'URL and redirect investigation', 72),
+        ...smallCard(298, 336, useIcon('lock-keyhole'), 'TLS certificate analysis', 72),
+        ...smallCard(72, 416, useIcon('mail'), 'Email and header analysis', 72),
+        ...smallCard(298, 416, useIcon('message-square-warning'), 'Scam message analysis', 72),
+        ...smallCard(72, 496, useLogo('gmail'), 'Gmail inbox fraud alerts', 72),
+        ...smallCard(298, 496, useIcon('file-search'), 'Evidence-backed explanations', 72),
         box(594, 130, 580, 372, { fill: C.laptop, radius: 14 }),
         img(asset('dashboard.png'), 'WebAssure dashboard', 606, 142, 556, 348),
         box(564, 502, 640, 14, { fill: C.base, radius: 7 }),
@@ -228,7 +230,7 @@ export function buildSlides(mode) {
         ...demoTab(140, '1', 'Sign in with Google', true),
         ...demoTab(224, '2', 'Paste a suspicious link'),
         ...demoTab(308, '3', 'Read the risk, evidence and limits'),
-        ...demoTab(392, '4', 'Check a scam message'),
+        ...demoTab(392, '4', 'Check a scam email or message'),
         box(M, 476, 416, 52),
         text(M + 20, 491, 110, 22, 'Solution URL', { size: 13, lh: 1.3, color: C.grey }),
         box(520, 140, 688, 388, { radius: 36, stroke: C.line }),
@@ -245,12 +247,12 @@ export function buildSlides(mode) {
         text(98, 350, 300, 62, '5', { size: 46, lh: 1.15, weight: 600, ls: -0.03 }),
         text(98, 412, 300, 28, 'evidence-based risk classes', { size: 18, lh: 1.3, color: C.grey }),
         box(M, 468, 340, 128),
-        text(98, 490, 300, 62, '175', { size: 46, lh: 1.15, weight: 600, ls: -0.03 }),
+        text(98, 490, 300, 62, '182', { size: 46, lh: 1.15, weight: 600, ls: -0.03 }),
         text(98, 552, 300, 28, 'automated tests passing', { size: 18, lh: 1.3, color: C.grey }),
         ...gridCard(440, 120, 'file-search', 'Evidence, not verdicts', 'Every finding shows its evidence and source, not a bare “safe” or “malicious”.'),
         ...gridCard(832, 120, 'lock-keyhole', 'A padlock is not proof', 'TLS is checked, and never treated as proof that a site is honest.'),
         ...gridCard(440, 366, 'shield-alert', 'No false all-clear', 'A check that fails is reported as unavailable, never as a clean result.'),
-        ...gridCard(832, 366, 'scan-search', 'Check before acting', 'Links and messages can be checked before money or data moves.'),
+        ...gridCard(832, 366, 'scan-search', 'Check before acting', 'Links, emails and messages can be checked before money or data moves.'),
         ...footer('Goals of the product. Not yet measured with real users.'),
       ],
     },
@@ -267,13 +269,13 @@ export function buildSlides(mode) {
         ]),
         ...panel(470, 'Backend', [
           [useLogo('fastapi'), 'FastAPI', 'Investigation API'],
-          [useLogo('python'), 'Python checks', 'URL, DNS, HTTP, TLS and HTML'],
+          [useLogo('python'), 'Python checks', 'URL, email, DNS, TLS and HTML'],
           [useIcon('shield-check'), 'Risk rules', 'Deterministic classification'],
           [useLogo('scikitlearn'), 'scikit-learn', 'Scam message classifier'],
         ]),
         ...panel(868, 'Services', [
-          [useLogo('supabase'), 'Supabase', 'Auth and avatar storage'],
-          [useLogo('postgresql'), 'Postgres', 'Owner-only report storage'],
+          [useLogo('supabase'), 'Supabase', 'Auth and owner-only Postgres'],
+          [useLogo('gmail'), 'Gmail API', 'Read-only inbox screening'],
           [useLogo('google'), 'Safe Browsing', 'Reputation lookup'],
           [useLogo('googlegemini'), 'Gemini', 'Optional explanations'],
         ]),
@@ -316,7 +318,7 @@ export function buildSlides(mode) {
         ...stackBox(96, 450, 140, 'Web3', [['ethereum', 'Sepolia'], ['solidity', 'Solidity']]),
         ...stackBox(500, 76, 224, 'Backend Server', [['fastapi', 'FastAPI'], ['python', 'Python'], ['scikitlearn', 'scikit-learn'], [null, 'Uvicorn']]),
         ...stackBox(500, 370, 224, 'Data Storage', [['supabase', 'Supabase'], ['postgresql', 'PostgreSQL'], ['google', 'Google sign-in'], [null, 'Row-level security']]),
-        ...stackBox(904, 186, 224, 'Intelligence', [['googlegemini', 'Gemini'], ['google', 'Safe Browsing'], [null, 'Homoglyph checks'], [null, 'Rule-based risk']]),
+        ...stackBox(904, 186, 224, 'Intelligence', [['googlegemini', 'Gemini'], ['google', 'Safe Browsing'], ['gmail', 'Gmail API'], [null, 'Rule-based risk']]),
         arrow(236, 150, 236, 186),
         arrow(236, 150, 500, 150),
         arrow(1044, 150, 1044, 186),

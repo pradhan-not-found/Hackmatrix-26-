@@ -1282,3 +1282,10 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 .ea-result .analysis-finding[data-severity='MEDIUM'] .analysis-category-icon { color: var(--analysis-warn); }
 .rt__tls { grid-template-columns: max-content 1fr; }
 .rt__name .url-cell { text-transform: none; }
+
+/* assessment summary: soft tint, no curved side bar */
+.report-drawer .report-insight-summary, .ea-result .report-insight-summary {
+  border-left: 0; box-shadow: none; border-radius: 14px; padding: 18px 20px;
+  background: color-mix(in srgb, var(--workspace-accent, #4672ff) 9%, var(--report-alt));
+}
+.report-drawer .report-insight-summary .analysis-eyebrow, .ea-result .report-insight-summary .analysis-eyebrow { color: var(--workspace-accent, #7ea0ff); }
