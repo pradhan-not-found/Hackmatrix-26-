@@ -335,7 +335,7 @@ export function buildSlides(mode) {
       items: [
         eyebrow('Where we go from here', 120),
         text(M, 150, 330, 70, 'Next steps', { size: 52, lh: 1.15, weight: 600, ls: -0.035 }),
-        text(M, 232, 320, 120, 'WebAssure is a working local MVP. These steps take it to a public product.', { size: 20, lh: 1.5, color: C.grey }),
+        text(M, 232, 320, 120, 'WebAssure is a working MVP. These steps take it to a public product.', { size: 20, lh: 1.5, color: C.grey }),
         text(M, 502, 330, 56, 'Thank you.', { size: 42, lh: 1.2, weight: 600, ls: -0.03 }),
         text(M, 562, 340, 26, 'Team Fantastic 4  |  HackMatrix 2026', { size: 17, lh: 1.3, color: C.grey }),
         ...gridCard(440, 120, 'rocket', 'Mainnet readiness', 'Audit the registry contract before moving beyond the Sepolia testnet.', 'Planned'),
