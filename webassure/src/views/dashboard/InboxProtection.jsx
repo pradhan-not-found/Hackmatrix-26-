@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { emailLabel, emailTone } from '../../lib/email.js'
 import { gmailStatus, latestScan, scanInbox } from '../../lib/gmail.js'
 import { BRAND } from '../../components/brandIcons.js'
-import { ShieldIcon } from '../../components/Icons.jsx'
 
 // Email analysis page: the connected inbox, its flagged emails and links to their saved reports.
 export default function InboxProtection({ onOpen, onScanned }) {
@@ -34,10 +33,7 @@ export default function InboxProtection({ onOpen, onScanned }) {
   if (!account) {
     return (
       <section className="card panel ea-inbox ea-inbox--off">
-        <div className="ea-inbox__intro">
-          <span className="ea-inbox__ic"><ShieldIcon /></span>
-          <div><h2 className="panel__title">Protect your inbox</h2><p className="caption grey">Connect Gmail to get warned about likely fraud emails as they arrive.</p></div>
-        </div>
+        <div><h2 className="panel__title">Protect your inbox</h2><p className="caption grey">Connect Gmail to get warned about likely fraud emails as they arrive.</p></div>
         <Link href="/dashboard/settings#accounts" className="ea-gmail-btn">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={BRAND.gmail.path} fill={BRAND.gmail.color} /></svg>
           Connect Gmail
