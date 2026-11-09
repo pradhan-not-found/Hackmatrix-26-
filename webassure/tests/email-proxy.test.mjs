@@ -53,12 +53,21 @@ test('eml upload preserves multipart payload and refuses other files', async () 
   assert.equal((await send('upload', { method: 'POST', body: bad })).status, 422)
 })
 
+test('gmail routes need a session, except for the callback from Google', async () => {
+  await send('gmail/messages?query=in:inbox&user_email=other@example.com')
+  assert.equal(received.url, '/api/email/gmail/messages?query=in%3Ainbox')
+  assert.equal((await send('gmail/status', {}, false)).status, 401)
+  assert.equal((await send('gmail/callback?code=c&state=s&other=x', {}, false)).status, 200)
+  assert.equal(received.url, '/api/email/gmail/callback?code=c&state=s')
+  assert.equal((await send('gmail/scan')).status, 405)
+})
+
 test('history forwards pagination only, blocks unauthenticated calls and unsupported routes', async () => {
   const response = await send('results?limit=10&offset=5&user_id=other')
   assert.equal(received.url, '/api/email/results?limit=10&offset=5')
   assert.equal(response.headers.get('Cache-Control'), 'no-store')
   assert.equal((await send('results', {}, false)).status, 401)
-  assert.equal((await send('gmail/messages')).status, 404)
+  assert.equal((await send('gmail/unknown')).status, 404)
   assert.equal((await send('results/not-a-uuid')).status, 404)
   assert.equal((await send('results', { method: 'POST' })).status, 405)
 })

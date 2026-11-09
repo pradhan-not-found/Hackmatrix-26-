@@ -27,6 +27,8 @@ function ChainLink({ config, type, value, children, className = '' }) {
   return href ? <a className={`ledger-explorer ${className}`} href={href} target="_blank" rel="noopener noreferrer">{children}</a> : children
 }
 
+const SETUP_ACTIONS = new Set(['Connecting wallet', 'Waiting for deployment approval and confirmation', 'Checking deployment', 'Checking registry address'])
+
 export default function Ledger() {
   const { scans, getReport, historyLoading, historyError, total, loadMore } = useDash()
   const [config, setConfig] = useState(null)
@@ -35,6 +37,8 @@ export default function Ledger() {
   const [account, setAccount] = useState('')
   const [walletChain, setWalletChain] = useState('')
   const [balance, setBalance] = useState('')
+  const [hasWallet, setHasWallet] = useState(true)
+  const [messageCard, setMessageCard] = useState(2)
   const [existingAddress, setExistingAddress] = useState('')
   const [selected, setSelected] = useState('')
   const [bundle, setBundle] = useState(null)
@@ -77,6 +81,26 @@ export default function Ledger() {
     ethereum.on('accountsChanged', accountsChanged); ethereum.on('chainChanged', chainChanged)
     return () => { ethereum.removeListener?.('accountsChanged', accountsChanged); ethereum.removeListener?.('chainChanged', chainChanged) }
   }, [])
+  // Show a wallet this site is already allowed to use, without opening a MetaMask prompt.
+  useEffect(() => {
+    const ethereum = window.ethereum
+    setHasWallet(!!ethereum)
+    if (!ethereum) return
+    let active = true
+    const sync = async () => {
+      try {
+        const [accounts, chain] = await Promise.all([ethereum.request({ method: 'eth_accounts' }), ethereum.request({ method: 'eth_chainId' })])
+        if (!active) return
+        setAccount(accounts[0] || '')
+        setWalletChain(BigInt(chain).toString())
+        if (!accounts[0]) return
+        const amount = await new BrowserProvider(ethereum).getBalance(accounts[0])
+        if (active) setBalance(formatEther(amount))
+      } catch {}
+    }
+    sync()
+    return () => { active = false }
+  }, [account, walletChain])
   const saveConfig = (value) => {
     setConfig(value); setSetupError('')
     try { localStorage.setItem(`wa-registry:${chainId}`, JSON.stringify(value)) } catch {}
@@ -98,6 +122,7 @@ export default function Ledger() {
     try { return await action(provider) } finally { provider.destroy() }
   }
   const perform = async (name, action) => {
+    setMessageCard(SETUP_ACTIONS.has(name) ? 1 : 2)
     setBusy(name); setError(''); setNotice(''); setVerified(null)
     try { await action() }
     catch (e) { setError(e.code === 'ACTION_REJECTED' || e.code === 4001 ? 'Request declined in your wallet. You can try again when ready.' : e.shortMessage || e.message || 'Registry operation failed. Please retry.') }
@@ -160,6 +185,11 @@ export default function Ledger() {
       setNotice('Receipt loaded. Verify it against the configured registry.')
     })
   }
+  const messages = <>
+    {busy && <p className="ledger-message" role="status">{busy}…</p>}
+    {error && <p className="ledger-message ledger-message--bad" role="alert">{error}</p>}
+    {notice && <p className="ledger-message" role="status">{notice}</p>}
+  </>
   return <>
     <PageHead title="Threat ledger" sub="Register report fingerprints and independently verify report integrity." />
 
@@ -184,15 +214,29 @@ export default function Ledger() {
             </select></span>
           </label>
           <div className="ledger-wallet">
-            <p className="caption grey">
-              {account ? <><code title={account}>{account.slice(0, 8)}…{account.slice(-6)}</code>{balance && ` · ${Number(balance).toPrecision(4)} test ETH`}{walletChain !== chainId && ' · Switch network to continue'}</> : 'Connect MetaMask to deploy or register. Verification needs no wallet.'}
-            </p>
-            <button className="btn btn--ghost" disabled={!!busy} onClick={connect}>
-              <WalletIcon />
-              {account && walletChain === chainId ? 'Refresh wallet' : 'Connect wallet'}
-            </button>
+            {account ? (
+              <div className="ledger-account" data-wrong={walletChain !== chainId || undefined}>
+                <i />
+                <div>
+                  <strong title={account}>{account.slice(0, 6)}…{account.slice(-4)}</strong>
+                  <p className="caption grey">{walletChain === chainId ? `Connected to ${network.name}${balance ? ` · ${Number(balance).toPrecision(4)} ${network.currency}` : ''}` : `Wrong network. Switch to ${network.name} to continue.`}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="caption grey">{hasWallet ? 'Connect MetaMask to deploy or register. Verification needs no wallet.' : 'MetaMask was not found in this browser. Install it to deploy or register. Verification needs no wallet.'}</p>
+            )}
+            {hasWallet ? (
+              <button className="btn btn--ghost" disabled={!!busy} onClick={connect}>
+                <WalletIcon />
+                {busy === 'Connecting wallet' ? 'Connecting…' : !account ? 'Connect wallet' : walletChain !== chainId ? 'Switch network' : 'Refresh wallet'}
+              </button>
+            ) : (
+              <a className="btn btn--ghost" href="https://metamask.com/download" target="_blank" rel="noopener noreferrer"><WalletIcon />Install MetaMask</a>
+            )}
           </div>
         </div>
+
+        {messageCard === 1 && messages}
 
         {config && (
           <div className="ledger-facts">
@@ -316,9 +360,7 @@ export default function Ledger() {
           </div>
         )}
 
-        {busy && <p className="ledger-message" role="status">{busy}…</p>}
-        {error && <p className="ledger-message ledger-message--bad" role="alert">{error}</p>}
-        {notice && <p className="ledger-message" role="status">{notice}</p>}
+        {messageCard === 2 && messages}
         {verified && (
           <div className="ledger-verified">
             <strong>Integrity verified</strong>

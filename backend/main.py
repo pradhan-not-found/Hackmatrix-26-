@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field, model_validator
 
+from backend import email_store
 from backend.investigation import investigate
 from backend.network import UnsafeURL
 from backend.gemini import explain, explain_message_analysis, saved_insights_match
@@ -161,27 +162,6 @@ def _explain_investigation(investigation_id, provider, store):
         slots.release()
 
 
-def email_database():
-    """Database for email analyses."""
-    path = Path(os.getenv("EMAIL_ANALYSIS_DB", "data/email_analyses.sqlite3"))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(path, timeout=5)
-    connection.execute("""
-        CREATE TABLE IF NOT EXISTS email_analyses (
-            id TEXT PRIMARY KEY,
-            report TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )
-    """)
-    # Legacy rows have no owner and must never be assigned to whoever signs in
-    # first. Keep them intact, and store dashboard reports in an owner-scoped table.
-    connection.execute("""CREATE TABLE IF NOT EXISTS user_email_analyses (
-        id TEXT PRIMARY KEY, user_id TEXT NOT NULL, report TEXT NOT NULL, created_at TEXT NOT NULL
-    )""")
-    connection.execute("CREATE INDEX IF NOT EXISTS user_email_history ON user_email_analyses(user_id, created_at DESC)")
-    return connection
-
-
 # Email Analysis Endpoints
 
 @app.post("/api/email/analyze", response_model=EmailAnalysisResponse,
@@ -198,16 +178,7 @@ def analyze_email_text(body: EmailAnalysisRequest, principal: Principal = Depend
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
-        # Store in database
-        connection = email_database()
-        try:
-            with connection:
-                connection.execute(
-                    "INSERT INTO user_email_analyses (id, user_id, report, created_at) VALUES (?, ?, ?, ?)",
-                    (report["id"], principal.id, json.dumps(report), report["analyzed_at"])
-                )
-        finally:
-            connection.close()
+        email_store.save_analysis(principal.id, principal.token, report)
 
         return report
     finally:
@@ -236,16 +207,7 @@ async def analyze_email_upload(
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
-        # Store in database
-        connection = email_database()
-        try:
-            with connection:
-                connection.execute(
-                    "INSERT INTO user_email_analyses (id, user_id, report, created_at) VALUES (?, ?, ?, ?)",
-                    (report["id"], principal.id, json.dumps(report), report["analyzed_at"])
-                )
-        finally:
-            connection.close()
+        email_store.save_analysis(principal.id, principal.token, report)
 
         return report
     finally:
@@ -255,18 +217,10 @@ async def analyze_email_upload(
 @app.get("/api/email/results/{analysis_id}")
 def get_email_analysis(analysis_id: UUID, principal: Principal = Depends(authenticated_user)):
     """Retrieve a stored email analysis report."""
-    connection = email_database()
-    try:
-        row = connection.execute(
-            "SELECT report FROM user_email_analyses WHERE id = ? AND user_id = ?",
-            (str(analysis_id), principal.id)
-        ).fetchone()
-    finally:
-        connection.close()
-
-    if row is None:
+    report = email_store.get_analysis(principal.id, principal.token, str(analysis_id))
+    if report is None:
         raise HTTPException(404, "Email analysis not found")
-    return json.loads(row[0])
+    return report
 
 
 @app.get("/api/email/results")
@@ -276,20 +230,8 @@ def list_email_analyses(
     principal: Principal = Depends(authenticated_user)
 ):
     """List stored email analyses."""
-    connection = email_database()
-    try:
-        rows = connection.execute(
-            "SELECT report FROM user_email_analyses WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
-            (principal.id, limit, offset)
-        ).fetchall()
-        total = connection.execute("SELECT COUNT(*) FROM user_email_analyses WHERE user_id = ?", (principal.id,)).fetchone()[0]
-    finally:
-        connection.close()
-
-    fields = ("id", "classification", "risk_score", "sender", "subject", "analyzed_at")
-    items = [{key: report.get(key) for key in fields}
-             for report in (json.loads(row[0]) for row in rows)]
-    return {"items": items, "total": total, "limit": limit, "offset": offset}
+    page = email_store.list_analyses(principal.id, principal.token, limit, offset)
+    return {**page, "limit": limit, "offset": offset}
 
 
 # Gmail OAuth Endpoints. Every route except Google's callback requires a signed-in user,
@@ -306,16 +248,9 @@ def gmail_page(connected: bool) -> HTMLResponse:
         headers={"Cache-Control": "no-store"})
 
 
-def save_gmail_report(user_id: str, report: dict) -> None:
-    """Add a flagged inbox email to the same private history as manual analyses."""
-    connection = email_database()
-    try:
-        with connection:
-            connection.execute(
-                "INSERT OR IGNORE INTO user_email_analyses (id, user_id, report, created_at) VALUES (?, ?, ?, ?)",
-                (report["id"], user_id, json.dumps(report), report["analyzed_at"]))
-    finally:
-        connection.close()
+def gmail_report_saver(session: str):
+    """Add flagged inbox emails to the same private history as manual analyses."""
+    return lambda user_id, report: email_store.save_analysis(user_id, session, report, ignore_duplicate=True)
 
 
 def gmail_call(action):
@@ -334,7 +269,7 @@ def gmail_call(action):
 def gmail_auth(principal: Principal = Depends(authenticated_user)):
     """Start Gmail OAuth for the signed-in user."""
     try:
-        auth_url, _ = generate_auth_url(principal.id)
+        auth_url, _ = generate_auth_url(principal.id, principal.token)
         return {"auth_url": auth_url}
     except ValueError as exc:
         raise HTTPException(503, str(exc)) from exc
@@ -349,16 +284,16 @@ def gmail_callback(code: Optional[str] = None, state: Optional[str] = None, erro
         owner_id, tokens = exchange_code_for_tokens(code, state)
         if not owner_id or not tokens:
             return gmail_page(False)
-        save_connection(owner_id, tokens)
+        save_connection(owner_id, tokens, tokens.get("webassure_session"))
         return gmail_page(True)
-    except (ValueError, KeyError):
+    except (ValueError, KeyError, HTTPException):
         return gmail_page(False)
 
 
 @app.get("/api/email/gmail/status")
 def gmail_status(principal: Principal = Depends(authenticated_user)):
     """Report the signed-in user's own Gmail connection."""
-    return connection_status(principal.id)
+    return connection_status(principal.id, principal.token)
 
 
 @app.post("/api/email/gmail/scan")
@@ -367,7 +302,7 @@ def gmail_scan(principal: Principal = Depends(authenticated_user)):
     if not slots.acquire(blocking=False):
         raise HTTPException(429, "Analysis capacity reached; retry later")
     try:
-        return gmail_call(lambda: scan_inbox(principal.id, save_report=save_gmail_report))
+        return gmail_call(lambda: scan_inbox(principal.id, save_report=gmail_report_saver(principal.token), session=principal.token))
     finally:
         slots.release()
 
@@ -380,13 +315,13 @@ def gmail_list_messages(
     principal: Principal = Depends(authenticated_user)
 ):
     """List the signed-in user's Gmail messages."""
-    return gmail_call(lambda: list_messages(access_token_for(principal.id), query, max_results, page_token))
+    return gmail_call(lambda: list_messages(access_token_for(principal.id, principal.token), query, max_results, page_token))
 
 
 @app.get("/api/email/gmail/message/{message_id}")
 def gmail_get_message(message_id: str, principal: Principal = Depends(authenticated_user)):
     """Get one of the signed-in user's Gmail messages."""
-    return gmail_call(lambda: parse_gmail_message(get_message(access_token_for(principal.id), message_id, format="full")))
+    return gmail_call(lambda: parse_gmail_message(get_message(access_token_for(principal.id, principal.token), message_id, format="full")))
 
 
 @app.post("/api/email/gmail/analyze")
@@ -396,7 +331,7 @@ def gmail_analyze_messages(body: GmailAnalyzeRequest, principal: Principal = Dep
         raise HTTPException(429, "Analysis capacity reached; retry later")
 
     def analyze():
-        access_token = access_token_for(principal.id)
+        access_token = access_token_for(principal.id, principal.token)
         results = []
         for msg_id in body.message_ids[:10]:
             try:
@@ -417,7 +352,7 @@ def gmail_analyze_messages(body: GmailAnalyzeRequest, principal: Principal = Dep
 @app.post("/api/email/gmail/disconnect")
 def gmail_disconnect(principal: Principal = Depends(authenticated_user)):
     """Disconnect the signed-in user's Gmail and revoke the Google grant."""
-    tokens = stored_tokens(principal.id)
+    tokens = stored_tokens(principal.id, principal.token)
     if tokens:
         revoke_token(tokens.get("refresh_token") or tokens["access_token"])
-    return {"status": "disconnected" if delete_connection(principal.id) else "not_connected"}
+    return {"status": "disconnected" if delete_connection(principal.id, principal.token) else "not_connected"}

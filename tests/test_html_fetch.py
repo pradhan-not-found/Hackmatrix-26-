@@ -66,12 +66,19 @@ class BoundedHTMLFetchTests(unittest.TestCase):
 
     def test_non_html_compressed_attachments_and_oversize_are_not_parsed(self):
         for path, status in (("/binary", "not_applicable"), ("/compressed", "unavailable"),
-                             ("/attachment", "unavailable"), ("/declared-large", "unavailable"),
-                             ("/large", "unavailable")):
+                             ("/attachment", "unavailable"), ("/declared-large", "unavailable")):
             with self.subTest(path=path):
                 result = self.get(path)["html"]
                 self.assertEqual(result["status"], status)
                 self.assertNotIn("text", result)
+
+    def test_large_pages_are_read_only_up_to_the_limit_and_say_so(self):
+        result = self.get("/large")["html"]
+        self.assertEqual(result["status"], "completed")
+        self.assertTrue(result["truncated"])
+        self.assertEqual(result["bytes_read"], MAX_HTML_BYTES)
+        self.assertEqual(len(result["text"]), MAX_HTML_BYTES)
+        self.assertIn("first 256 KiB", result["reason"])
 
     def test_redirect_is_returned_not_followed(self):
         result = self.get("/redirect")

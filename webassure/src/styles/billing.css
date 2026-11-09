@@ -1289,3 +1289,10 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
   background: color-mix(in srgb, var(--workspace-accent, #4672ff) 9%, var(--report-alt));
 }
 .report-drawer .report-insight-summary .analysis-eyebrow, .ea-result .report-insight-summary .analysis-eyebrow { color: var(--workspace-accent, #7ea0ff); }
+
+/* threat ledger: connected wallet */
+.ledger-account { flex: 1 1 200px; min-width: 0; display: flex; align-items: center; gap: 12px; }
+.ledger-account i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--st-ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--st-ok) 18%, transparent); }
+.ledger-account[data-wrong] i { background: var(--st-warn); box-shadow: 0 0 0 4px color-mix(in srgb, var(--st-warn) 18%, transparent); }
+.ledger-account strong { display: block; font: 600 14px/20px ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--ink); }
+.ledger-account .caption { margin-top: 1px; font-size: 12.5px; line-height: 18px; overflow-wrap: anywhere; }

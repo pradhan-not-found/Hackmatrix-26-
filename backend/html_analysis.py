@@ -8,6 +8,10 @@ from backend.network import normalize_url
 from backend.url_analysis import BRANDS, analyze_url, domain_info
 
 
+# Large legitimate pages reference hundreds of images and scripts; the tag cap still bounds parsing.
+MAX_RESOURCES = 2000
+
+
 class PageParser(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -47,7 +51,7 @@ class PageParser(HTMLParser):
                                       "payment": bool(set((attrs.get("autocomplete") or "").lower().split()) & {"cc-number", "cc-csc", "cc-exp"}),
                                       "override": attrs.get("formaction") if control_type in ("submit", "image") else None,
                                       "method": attrs.get("formmethod")})
-        if len(self.resources) < 100:
+        if len(self.resources) < MAX_RESOURCES:
             if (tag in ("img", "iframe", "audio", "video", "source") or (tag == "input" and (attrs.get("type") or "").lower() == "image")) and attrs.get("src"):
                 self.resources.append((tag, attrs["src"]))
             if tag == "link" and "stylesheet" in (attrs.get("rel") or "").lower().split() and attrs.get("href"):
@@ -186,7 +190,7 @@ def analyze_html(text: str, url: str) -> dict:
     limitations = ["Static parse only: no JavaScript, stylesheets, frames, resources, or form actions are executed or fetched.",
                    "Title/heading brand matches use a limited registry and do not establish ownership or impersonation.",
                    "Browser DOM repair, CSS resource URLs, disabled fieldsets, and script-driven forms are not fully modeled."]
-    limited = len(parser.forms) >= 100 or len(parser.controls) >= 500 or len(parser.resources) >= 100 or len(forms) >= 200
+    limited = len(parser.forms) >= 100 or len(parser.controls) >= 500 or len(parser.resources) >= MAX_RESOURCES or len(forms) >= 200
     if limited:
         limitations.append("Element limits reached; some page elements were not inspected.")
     return {"url": url, "base_url": base, "title": title, "heading": heading, "form_count": len(parser.forms), "limited": limited,

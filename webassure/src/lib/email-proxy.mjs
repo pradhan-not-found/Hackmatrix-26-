@@ -22,8 +22,43 @@ async function limitedBody(request, max) {
   return result
 }
 
+const GMAIL_ROUTES = { auth: 'GET', status: 'GET', scan: 'POST', disconnect: 'POST', messages: 'GET', analyze: 'POST', callback: 'GET' }
+const GMAIL_QUERY = { callback: ['code', 'state', 'error'], messages: ['query', 'max_results', 'page_token'] }
+
+async function gmailProxy(request, path) {
+  const name = path[1]
+  const single = name === 'message' && path.length === 3 && /^[\w-]+$/.test(path[2])
+  const method = single ? 'GET' : path.length === 2 && Object.hasOwn(GMAIL_ROUTES, name) ? GMAIL_ROUTES[name] : null
+  if (!method) return error('Unknown email endpoint.', 404)
+  if (request.method !== method) return error('Method not allowed.', 405)
+  const headers = {}
+  // Google's redirect has no session; the backend checks its encrypted state instead.
+  if (name !== 'callback') {
+    const authorization = request.headers.get('authorization')
+    if (!/^Bearer\s+\S+$/i.test(authorization || '')) return error('Sign in to use Gmail protection.', 401)
+    headers.Authorization = authorization
+  }
+  try {
+    let body
+    if (method === 'POST') {
+      body = await limitedBody(request, 65536)
+      headers['Content-Type'] = 'application/json'
+    }
+    const base = (process.env.BACKEND_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+    const upstream = new URL(`${base}/api/email/gmail/${path.slice(1).map(encodeURIComponent).join('/')}`)
+    const query = new URL(request.url).searchParams
+    for (const key of GMAIL_QUERY[name] || []) if (query.has(key)) upstream.searchParams.set(key, query.get(key))
+    const response = await fetch(upstream, { method, body, headers, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(300000) })
+    return new Response(await response.text(), { status: response.status, headers: { 'Content-Type': response.headers.get('content-type') || 'application/json', 'Cache-Control': 'no-store' } })
+  } catch (failure) {
+    if (failure.status) return error(failure.message, failure.status)
+    return error('Cannot reach Gmail protection. Please retry.', failure.name === 'TimeoutError' ? 504 : 502)
+  }
+}
+
 export async function emailProxy(request, { params }) {
   const path = params.path || []
+  if (path[0] === 'gmail') return gmailProxy(request, path)
   const create = path.length === 1 && ['analyze', 'upload'].includes(path[0])
   const read = path[0] === 'results' && (path.length === 1 || (path.length === 2 && UUID.test(path[1])))
   if (!create && !read) return error('Unknown email endpoint.', 404)

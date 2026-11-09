@@ -45,9 +45,9 @@ def read_html(response, headers: dict, deadline: float) -> dict:
         length = int(headers["content-length"]) if "content-length" in headers else None
     except ValueError:
         return {"status": "unavailable", "reason": "Invalid response Content-Length."}
-    if length is not None and (length < 0 or length > MAX_HTML_BYTES):
-        return {"status": "unavailable", "reason": "HTML exceeds the 256 KiB inspection limit or has an invalid length."}
-    chunks, size = [], 0
+    if length is not None and length < 0:
+        return {"status": "unavailable", "reason": "Invalid response Content-Length."}
+    chunks, size, truncated = [], 0, False
     while True:
         if time.monotonic() >= deadline:
             raise TimeoutError("HTML request deadline exceeded")
@@ -55,19 +55,24 @@ def read_html(response, headers: dict, deadline: float) -> dict:
         if not chunk:
             break
         size += len(chunk)
-        if size > MAX_HTML_BYTES:
-            return {"status": "unavailable", "reason": "HTML exceeds the 256 KiB inspection limit."}
         chunks.append(chunk)
-    if response.length not in (None, 0):
+        if size > MAX_HTML_BYTES:
+            truncated = True
+            break
+    if not truncated and response.length not in (None, 0):
         return {"status": "unavailable", "reason": "HTML response ended before its declared length."}
-    raw = b"".join(chunks)
+    raw = b"".join(chunks)[:MAX_HTML_BYTES]
+    size = len(raw)
     charset = message.get_content_charset() or "utf-8"
     try:
         text = raw.decode(charset, errors="replace")
     except (LookupError, UnicodeError):
         charset = "utf-8"
         text = raw.decode(charset, errors="replace")
-    return {"status": "completed", "text": text, "bytes_read": size, "charset": charset}
+    result = {"status": "completed", "text": text, "bytes_read": size, "charset": charset}
+    if truncated:
+        result.update(truncated=True, reason="Only the first 256 KiB of this page's HTML was inspected.")
+    return result
 
 
 def normalize_url(value: str) -> str:

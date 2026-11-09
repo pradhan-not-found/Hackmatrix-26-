@@ -29,7 +29,7 @@ Everything the submission form asks for, in one place. Fields marked **To add** 
 | **Threat ledger** | Salted report fingerprints registered through MetaMask, with receipt export, import and independent verification | Live on Ethereum Sepolia |
 | **AI explanations** | Built-in rule-based explanations, plus optional schema-validated Gemini explanations for URL reports that cannot change the verdict | Working; Gemini needs an API key |
 | **Accounts and privacy** | Google and email sign-in, password recovery, profile, verified sessions and owner-only storage | Working with Supabase setup |
-| **Tests** | 155 backend and 27 web app automated tests. They use mocked network calls and do not measure real-world detection accuracy | Passing |
+| **Tests** | 163 backend and 28 web app automated tests. They use mocked network calls and do not measure real-world detection accuracy | Passing |
 
 Not implemented yet: Certificate Transparency, revocation and scheduled monitoring, validated campaign attribution, and production hardening (per-user rate limits, retention controls, egress restrictions and a durable job queue).
 
@@ -77,9 +77,13 @@ To submit it: the form asks for a Google Doc or Notion page, so open the PDF in 
 
 ## Short description
 
-Up to 1,000 characters (this text is 916):
+What it does, how we built it and the hardest problem we solved. Up to 1,000 characters (this text is 939):
 
-> WebAssure checks suspicious links, emails, messages and certificates like a security analyst and explains the result in plain language. A FastAPI backend inspects URLs safely with public-DNS validation, re-checked redirects, bounded HTML reading and verified TLS, then combines Google Safe Browsing, look-alike detection and certificate analysis into a deterministic verdict with evidence. Connected Gmail inboxes are screened for fraud without opening any link, and likely fraud triggers an in-app alert. Scikit-learn analyses scam messages, and Gemini can explain findings without changing the verdict. Salted report fingerprints can be registered on Ethereum Sepolia and verified independently. Each user's data stays private behind verified sessions and owner-only storage. The hardest problem was trust: a provider timeout must never look like a clean result, so every check reports its own coverage and limits.
+> WebAssure is an explainable AI, cybersecurity and Web3 platform that investigates suspicious URLs, emails, SMS and TLS certificates and returns evidence-based risk assessments in plain language. It detects phishing, brand impersonation, homograph domains, malicious redirect chains, credential-harvesting forms and SPF, DKIM or DMARC failures, and sends read-only Gmail fraud alerts. Built with Next.js, FastAPI, Supabase row-level security, Google Safe Browsing, a scikit-learn scam classifier and schema-validated Gemini explanations. Salted report fingerprints are registered through a Solidity smart contract on Ethereum Sepolia with MetaMask for tamper-evident, independent verification. The hardest problem was trust: inspecting hostile pages safely with SSRF-resistant DNS validation and bounded parsing, keeping verdicts deterministic so AI cannot change them, and reporting a failed check as Inconclusive, never as a clean result.
+
+## Keywords
+
+Explainable AI, phishing detection, digital trust intelligence, website impersonation, homograph and look-alike domain analysis, malicious redirect chains, TLS certificate validation, credential harvesting, email authentication (SPF, DKIM, DMARC), scam message classification, Google Safe Browsing, Gemini, Web3, Solidity, Ethereum Sepolia, tamper-evident reports, row-level security, SSRF protection.
 
 ## Before you submit
 

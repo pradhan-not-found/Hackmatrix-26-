@@ -1,5 +1,6 @@
 """Gmail API integration for OAuth authentication and email retrieval."""
 
+import base64
 import os
 import json
 import secrets
@@ -11,8 +12,12 @@ from typing import Optional
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from dotenv import dotenv_values
 
+from backend.email_store import using_supabase
 from backend.gemini import ENV_FILE
 
 
@@ -48,17 +53,31 @@ def get_oauth_config() -> dict:
     }
 
 
-def generate_auth_url(owner_id: str) -> tuple[str, str]:
-    """Return a Google consent URL and a single-use state bound to this WebAssure user."""
+def _state_cipher() -> Fernet:
+    secret = get_oauth_config()["client_secret"]
+    if not secret:
+        raise ValueError("Gmail OAuth not configured. Set GMAIL_CLIENT_SECRET in .env")
+    key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b"webassure-gmail-oauth-state-v1").derive(secret.encode())
+    return Fernet(base64.urlsafe_b64encode(key))
+
+
+def generate_auth_url(owner_id: str, session: Optional[str] = None) -> tuple[str, str]:
+    """Return a Google consent URL and a state bound to this WebAssure user."""
     config = get_oauth_config()
     if not config["client_id"] or not config["redirect_uri"]:
         raise ValueError("Gmail OAuth not configured. Set GMAIL_CLIENT_ID and GMAIL_REDIRECT_URI in .env")
 
-    now = time.time()
-    for key in [key for key, value in _oauth_states.items() if value["expires_at"] <= now]:
-        del _oauth_states[key]
-    state = secrets.token_urlsafe(32)
-    _oauth_states[state] = {"owner_id": owner_id, "expires_at": now + STATE_TTL_SECONDS}
+    if using_supabase():
+        # Google's callback can reach a different server instance and carries no user
+        # session, so the expiring state is encrypted and holds what the callback needs.
+        payload = json.dumps({"owner": owner_id, "session": session, "nonce": secrets.token_urlsafe(8)})
+        state = _state_cipher().encrypt(payload.encode()).decode()
+    else:
+        now = time.time()
+        for key in [key for key, value in _oauth_states.items() if value["expires_at"] <= now]:
+            del _oauth_states[key]
+        state = secrets.token_urlsafe(32)
+        _oauth_states[state] = {"owner_id": owner_id, "expires_at": now + STATE_TTL_SECONDS}
 
     params = {
         "client_id": config["client_id"],
@@ -73,17 +92,28 @@ def generate_auth_url(owner_id: str) -> tuple[str, str]:
     return f"{GOOGLE_AUTH_ENDPOINT}?{urllib.parse.urlencode(params)}", state
 
 
-def validate_state(state: str) -> Optional[str]:
-    """Consume an OAuth state and return the WebAssure user that started the sign-in."""
+def read_state(state: str) -> tuple[Optional[str], Optional[str]]:
+    """Consume an OAuth state and return its (WebAssure user, session), or (None, None)."""
+    if using_supabase():
+        try:
+            payload = json.loads(_state_cipher().decrypt(state.encode(), ttl=STATE_TTL_SECONDS))
+        except (InvalidToken, ValueError):
+            return None, None
+        return payload.get("owner"), payload.get("session")
     entry = _oauth_states.pop(state, None)
     if not entry or entry["expires_at"] <= time.time():
-        return None
-    return entry["owner_id"]
+        return None, None
+    return entry["owner_id"], None
+
+
+def validate_state(state: str) -> Optional[str]:
+    """Consume an OAuth state and return the WebAssure user that started the sign-in."""
+    return read_state(state)[0]
 
 
 def exchange_code_for_tokens(auth_code: str, state: str) -> tuple[str, dict]:
     """Exchange a code for tokens. Returns the owning WebAssure user and the token data."""
-    owner_id = validate_state(state)
+    owner_id, session = read_state(state)
     if not owner_id:
         raise ValueError("Invalid or expired OAuth state")
 
@@ -107,6 +137,7 @@ def exchange_code_for_tokens(auth_code: str, state: str) -> tuple[str, dict]:
         raise ValueError("Google token exchange failed") from failure
 
     token_data["user_info"] = get_user_info(token_data["access_token"])
+    token_data["webassure_session"] = session
     return owner_id, token_data
 
 

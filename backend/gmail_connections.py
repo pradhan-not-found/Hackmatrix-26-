@@ -2,10 +2,7 @@
 
 import base64
 import json
-import os
-import sqlite3
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Callable, Optional
 from uuid import NAMESPACE_URL, uuid5
 
@@ -13,6 +10,7 @@ from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
+from backend import email_store
 from backend.email_analysis import MAX_EMAIL_SIZE, analyze_email
 from backend.gmail_api import get_message, get_oauth_config, list_messages, parse_gmail_message, refresh_access_token
 
@@ -26,16 +24,6 @@ class GmailReconnectRequired(Exception):
     """The stored Google authorization is missing, expired or was revoked."""
 
 
-def _database() -> sqlite3.Connection:
-    path = Path(os.getenv("EMAIL_ANALYSIS_DB", "data/email_analyses.sqlite3"))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(path, timeout=5)
-    connection.execute("""CREATE TABLE IF NOT EXISTS gmail_connections (
-        user_id TEXT PRIMARY KEY, email TEXT NOT NULL, tokens BLOB NOT NULL, connected_at TEXT NOT NULL
-    )""")
-    return connection
-
-
 def _cipher() -> Fernet:
     secret = get_oauth_config()["client_secret"]
     if not secret:
@@ -44,26 +32,13 @@ def _cipher() -> Fernet:
     return Fernet(base64.urlsafe_b64encode(key))
 
 
-def _write_tokens(user_id: str, email: str, tokens: dict, connected_at: str) -> None:
+def _write_tokens(user_id: str, email: str, tokens: dict, connected_at: str, session: Optional[str] = None) -> None:
     sealed = _cipher().encrypt(json.dumps(tokens).encode())
-    connection = _database()
-    try:
-        with connection:
-            connection.execute(
-                "INSERT INTO gmail_connections (user_id, email, tokens, connected_at) VALUES (?, ?, ?, ?) "
-                "ON CONFLICT(user_id) DO UPDATE SET email = excluded.email, tokens = excluded.tokens, connected_at = excluded.connected_at",
-                (user_id, email, sealed, connected_at),
-            )
-    finally:
-        connection.close()
+    email_store.write_connection(user_id, session, email, sealed, connected_at)
 
 
-def _read(user_id: str) -> Optional[tuple[str, dict, str]]:
-    connection = _database()
-    try:
-        row = connection.execute("SELECT email, tokens, connected_at FROM gmail_connections WHERE user_id = ?", (user_id,)).fetchone()
-    finally:
-        connection.close()
+def _read(user_id: str, session: Optional[str] = None) -> Optional[tuple[str, dict, str]]:
+    row = email_store.read_connection(user_id, session)
     if not row:
         return None
     try:
@@ -72,39 +47,34 @@ def _read(user_id: str) -> Optional[tuple[str, dict, str]]:
         return None
 
 
-def save_connection(user_id: str, tokens: dict) -> None:
-    previous = _read(user_id)
+def save_connection(user_id: str, tokens: dict, session: Optional[str] = None) -> None:
+    previous = _read(user_id, session)
     stored = {
         "access_token": tokens["access_token"],
         "refresh_token": tokens.get("refresh_token") or (previous[1].get("refresh_token") if previous else None),
         "expires_at": datetime.now(timezone.utc).timestamp() + tokens.get("expires_in", 3600),
     }
     email = (tokens.get("user_info") or {}).get("email") or "Gmail account"
-    _write_tokens(user_id, email, stored, datetime.now(timezone.utc).isoformat())
+    _write_tokens(user_id, email, stored, datetime.now(timezone.utc).isoformat(), session)
     forget_cached(user_id)
 
 
-def connection_status(user_id: str) -> dict:
-    current = _read(user_id)
+def connection_status(user_id: str, session: Optional[str] = None) -> dict:
+    current = _read(user_id, session)
     if not current:
         return {"connected": False}
     return {"connected": True, "email": current[0], "connected_at": current[2]}
 
 
-def stored_tokens(user_id: str) -> Optional[dict]:
-    current = _read(user_id)
+def stored_tokens(user_id: str, session: Optional[str] = None) -> Optional[dict]:
+    current = _read(user_id, session)
     return current[1] if current else None
 
 
-def delete_connection(user_id: str) -> bool:
-    connection = _database()
-    try:
-        with connection:
-            removed = connection.execute("DELETE FROM gmail_connections WHERE user_id = ?", (user_id,)).rowcount
-    finally:
-        connection.close()
+def delete_connection(user_id: str, session: Optional[str] = None) -> bool:
+    removed = email_store.delete_connection(user_id, session)
     forget_cached(user_id)
-    return bool(removed)
+    return removed
 
 
 def forget_cached(user_id: str) -> None:
@@ -112,9 +82,9 @@ def forget_cached(user_id: str) -> None:
         del _scan_cache[key]
 
 
-def access_token_for(user_id: str) -> str:
+def access_token_for(user_id: str, session: Optional[str] = None) -> str:
     """Return a current access token for this WebAssure user, refreshing it when needed."""
-    current = _read(user_id)
+    current = _read(user_id, session)
     if not current:
         raise GmailReconnectRequired("Connect Gmail in Settings first.")
     email, tokens, connected_at = current
@@ -130,7 +100,7 @@ def access_token_for(user_id: str) -> str:
     tokens.update(access_token=fresh["access_token"], expires_at=now + fresh.get("expires_in", 3600))
     if fresh.get("refresh_token"):
         tokens["refresh_token"] = fresh["refresh_token"]
-    _write_tokens(user_id, email, tokens, connected_at)
+    _write_tokens(user_id, email, tokens, connected_at, session)
     return tokens["access_token"]
 
 
@@ -167,10 +137,10 @@ def _screen(user_id: str, access_token: str, message_id: str, save_report: Optio
     }
 
 
-def scan_inbox(user_id: str, limit: int = SCAN_LIMIT, save_report: Optional[Callable[[str, dict], None]] = None) -> dict:
+def scan_inbox(user_id: str, limit: int = SCAN_LIMIT, save_report: Optional[Callable[[str, dict], None]] = None, session: Optional[str] = None) -> dict:
     """Screen the newest inbox messages. Only flagged messages' summaries are returned."""
-    status = connection_status(user_id)
-    access_token = access_token_for(user_id)
+    status = connection_status(user_id, session)
+    access_token = access_token_for(user_id, session)
     try:
         listing = list_messages(access_token, "in:inbox", limit)
     except ValueError as failure:
