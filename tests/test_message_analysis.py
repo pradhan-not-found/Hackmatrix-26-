@@ -26,6 +26,41 @@ class MessagePreprocessingTests(unittest.TestCase):
 
 
 class MessageAnalysisTests(unittest.TestCase):
+    def test_promotional_chain_spam_detects_reward_urgency_forwarding_and_link_context(self):
+        message = ("You have been selected as today's LUCKY WINNER! Get an exclusive ₹50,000 shopping voucher absolutely FREE! "
+                   "Limited slots available! Claim your reward NOW before midnight! "
+                   "Visit: https://super-deals.example.com/reward "
+                   "Forward this message to 15 friends to unlock your bonus gift!")
+        with patch("backend.message_analysis._model_prediction", return_value={
+                "status": "available", "label": "spam", "confidence": 0.97, "model": "LogisticRegression"}):
+            report = analyze_message(message)
+        codes = {item["code"] for item in report["indicators"]}
+        self.assertTrue({"lottery_prize", "promotional_reward", "urgency_pressure",
+                         "forwarding_incentive", "promotion_related_url"} <= codes)
+        self.assertEqual(report["extracted_urls"], ["https://super-deals.example.com/reward"])
+        self.assertGreater(report["heuristic_risk_score"], 24)
+        self.assertGreaterEqual(report["heuristic_risk_score"], 42)
+        self.assertEqual(report["classification"], "Likely scam or spam")
+
+    def test_promotional_reward_overlaps_are_grouped_not_double_counted(self):
+        from backend.message_analysis import calculate_heuristic_risk_score
+        indicators = [
+            {"code": "lottery_prize"}, {"code": "promotional_reward"},
+            {"code": "message_url"}, {"code": "promotion_related_url"},
+        ]
+        # Keep the stronger signal per reward and link family: 20 + 18.
+        self.assertEqual(calculate_heuristic_risk_score(indicators), 38)
+
+    def test_bank_kyc_phishing_score_remains_ninety(self):
+        message = ("Dear customer, your bank account is blocked. Complete KYC immediately. "
+                   "Verify your account at https://bank.example.com/kyc and send your OTP, "
+                   "password, CVV, and PIN number.")
+        with patch("backend.message_analysis._model_prediction", return_value={
+                "status": "available", "label": "spam", "confidence": 0.91, "model": "LogisticRegression"}):
+            report = analyze_message(message)
+        self.assertEqual(report["heuristic_risk_score"], 90)
+        self.assertEqual(report["classification"], "Likely scam or spam")
+
     def test_indicators_are_separate_from_model_prediction(self):
         with patch("backend.message_analysis._model_prediction", return_value={
                 "status": "available", "label": "ham", "confidence": 0.8, "model": "LogisticRegression"}):

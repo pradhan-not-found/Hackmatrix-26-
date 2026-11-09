@@ -3,6 +3,7 @@
 import re
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlsplit
 
 MAX_MESSAGE_LENGTH = 10000
 MODEL_PATH = Path(__file__).parent / "models" / "message_classifier.joblib"
@@ -18,9 +19,52 @@ INDICATORS = [
     ("job_offer", re.compile(r"\b(?:job offer|work from home|hiring now|daily income|part[ -]time job|registration fee)\b", re.I), "Unsolicited job or income offer language"),
     ("payment_request", re.compile(r"\b(?:pay|payment|transfer|wire|fee|deposit|refund|upi|gift card|crypto(?:currency)?)\b", re.I), "Payment, transfer, or refund language"),
     ("credential_harvesting", re.compile(r"\b(?:password|passcode|login credentials|card details|cvv|pin number|social security)\b", re.I), "Sensitive credential or payment detail request"),
-    ("urgency_pressure", re.compile(r"\b(?:immediately|urgent|act now|within \d+ hours?|expires today|right away|final warning|suspended unless)\b", re.I), "Urgency or consequence pressure"),
+    ("urgency_pressure", re.compile(r"\b(?:immediately|urgent|act now|claim (?:your )?(?:reward|prize|gift|voucher) now|within \d+\s*(?:minutes?|hours?|days?)|expires today|right away|final warning|suspended unless|limited slots?(?: available)?|before midnight|before (?:the )?deadline|last chance|ends? (?:today|tonight))\b", re.I), "Urgency, scarcity, or deadline pressure"),
     ("impersonation", re.compile(r"\b(?:dear customer|bank security|support team|tax department|delivery service|government notice)\b", re.I), "Generic authority or service identity claim"),
 ]
+
+INDICATOR_WEIGHTS = {
+    "banking_kyc": 18, "otp_theft": 18, "credential_harvesting": 18, "payment_request": 18,
+    "lottery_prize": 12, "job_offer": 12, "urgency_pressure": 12, "impersonation": 12,
+    "message_url": 12, "shortened_url": 18,
+    "promotional_reward": 20, "forwarding_incentive": 12, "promotion_related_url": 18,
+}
+OVERLAPPING_SIGNAL_GROUPS = (
+    {"lottery_prize", "promotional_reward"},
+    {"message_url", "shortened_url", "promotion_related_url"},
+)
+
+
+def _promotion_reward_evidence(text: str) -> list[str]:
+    """Require a reward claim, a tangible reward, and promotional bait language."""
+    claim = re.search(r"\b(?:selected|lucky winner|winner|won|claim(?: your)?)\b", text, re.I)
+    reward = re.search(r"\b(?:shopping\s+)?(?:voucher|reward|prize|gift|cash|bonus)\b", text, re.I)
+    bait = re.search(r"\b(?:free|exclusive|absolutely|bonus|unlock)\b|₹\s?[\d,]+", text, re.I)
+    if not (claim and reward and bait):
+        return []
+    return list(dict.fromkeys(match.group(0) for match in (claim, reward, bait)))
+
+
+def _promotion_url_evidence(urls: list[str]) -> list[str]:
+    """Identify promotional wording in a link when the message also promises rewards."""
+    promo_terms = re.compile(r"(?:^|[-_./])(?:deal|deals|reward|voucher|gift|bonus|claim|offer|promo|shop)(?:$|[-_./])", re.I)
+    evidence = []
+    for url in urls:
+        candidate = url if re.match(r"(?i)^https?://", url) else f"https://{url}"
+        parsed = urlsplit(candidate)
+        if promo_terms.search(parsed.hostname or "") or promo_terms.search(parsed.path):
+            evidence.append(url)
+    return evidence
+
+
+def calculate_heuristic_risk_score(indicators: list[dict]) -> int:
+    """Score unique indicators while taking the strongest signal in overlap groups."""
+    codes = {item["code"] for item in indicators}
+    grouped_codes = set().union(*OVERLAPPING_SIGNAL_GROUPS)
+    score = sum(INDICATOR_WEIGHTS.get(code, 0) for code in codes - grouped_codes)
+    for group in OVERLAPPING_SIGNAL_GROUPS:
+        score += max((INDICATOR_WEIGHTS.get(code, 0) for code in codes & group), default=0)
+    return min(100, score)
 
 
 def preprocess_message(message: str) -> dict:
@@ -78,6 +122,18 @@ def analyze_message(message: str) -> dict:
         if evidence:
             matched.append({"code": code, "name": title, "evidence": evidence})
 
+    reward_evidence = _promotion_reward_evidence(text)
+    if reward_evidence:
+        matched.append({"code": "promotional_reward", "name": "Unrealistic reward claim with promotional bait",
+                        "evidence": reward_evidence})
+
+    forwarding_evidence = list(dict.fromkeys(match.group(0) for match in re.finditer(
+        r"\bforward\s+(?:this\s+)?(?:message|sms|text)\s+to\s+\d+\s+(?:friends|contacts|people)\b",
+        text, re.I)))
+    if forwarding_evidence:
+        matched.append({"code": "forwarding_incentive", "name": "Forwarding incentive or chain-message request",
+                        "evidence": forwarding_evidence})
+
     suspicious_domains = []
     for value in prepared["urls"]:
         host = re.sub(r"(?i)^https?://", "", value).split("/", 1)[0].lower().removeprefix("www.")
@@ -87,11 +143,16 @@ def analyze_message(message: str) -> dict:
         matched.append({"code": "shortened_url", "name": "URL shortener hides the destination",
                         "evidence": [item["url"] for item in suspicious_domains]})
     if prepared["urls"] and not suspicious_domains:
-        matched.append({"code": "message_url", "name": "Message contains a link requiring independent verification",
-                        "evidence": prepared["urls"]})
+        promotional_urls = _promotion_url_evidence(prepared["urls"]) if reward_evidence else []
+        if promotional_urls:
+            matched.append({"code": "promotion_related_url", "name": "Link wording reinforces a reward promotion",
+                            "evidence": promotional_urls})
+        else:
+            matched.append({"code": "message_url", "name": "Message contains a link requiring independent verification",
+                            "evidence": prepared["urls"]})
 
     prediction = _model_prediction(text)
-    heuristic_points = min(100, sum(18 if item["code"] in {"banking_kyc", "otp_theft", "credential_harvesting", "payment_request"} else 12 for item in matched))
+    heuristic_points = calculate_heuristic_risk_score(matched)
     model_spam = prediction["label"] == "spam"
     # The classic dataset is binary spam/ham, so keep its output distinct from heuristic assessment.
     if heuristic_points >= 42 or (model_spam and prediction["confidence"] >= 0.80 and heuristic_points >= 12):
