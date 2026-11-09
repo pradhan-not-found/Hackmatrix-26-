@@ -39,7 +39,7 @@ function Insights({ explanation, isAI }) {
   const cited = [explanation.summary, ...explanation.explanations, ...explanation.next_steps].flatMap((item) => item.evidence_ids)
   return <div className="ins">
     <div>
-      <p className="ins__tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 4 1.9 5.1L18 11l-5.1 1.9L11 18l-1.9-5.1L4 11l5.1-1.9z" /><path d="M19 3v4" /><path d="M17 5h4" /></svg>{isAI ? 'Gemini assessment' : 'Assessment summary'}</p>
+      <p className="ins__tag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 4 1.9 5.1L18 11l-5.1 1.9L11 18l-1.9-5.1L4 11l5.1-1.9z" /><path d="M19 3v4" /><path d="M17 5h4" /></svg>{isAI ? 'WebAssure AI assessment' : 'Assessment summary'}</p>
       <p className="ins__summary">{explanation.summary.text}</p>
     </div>
     {groups.map(([title, items, action]) => !!items.length && <div key={title}>
@@ -48,7 +48,7 @@ function Insights({ explanation, isAI }) {
     </div>)}
     <div className="ins__foot">
       <Evidence title="View supporting evidence" value={(explanation.evidence || []).filter((source) => cited.includes(source.id))} />
-      {isAI && <p className="caption grey">{explanation.model} · {formatDate(explanation.generated_at)} · AI interpretation; review the evidence.</p>}
+      {isAI && <p className="caption grey">{formatDate(explanation.generated_at)} · AI interpretation; review the evidence.</p>}
     </div>
   </div>
 }
@@ -207,7 +207,7 @@ export default function ReportDetails({ id, onClose }) {
         </article>)}
       </section>
       <section className="analysis-explanation" aria-busy={insightBusy}><div className="report-insight-head"><SectionTitle icon={FileIcon}>Report insights</SectionTitle>{!currentAI && <button className="btn btn--ink" disabled={insightBusy} onClick={generateInsights}>{insightBusy ? 'Analysing evidence…' : insightError ? 'Retry AI insights' : isAI ? 'Update AI insights' : 'Generate AI insights'}</button>}</div>
-        {!isAI && <p className="caption grey">Get a concise Gemini interpretation of the findings and the most useful next steps. Only selected report evidence is sent.</p>}
+        {!isAI && <p className="caption grey">Get a concise WebAssure AI interpretation of the findings and the most useful next steps. Only selected report evidence is sent.</p>}
         {insightBusy && <p className="report-insight-status" role="status">Preparing a short, evidence-based assessment…</p>}
         {insightError && <p className="report-insight-error" role="alert">{insightError} Your original findings remain available.</p>}
         {explanation?.status === 'completed' ? <Insights explanation={explanation} isAI={isAI} /> : <p className="caption grey">{explanation?.reason || 'No explanation was saved with this report. Review the findings and check details below.'}</p>}

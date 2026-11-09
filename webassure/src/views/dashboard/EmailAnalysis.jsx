@@ -146,7 +146,7 @@ function EmailReport({ report }) {
             {ai?.status === 'completed' ? (
               <>
                 <div className="report-insight-summary">
-                  <p className="analysis-eyebrow">{ai.provider === 'Gemini' ? 'GEMINI ASSESSMENT' : 'ASSESSMENT SUMMARY'}</p>
+                  <p className="analysis-eyebrow">{ai.provider === 'Gemini' ? 'WEBASSURE AI ASSESSMENT' : 'ASSESSMENT SUMMARY'}</p>
                   <p>{ai.summary?.text}</p>
                 </div>
                 {!!ai.explanations?.length && (
@@ -155,7 +155,7 @@ function EmailReport({ report }) {
                     {ai.explanations.map((item, i) => <p className="ea-explanation" key={i}>{item.text}</p>)}
                   </details>
                 )}
-                <p className="caption grey">{ai.provider} · {ai.model}</p>
+                {ai.provider === 'Gemini' && <p className="caption grey">AI interpretation; review the evidence.</p>}
               </>
             ) : <p className="caption grey">{ai?.reason || 'The optional AI explanation is unavailable. The original findings remain available.'}</p>}
           </section>
