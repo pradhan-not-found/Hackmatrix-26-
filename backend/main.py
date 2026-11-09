@@ -51,17 +51,19 @@ class MessageAnalysisRequest(BaseModel):
 
 
 class EmailAnalysisRequest(BaseModel):
-    """Submit either a complete raw message or headers copied from a message."""
+    """Submit a complete raw message, raw headers, or structured email fields."""
     email_content: Optional[str] = Field(default=None, max_length=MAX_EMAIL_SIZE,
                                          description="Complete RFC 5322 email, including headers and optional body")
     raw_headers: Optional[str] = Field(default=None, max_length=MAX_EMAIL_SIZE,
                                        description="Raw RFC 5322 headers, with one header per line")
+    structured_email: Optional[dict] = Field(default=None, description="Structured fields: from, to, reply_to, subject, date, body, html_body")
     use_gemini: bool = False
 
     @model_validator(mode="after")
     def require_one_input(self):
-        if bool(self.email_content and self.email_content.strip()) == bool(self.raw_headers and self.raw_headers.strip()):
-            raise ValueError("Provide exactly one of email_content or raw_headers")
+        provided = [bool(self.email_content and self.email_content.strip()), bool(self.raw_headers and self.raw_headers.strip()), self.structured_email is not None]
+        if sum(provided) != 1:
+            raise ValueError("Provide exactly one of email_content, raw_headers, or structured_email")
         return self
 
 
@@ -74,6 +76,8 @@ class EmailAnalysisResponse(BaseModel):
     risk_scoring: dict
     sender: str
     subject: str
+    to: str = ""
+    reply_to: str = ""
     indicators: list[dict]
     authentication: dict
     urls: list[dict]
@@ -181,15 +185,15 @@ def email_database():
 # Email Analysis Endpoints
 
 @app.post("/api/email/analyze", response_model=EmailAnalysisResponse,
-          summary="Analyze pasted email text or raw headers",
-          description="Provide exactly one of email_content (complete raw message) or raw_headers (header block only). Authentication evidence is reported separately from missing evidence.")
+          summary="Analyze pasted email text, raw headers, or structured fields",
+          description="Provide exactly one of email_content, raw_headers, or structured_email. Authentication evidence is reported separately from missing evidence.")
 def analyze_email_text(body: EmailAnalysisRequest, principal: Principal = Depends(authenticated_user)):
     """Analyze a complete pasted message or a header-only sample."""
     if not slots.acquire(blocking=False):
         raise HTTPException(429, "Analysis capacity reached; retry later")
     try:
         try:
-            source = body.email_content if body.email_content is not None else body.raw_headers
+            source = body.email_content if body.email_content is not None else body.raw_headers if body.raw_headers is not None else body.structured_email
             report = analyze_email(source, "text", body.use_gemini)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc

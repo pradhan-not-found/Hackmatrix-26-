@@ -6,6 +6,7 @@ import email.message
 import email.policy
 import email.utils
 import re
+from difflib import SequenceMatcher
 import json
 import base64
 import quopri
@@ -48,15 +49,16 @@ TARGET_BRANDS = {
 
 # Email indicators for NLP analysis
 EMAIL_INDICATORS = [
-    ("urgency_pressure", re.compile(r"\b(?:immediately|urgent|act now|within \d+ hours?|expires today|right away|final warning|suspended unless|last chance|limited time)\b", re.I), "Urgency or consequence pressure"),
-    ("credential_harvesting", re.compile(r"\b(?:password|passcode|login credentials|card details|bank account details|cvv|pin number|social security|ssn|mother'?s maiden name)\b", re.I), "Sensitive credential or payment detail request"),
+    ("urgency_pressure", re.compile(r"\b(?:immediately|urgent|act now|within \d+\s*(?:minutes?|hours?|days?)|\d+\s*(?:minutes?|hours?)\s*(?:to|left)|expires today|right away|final warning|suspended unless|last chance|limited time|deadline)\b", re.I), "Urgency or consequence pressure"),
+    ("credential_harvesting", re.compile(r"\b(?:password|passcode|login credentials|card details|bank account details|cvv|pin number|social security|ssn|mother'?s maiden name|personal information|personal details|verify (?:your )?(?:identity|ownership|account))\b", re.I), "Sensitive credential or payment detail request"),
     ("otp_theft", re.compile(r"\b(?:otp|one[ -]time password|verification code|security code|auth code|2fa code|mfa code)\b", re.I), "One-time code or verification language"),
-    ("payment_request", re.compile(r"\b(?:pay|payment|transfer|wire|fee|deposit|refund|upi|gift card|crypto(?:currency)?|bitcoin|ethereum|wallet address)\b", re.I), "Payment, transfer, or refund language"),
+    ("payment_request", re.compile(r"\b(?:pay|payment|transfer|wire|fee|deposit|refund|upi|gift card|crypto(?:currency)?|bitcoin|ethereum|wallet address|payment authorized|unauthorized payment|transaction (?:was )?authorized|dispute (?:this )?(?:charge|payment|transaction))\b", re.I), "Payment, transfer, or refund language"),
     ("banking_kyc", re.compile(r"\b(?:kyc|bank account|account (?:blocked|suspended|frozen)|update (?:your )?(?:bank )?account|verify (?:your )?account|unusual activity|suspicious activity)\b", re.I), "Banking or account verification language"),
     ("lottery_prize", re.compile(r"\b(?:lottery|won|winner|prize|cash prize|claim (?:your )?(?:reward|gift)|congratulations|selected|chosen)\b", re.I), "Prize, lottery, or reward claim language"),
     ("job_offer", re.compile(r"\b(?:job offer|work from home|hiring now|daily income|part[ -]time job|registration fee|advance fee|training fee)\b", re.I), "Unsolicited job or income offer language"),
     ("impersonation", re.compile(r"\b(?:dear customer|bank security|support team|tax department|delivery service|government notice|official notice|security alert|account team|billing department)\b", re.I), "Generic authority or service identity claim"),
-    ("threat_intimidation", re.compile(r"\b(?:legal action|lawsuit|arrest|police|court|fine|penalty|terminate|close your account|permanent(?:ly)? block)\b", re.I), "Threat of legal or punitive action"),
+    ("threat_intimidation", re.compile(r"\b(?:legal action|lawsuit|arrest|police|court|fine|penalty|terminate|close your account|permanent(?:ly)? block|account restriction|restrict(?:ed|ions?)? (?:your )?account|irreversible|settlement|account suspension)\b", re.I), "Threat of legal or punitive action"),
+    ("fake_payment_alert", re.compile(r"\b(?:unauthorized|unrecogn[i]?zed|suspicious) (?:payment|charge|transaction)|(?:payment|charge|transaction) (?:has been |was )?authorized\b", re.I), "Unexpected payment or transaction alert"),
     ("fake_invoice", re.compile(r"\b(?:invoice|receipt|billing|amount due|outstanding balance|past due|overdue|payment overdue)\b", re.I), "Fake invoice or billing language"),
     ("package_delivery", re.compile(r"\b(?:package|delivery|shipment|tracking|parcel|dhl|fedex|ups|usps|courier|re-delivery|delivery attempt)\b", re.I), "Package delivery notification language"),
     ("account_compromise", re.compile(r"\b(?:compromised|hacked|breach|unauthorized access|suspicious login|new device|login from|security breach)\b", re.I), "Account compromise alert language"),
@@ -163,7 +165,7 @@ def extract_urls_from_text(text: str) -> list[str]:
     """Extract URLs from text content."""
     # Enhanced URL pattern
     url_pattern = re.compile(
-        r"(?i)(?<![@\w])(?:https?://|www\.)[^\s<>\"'\)\]]+|(?<![@\w])\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9-]+)+(?:/[^\s<>\"'\)\]]*)?"
+        r"(?i)(?<![@\w])(?:https?://|www\.)[^\s<>\"'\)\]]+|(?<![@\w/])\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9-]+)*\.[a-z]{2,}(?:/[^\s<>\"'\)\]]*)?"
     )
     urls = []
     for match in url_pattern.finditer(text):
@@ -271,9 +273,12 @@ def analyze_sender(sender_header: str, from_header: str, reply_to_header: str) -
 
         # Subdomain spoofing (e.g., security.paypal.com.phisher.com)
         for brand in TARGET_BRANDS:
-            if brand in domain and not domain.endswith(f".{brand}.com") and not domain == f"{brand}.com":
+            legitimate = domain == f"{brand}.com" or domain.endswith(f".{brand}.com")
+            labels = domain.split(".")
+            brand_like = any(label == brand or (len(label) >= 5 and SequenceMatcher(None, label, brand).ratio() >= 0.82) for label in labels[:-1])
+            if (brand in domain or brand_like) and not legitimate:
                 result["suspicious"] = True
-                result["details"].append(f"Possible {brand} impersonation via subdomain")
+                result["details"].append(f"Possible {brand} impersonation from untrusted domain {domain}")
                 break
 
     return result
@@ -513,6 +518,19 @@ def analyze_email_content(text_body: str, html_body: str) -> dict:
                 "count": len(matches)
             })
 
+    deceptive_links = []
+    anchor_pattern = re.compile(r'<a\b[^>]*href\s*=\s*["\']([^"\']+)["\'][^>]*>(.*?)</a\s*>', re.I | re.S)
+    for href, label in anchor_pattern.findall(html_body or ""):
+        label_text = re.sub(r"<[^>]+>", " ", label).strip()
+        label_match = re.search(r"(?:https?://)?(?:www\.)?([a-z0-9.-]+\.[a-z]{2,})", label_text, re.I)
+        href_host = (urlparse(href).hostname or "").lower().removeprefix("www.")
+        label_host = label_match.group(1).lower().removeprefix("www.") if label_match else ""
+        if href_host and label_host and href_host != label_host:
+            deceptive_links.append(f"Displayed {label_host}, destination {href_host}")
+    if deceptive_links:
+        matched_indicators.append({"code": "misleading_hyperlink", "name": "Displayed link differs from destination",
+                                  "evidence": deceptive_links[:5], "count": len(deceptive_links)})
+
     return {
         "text_length": len(text_body),
         "html_length": len(html_body),
@@ -532,12 +550,14 @@ def calculate_risk_score(
     score = 0
     reasons = []
 
-    # Sender analysis scoring
+    # Score once per evidence family to limit duplicate clues.
     if sender_analysis.get("mismatch"):
         score += 20
         reasons.append("Sender/From/Reply-To address mismatch")
     if sender_analysis.get("suspicious"):
         score += 15
+        if any("impersonation" in detail.lower() for detail in sender_analysis.get("details", [])):
+            score += 10
         for detail in sender_analysis.get("details", []):
             reasons.append(f"Suspicious sender: {detail}")
 
@@ -562,15 +582,25 @@ def calculate_risk_score(
         reasons.append("Complete authentication failure (SPF, DKIM, DMARC)")
 
     # Content analysis scoring
-    high_severity_indicators = {"credential_harvesting", "otp_theft", "banking_kyc", "payment_request"}
-    medium_severity_indicators = {"urgency_pressure", "threat_intimidation", "impersonation", "fake_invoice",
+    high_severity_indicators = {"credential_harvesting", "otp_theft", "banking_kyc", "payment_request", "fake_payment_alert"}
+    medium_severity_indicators = {"urgency_pressure", "threat_intimidation", "impersonation", "fake_invoice", "misleading_hyperlink",
                                    "lottery_prize", "job_offer", "package_delivery", "account_compromise"}
 
+    detected_codes = set()
+    payment_language_scored = False
     for indicator in content_analysis.get("indicators", []):
-        if indicator["code"] in high_severity_indicators:
+        code = indicator.get("code")
+        if code in detected_codes:
+            continue
+        detected_codes.add(code)
+        if code in {"payment_request", "fake_payment_alert"}:
+            if payment_language_scored:
+                continue
+            payment_language_scored = True
+        if code in high_severity_indicators:
             score += 18
             reasons.append(f"High-risk content: {indicator['name']}")
-        elif indicator["code"] in medium_severity_indicators:
+        elif code in medium_severity_indicators:
             score += 12
             reasons.append(f"Medium-risk content: {indicator['name']}")
         else:
@@ -583,12 +613,16 @@ def calculate_risk_score(
     for url_result in url_analysis:
         url_score = url_result.get("risk_score", 0)
         max_url_risk = max(max_url_risk, url_score)
-        if url_result.get("risk_classification") in {"Confirmed Malicious", "Suspicious"}:
+        if url_result.get("risk_classification") in {"Confirmed Malicious", "Suspicious"} or url_score >= 15:
             malicious_urls += 1
 
     if malicious_urls > 0:
-        score += min(30, max_url_risk + malicious_urls * 5)
+        score += min(35, max(15, max_url_risk) + min(10, (malicious_urls - 1) * 5))
         reasons.append(f"Suspicious URLs detected ({malicious_urls})")
+
+    if "urgency_pressure" in detected_codes and detected_codes.intersection({"payment_request", "fake_payment_alert", "threat_intimidation", "banking_kyc"}):
+        score += 10
+        reasons.append("Urgency combined with a payment or account threat")
 
     # Attachment scoring
     for att in attachments:
@@ -669,8 +703,27 @@ def parse_email_text(email_text: str) -> email.message.EmailMessage:
         raise ValueError(f"Failed to parse email text: {e}")
 
 
+def structured_email_to_text(value: dict) -> str:
+    """Convert common structured email fields into a parseable MIME message."""
+    if not isinstance(value, dict):
+        raise ValueError("Structured email input must be an object")
+    header_map = {"from": "From", "to": "To", "reply_to": "Reply-To", "subject": "Subject", "date": "Date"}
+    lines = []
+    for key, header in header_map.items():
+        item = value.get(key)
+        if item is not None and str(item).strip():
+            header_value = re.sub(r"[\r\n]+", " ", str(item)).strip()
+            lines.append(f"{header}: {header_value}")
+    body = value.get("body", "")
+    html = value.get("html_body", "")
+    if html:
+        lines.append("Content-Type: text/html; charset=utf-8")
+        body = html
+    return "\n".join(lines) + "\n\n" + str(body or "")
+
+
 def analyze_email(
-    email_input: str | bytes,
+    email_input: str | bytes | dict,
     input_type: Literal["text", "eml"],
     use_gemini: bool = False,
     follow_links: bool = True
@@ -687,6 +740,8 @@ def analyze_email(
         Structured analysis report
     """
     # Enforce limits before MIME parsing to avoid unnecessary memory/CPU work.
+    if isinstance(email_input, dict):
+        email_input = structured_email_to_text(email_input)
     raw_size = len(email_input) if isinstance(email_input, bytes) else len(email_input.encode("utf-8"))
     if raw_size > MAX_EMAIL_SIZE:
         raise ValueError(f"Email exceeds maximum size of {MAX_EMAIL_SIZE} bytes")
@@ -708,6 +763,13 @@ def analyze_email(
     from_header = msg.get("From", "")
     reply_to = msg.get("Reply-To", "")
     subject = decode_mime_header(msg.get("Subject", ""))
+    # Some clients paste a rendered message where header lines are surrounded
+    # by UI text and therefore fall into the parsed body rather than headers.
+    if not subject:
+        pasted = email_input.decode("utf-8", errors="replace") if isinstance(email_input, bytes) else email_input
+        subject_match = re.search(r"(?im)^\s*subject\s*:\s*(.+?)\s*$", pasted)
+        if subject_match:
+            subject = decode_mime_header(subject_match.group(1).strip())
     date_header = msg.get("Date", "")
     message_id = msg.get("Message-ID", "")
 
@@ -716,6 +778,7 @@ def analyze_email(
 
     # Extract all URLs
     urls = []
+    urls.extend(extract_urls_from_text(subject))
     urls.extend(extract_urls_from_text(text_body))
     urls.extend(extract_urls_from_text(html_body))
     urls.extend(extract_urls_from_html(html_body))
@@ -724,7 +787,7 @@ def analyze_email(
     # Run analysis layers
     sender_analysis = analyze_sender(sender, from_header, reply_to)
     auth_analysis = analyze_authentication_headers(msg)
-    content_analysis = analyze_email_content(text_body, html_body)
+    content_analysis = analyze_email_content(f"{subject}\n{text_body}", html_body)
     url_analysis = analyze_urls_in_email(urls) if follow_links else analyze_urls_offline(urls)
     attachments = analyze_attachments(msg)
 
@@ -840,17 +903,20 @@ def analyze_email(
             "method": "Deterministic weighted indicators; score is capped at 100",
             "thresholds": {"safe": "0-19", "suspicious": "20-44", "scam": "45-69", "phishing": "70-100"},
             "weights": {
-                "sender_mismatch": 20, "suspicious_sender": 15,
+                "sender_mismatch": 20, "suspicious_sender": "15; +10 for brand impersonation",
                 "spf_fail_or_softfail": 15, "dkim_fail": 10, "dmarc_fail": 15,
                 "all_three_auth_failures_bonus": 10,
                 "high_risk_content_indicator": 18, "medium_risk_content_indicator": 12,
                 "other_content_indicator": 6,
-                "suspicious_url": "up to 30 based on the strongest URL score and number of flagged URLs",
+                "suspicious_url": "15-35 based on strongest URL score and number of flagged URLs",
+                "urgency_payment_or_account_threat_combo": 10,
                 "high_risk_attachment": 15, "medium_risk_attachment": 8,
                 "missing_authentication_evidence": 0
             }
         },
         "sender": from_header,
+        "to": msg.get("To", ""),
+        "reply_to": reply_to,
         "subject": subject,
         "date": date_header,
         "message_id": message_id,
@@ -997,5 +1063,5 @@ def generate_local_explanation(report: dict) -> dict:
 
 
 # High/medium severity indicator sets for scoring
-high_severity_indicators = {"credential_harvesting", "otp_theft", "banking_kyc", "payment_request"}
-medium_severity_indicators = {"urgency_pressure", "threat_intimidation", "impersonation", "fake_invoice"}
+high_severity_indicators = {"credential_harvesting", "otp_theft", "banking_kyc", "payment_request", "fake_payment_alert"}
+medium_severity_indicators = {"urgency_pressure", "threat_intimidation", "impersonation", "fake_invoice", "misleading_hyperlink"}

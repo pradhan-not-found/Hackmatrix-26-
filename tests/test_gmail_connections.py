@@ -23,12 +23,12 @@ PHISH = ("Your bank account will be suspended. Verify your password and OTP imme
          "https://paypal.com.account-verify.example/login or you will lose access. Urgent action required.")
 
 
-def gmail_message(message_id, body):
+def gmail_message(message_id, body, sender="PayPal Security <alerts@paypal-verify.example>", subject="Urgent: verify your account"):
     data = base64.urlsafe_b64encode(body.encode()).decode().rstrip("=")
     return {"id": message_id, "threadId": message_id, "labelIds": ["INBOX"], "payload": {
         "mimeType": "text/plain", "body": {"data": data},
-        "headers": [{"name": "From", "value": "PayPal Security <alerts@paypal-verify.example>"},
-                    {"name": "To", "value": "owner@example.com"}, {"name": "Subject", "value": "Urgent: verify your account"},
+        "headers": [{"name": "From", "value": sender},
+                    {"name": "To", "value": "owner@example.com"}, {"name": "Subject", "value": subject},
                     {"name": "Date", "value": "Mon, 9 Nov 2026 10:00:00 +0000"}]}}
 
 
@@ -101,7 +101,8 @@ class GmailConnectionTests(unittest.TestCase):
     def test_scan_flags_fraud_without_opening_links_or_exposing_clean_mail(self):
         self.connect(OWNER)
         self.user[0] = OWNER
-        messages = {"bad": gmail_message("bad", PHISH), "ok": gmail_message("ok", "See you at lunch tomorrow.")}
+        messages = {"bad": gmail_message("bad", PHISH), "ok": gmail_message(
+            "ok", "See you at lunch tomorrow.", "Morgan <morgan@company.example>", "Lunch tomorrow")}
         with patch("backend.gmail_connections.list_messages", return_value={"messages": [{"id": "bad"}, {"id": "ok"}]}), \
                 patch("backend.gmail_connections.get_message", side_effect=lambda token, message_id, format="full": messages[message_id]), \
                 patch("backend.email_analysis.investigate", side_effect=AssertionError("links must not be opened")) as opened:
@@ -114,7 +115,8 @@ class GmailConnectionTests(unittest.TestCase):
     def test_flagged_emails_join_email_analysis_history_once(self):
         self.connect(OWNER)
         self.user[0] = OWNER
-        messages = {"bad": gmail_message("bad", PHISH), "ok": gmail_message("ok", "See you at lunch tomorrow.")}
+        messages = {"bad": gmail_message("bad", PHISH), "ok": gmail_message(
+            "ok", "See you at lunch tomorrow.", "Morgan <morgan@company.example>", "Lunch tomorrow")}
         for _ in range(2):
             gmail_connections._scan_cache.clear()
             with patch("backend.gmail_connections.list_messages", return_value={"messages": [{"id": "bad"}, {"id": "ok"}]}), \

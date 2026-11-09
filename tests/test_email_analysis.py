@@ -77,6 +77,9 @@ class EmailParsingTests(unittest.TestCase):
         self.assertIn("https://example.com", urls)
         self.assertIn("http://test.org/path?query=1", urls)
 
+    def test_extract_full_url_only_once_not_again_as_bare_domain(self):
+        self.assertEqual(extract_urls_from_text("Visit https://example.com/verify now"), ["https://example.com/verify"])
+
     def test_extract_urls_from_html(self):
         html = '<a href="https://example.com">Link</a> <img src="http://test.org/img.png">'
         urls = extract_urls_from_html(html)
@@ -233,6 +236,17 @@ class URLAnalysisTests(unittest.TestCase):
 
 
 class RiskScoringTests(unittest.TestCase):
+    def test_suspicious_url_inspection_contributes_to_final_score(self):
+        sender = {"mismatch": False, "suspicious": False, "details": []}
+        auth = {"spf": "PASS", "dkim": "PASS", "dmarc": "PASS", "details": []}
+        content = {"indicators": []}
+        without_url, _ = calculate_risk_score(sender, auth, content, [], [])
+        with_url, classification = calculate_risk_score(sender, auth, content, [
+            {"risk_classification": "Suspicious", "risk_score": 25, "findings": [{"severity": "high"}]}
+        ], [])
+        self.assertGreater(with_url, without_url)
+        self.assertEqual(classification, "SUSPICIOUS")
+
     def test_safe_classification(self):
         sender = {"mismatch": False, "suspicious": False, "details": []}
         auth = {"spf": "PASS", "dkim": "PASS", "dmarc": "PASS", "details": []}
@@ -304,6 +318,47 @@ class RecommendationTests(unittest.TestCase):
 
 
 class FullEmailAnalysisTests(unittest.TestCase):
+    @patch("backend.email_analysis.investigate")
+    def test_paypal_style_phishing_email_is_high_risk_and_extracts_subject(self, mock_investigate):
+        mock_investigate.return_value = {
+            "risk_classification": "Suspicious",
+            "findings": [{"category": "url", "severity": "high", "description": "Deceptive destination"}],
+            "redirect_chain": [], "final_url": "https://paypal-verification.example.com/verify"
+        }
+        email_text = """From: PayPal Security <security@paypal-verification.example.com>
+To: victim@example.org
+Reply-To: recovery-team@example.net
+Subject: FINAL WARNING: $1,849.99 PAYMENT AUTHORIZED – DISPUTE WITHIN 30 MINUTES
+Date: Mon, 9 Nov 2026 10:00:00 +0000
+
+An unauthorized payment of $1,849.99 was authorized. Dispute within 30 minutes or
+your account will face restrictions and irreversible payment settlement. Verify
+account ownership and personal information at https://paypal-verification.example.com/verify.
+"""
+        report = analyze_email(email_text, "text", use_gemini=False)
+        self.assertEqual(report["subject"], "FINAL WARNING: $1,849.99 PAYMENT AUTHORIZED – DISPUTE WITHIN 30 MINUTES")
+        self.assertTrue(report["sender_analysis"]["mismatch"])
+        self.assertEqual(report["sender_analysis"]["reply_to_address"], "recovery-team@example.net")
+        self.assertEqual(report["classification"], "PHISHING")
+        self.assertGreaterEqual(report["risk_score"], 70)
+        self.assertEqual(len(report["urls"]), 1)
+        self.assertTrue(any(item["type"] == "SUSPICIOUS_URL" for item in report["indicators"]))
+
+    def test_legitimate_email_stays_low_risk(self):
+        email_text = """From: Morgan <morgan@company.example>
+To: Jamie <jamie@company.example>
+Subject: Lunch tomorrow
+Date: Mon, 9 Nov 2026 10:00:00 +0000
+Authentication-Results: mx.company.example; spf=pass; dkim=pass; dmarc=pass
+
+Hi Jamie, thanks for the helpful meeting. Lunch tomorrow at noon works for me.
+Best, Morgan
+"""
+        report = analyze_email(email_text, "text", use_gemini=False, follow_links=False)
+        self.assertEqual(report["subject"], "Lunch tomorrow")
+        self.assertEqual(report["classification"], "SAFE")
+        self.assertLess(report["risk_score"], 20)
+
     def test_analyze_simple_email_text(self):
         email_text = """From: sender@example.com
 To: recipient@test.com
@@ -510,6 +565,7 @@ Hello World
             self.assertIn("classification", data)
             self.assertIn("risk_score", data)
             self.assertIn("id", data)
+            self.assertEqual(data["subject"], "Test")
 
     def test_analyze_email_empty_rejected(self):
         with TestClient(app) as client:
