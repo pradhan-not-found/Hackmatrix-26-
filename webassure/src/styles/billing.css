@@ -1296,3 +1296,9 @@ html:has(.preloader[data-leaving]:not([data-dissolving])) main { animation: none
 .ledger-account[data-wrong] i { background: var(--st-warn); box-shadow: 0 0 0 4px color-mix(in srgb, var(--st-warn) 18%, transparent); }
 .ledger-account strong { display: block; font: 600 14px/20px ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--ink); }
 .ledger-account .caption { margin-top: 1px; font-size: 12.5px; line-height: 18px; overflow-wrap: anywhere; }
+
+/* inconclusive report: say why, and what to do */
+.rsum__why { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--analysis-warn) 10%, var(--report-alt)); }
+.rsum__why svg { flex: none; width: 18px; height: 18px; margin-top: 1px; color: var(--analysis-warn); }
+.rsum__why strong { display: block; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--report-ink); }
+.rsum__why p { margin-top: 3px; font-size: 13px; line-height: 19px; color: var(--report-muted); }

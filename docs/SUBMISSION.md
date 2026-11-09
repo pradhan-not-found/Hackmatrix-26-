@@ -29,7 +29,7 @@ Everything the submission form asks for, in one place. Fields marked **To add** 
 | **Threat ledger** | Salted report fingerprints registered through MetaMask, with receipt export, import and independent verification | Live on Ethereum Sepolia |
 | **AI explanations** | Built-in rule-based explanations, plus optional schema-validated Gemini explanations for URL reports that cannot change the verdict | Working; Gemini needs an API key |
 | **Accounts and privacy** | Google and email sign-in, password recovery, profile, verified sessions and owner-only storage | Working with Supabase setup |
-| **Tests** | 163 backend and 28 web app automated tests. They use mocked network calls and do not measure real-world detection accuracy | Passing |
+| **Tests** | 167 backend and 28 web app automated tests. They use mocked network calls and do not measure real-world detection accuracy | Passing |
 
 Not implemented yet: Certificate Transparency, revocation and scheduled monitoring, validated campaign attribution, and production hardening (per-user rate limits, retention controls, egress restrictions and a durable job queue).
 

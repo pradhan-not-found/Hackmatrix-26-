@@ -51,6 +51,19 @@ const TabIcon = ({ name }) => (
   <svg className="report-tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{TAB_PATHS[name]}</svg>
 )
 
+// The first reason this report could not reach a verdict, in plain language.
+function inconclusiveReason(report) {
+  const failed = (name) => report.checks.find((check) => check.name === name && !['completed', 'not_applicable'].includes(check.status))
+  if (failed('destination_safety')) return 'This address points to a private or unsupported network, so we did not open it.'
+  if (failed('dns')) return 'This domain could not be found. It may be fake, already taken down, or mistyped.'
+  if (failed('tls')) return "This site's security certificate could not be verified."
+  const http = failed('http')
+  if (http) return /HTTP\s*\d+/.test(http.reason || '') ? `The site refused our check (${http.reason.match(/HTTP\s*\d+/)[0]}), so its page could not be inspected.` : 'The site did not respond to our check, so its page could not be inspected.'
+  if (failed('threat_intelligence')) return 'The threat database could not be reached, so reputation was not checked.'
+  if (failed('html_inspection')) return 'The page could not be fully inspected.'
+  return 'Some checks could not be completed.'
+}
+
 // Step icon for a request in the redirect route: redirect, final page, or error.
 const HopIcon = ({ status }) => {
   const kind = status >= 400 ? 'bad' : status >= 300 ? 'redirect' : 'ok'
@@ -143,6 +156,7 @@ export default function ReportDetails({ id, onClose }) {
             <button type="button" className="rsum__jump" onClick={() => activate('connection')}><b>{report.redirect_chain.length}</b>Requests</button>
           </div>
         </div>
+        {report.risk_classification === 'Inconclusive' && <div className="rsum__why"><InfoIcon /><div><strong>{inconclusiveReason(report)}</strong><p>We found no proof either way, so this link is unverified, not safe. Do not enter passwords, OTPs or payment details until you confirm the address through the organisation's official website.</p></div></div>}
       </div>
       <div className="report-tabs" role="tablist" aria-label="Report sections">{tabs.map(([name, title], index) => <button key={name} id={`report-tab-${name}`} role="tab" aria-selected={tab === name} aria-controls={`report-panel-${name}`} tabIndex={tab === name ? 0 : -1} onClick={() => activate(name)} onKeyDown={(event) => navigateTab(event, index)}><TabIcon name={name} />{title}{name === 'overview' && <span className="report-tab-count">{report.findings.length}</span>}</button>)}<span className="report-tabs-note">Read-only evidence report</span></div>
       <div className="report-panels" ref={panels}>

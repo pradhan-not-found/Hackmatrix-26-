@@ -18,7 +18,25 @@ BRANDS = {
     "amazon": ("amazon.com", "amazon.in", "amazon.co.uk"),
     "apple": ("apple.com", "icloud.com"),
     "github": ("github.com",),
+    "netflix": ("netflix.com",),
+    "facebook": ("facebook.com", "fb.com"),
+    "instagram": ("instagram.com",),
+    "whatsapp": ("whatsapp.com", "whatsapp.net"),
+    "linkedin": ("linkedin.com",),
+    "sbi": ("sbi", "sbi.co.in", "onlinesbi.com", "sbicard.com", "sbilife.co.in"),
+    "hdfc": ("hdfc.com", "hdfcbank.com", "hdfclife.com", "hdfcergo.com"),
+    "icici": ("icicibank.com", "icicidirect.com", "iciciprulife.com", "icicilombard.com"),
+    "axisbank": ("axisbank.com",),
+    "kotak": ("kotak.com",),
+    "paytm": ("paytm.com", "paytm.in", "paytmbank.com"),
+    "phonepe": ("phonepe.com",),
+    "flipkart": ("flipkart.com",),
+    "irctc": ("irctc.co.in",),
+    "uidai": ("uidai.gov.in",),
 }
+# Ordinary words one edit away from a brand name are not misspellings of it.
+NOT_BRAND_TYPOS = {"apply", "maple", "ample"}
+MIN_TYPO_BRAND_LENGTH = 5
 EXTRACT = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None, include_psl_private_domains=True)
 LURES = {"login", "signin", "verify", "verification", "password", "account", "secure", "wallet", "kyc"}
 REDIRECT_PARAMETERS = {"url", "redirect", "redirect_uri", "redirect_url", "next", "continue", "return", "return_url", "destination", "dest"}
@@ -101,7 +119,8 @@ def analyze_url(url: str) -> dict:
                 add("brand_homoglyph", "Unicode hostname resembles a protected brand", evidence, "strong")
             elif brand in re.split(r"[-_]", label) or brand in subdomain_labels:
                 add("brand_in_unrelated_hostname", "Brand name appears on an unverified domain", evidence, "moderate" if lure_context else "weak")
-            elif near_match(label, brand):
+            elif len(brand) >= MIN_TYPO_BRAND_LENGTH and any(
+                    near_match(token, brand) and token not in NOT_BRAND_TYPOS for token in re.split(r"[-_]", label)):
                 add("brand_typo", "Domain label is a close spelling of a protected brand", {**evidence, "observed_label": label}, "moderate" if lure_context else "weak")
 
     for name, value in parse_qsl(parts.query, keep_blank_values=True)[:32]:
