@@ -233,6 +233,7 @@ export function buildSlides(mode) {
         ...demoTab(392, '4', 'Check a scam email or message'),
         box(M, 476, 416, 52),
         text(M + 20, 491, 110, 22, 'Solution URL', { size: 13, lh: 1.3, color: C.grey }),
+        text(M + 130, 490, 270, 24, 'https://web-assure.vercel.app', { size: 16, lh: 1.3, weight: 600 }),
         box(520, 140, 688, 388, { radius: 36, stroke: C.line }),
         text(520, 544, 688, 24, 'Demo video', { size: 15, lh: 1.3, color: C.grey, align: 'center' }),
         ...footer(),
