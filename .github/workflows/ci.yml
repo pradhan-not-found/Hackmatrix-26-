@@ -39,6 +39,8 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: webassure/package-lock.json
-      - run: npm ci
+      # ganache bundles the macOS-only fsevents package without marking it optional,
+      # so the platform check is skipped here. Vercel's own install is unaffected.
+      - run: npm ci --force
       - run: npm test
       - run: npm run build
