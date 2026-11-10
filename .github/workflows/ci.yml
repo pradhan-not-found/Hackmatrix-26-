@@ -42,5 +42,12 @@ jobs:
       # ganache bundles the macOS-only fsevents package without marking it optional,
       # so the platform check is skipped here. Vercel's own install is unaffected.
       - run: npm ci --force
-      - run: npm test
+      - name: Run tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-output.txt || {
+            grep -nE "not ok|Error|error|expected|actual|failed" test-output.txt | head -40 | while IFS= read -r line; do echo "::error::${line//%/%25}"; done
+            exit 1
+          }
       - run: npm run build
