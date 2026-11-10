@@ -7,6 +7,8 @@
 
 <a href="https://hackmatrix.codes/"><img src="docs/assets/hackmatrix-partners.png" alt="HackMatrix 2026 with ACM Student Chapter, Major League Hacking, Adamas University and RICE Adamas Group" width="560" /></a>
 
+<a href="https://github.com/pradhan-not-found/Hackmatrix-26-/actions/workflows/ci.yml"><img src="https://github.com/pradhan-not-found/Hackmatrix-26-/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+
 <sub>Built at <a href="https://hackmatrix.codes/">HackMatrix 2026</a> · Next.js · FastAPI · Supabase · Apache-2.0</sub>
 
 <br />
@@ -97,13 +99,13 @@ The backend is a local MVP. Run a single worker. Before any public deployment, a
 
 ## Demo
 
-<img src="docs/assets/screenshot-home.png" alt="WebAssure home page with the link checker" width="100%" />
+<a href="https://youtu.be/buhY1Fo2WFw"><img src="https://img.youtube.com/vi/buhY1Fo2WFw/maxresdefault.jpg" alt="Watch the WebAssure demo video on YouTube" width="100%" /></a>
 
 | | |
 | --- | --- |
-| **Live demo** | _Not deployed yet_ |
-| **Demo video** | _Not published yet_ |
-| **Pitch deck** | Open `/download` in the running web app to view and download it (PPT and PDF) |
+| **Live demo** | <https://web-assure.vercel.app> |
+| **Demo video** | [Watch on YouTube](https://youtu.be/buhY1Fo2WFw) |
+| **Pitch deck** | [View and download](https://web-assure.vercel.app/download) (PPT and PDF) |
 | **Run it locally** | Web app at <http://localhost:3000>, API docs at <http://127.0.0.1:8000/docs> (see [Setup and run](#setup-and-run)) |
 
 ## Tech stack
